@@ -1,0 +1,103 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.7rem 1.4rem;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast),
+    color var(--motion-fast),
+    transform var(--motion-fast);
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sm {
+  padding: 0.45rem 0.8rem;
+  font-size: var(--text-sm);
+}
+
+.lg {
+  padding: 0.85rem 1.5rem;
+  font-size: var(--text-lg);
+}
+
+.block {
+  width: 100%;
+}
+
+/* Primary CTA - Stage Emerald (PRD Sec: Approved Patterns). */
+.primary {
+  background: var(--color-emerald);
+}
+.primary:hover:not(:disabled) {
+  background: var(--color-emerald-hover);
+}
+
+.brass {
+  background: var(--color-brass);
+  color: var(--color-bg);
+}
+.brass:hover:not(:disabled) {
+  background: var(--color-brass-hover);
+}
+
+.orange {
+  background: var(--color-orange);
+}
+.orange:hover:not(:disabled) {
+  background: var(--color-orange-hover);
+}
+
+.ghost {
+  background: transparent;
+  border-color: var(--color-border-strong);
+}
+.ghost:hover:not(:disabled) {
+  background: var(--color-raised);
+  border-color: var(--color-brass);
+}
+
+.danger {
+  background: transparent;
+  color: var(--color-orange);
+  border-color: var(--color-orange);
+}
+.danger:hover:not(:disabled) {
+  background: rgba(198, 76, 39, 0.14);
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btnspin 0.6s linear infinite;
+}
+
+@keyframes btnspin {
+  to {
+    transform: rotate(360deg);
+  }
+}

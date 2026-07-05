@@ -1,0 +1,151 @@
+.hero {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: var(--space-5);
+  min-height: 260px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--color-raised);
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroPlaceholder {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 20%, rgba(196, 154, 71, 0.22), transparent 55%),
+    radial-gradient(circle at 80% 90%, rgba(7, 138, 112, 0.2), transparent 55%),
+    var(--color-raised);
+}
+
+/* Dark bottom gradient to preserve text contrast (PRD Sec: Approved Patterns). */
+.heroScrim {
+  position: relative;
+  width: 100%;
+  padding: var(--space-8) var(--space-5) var(--space-5);
+  background: linear-gradient(
+    to top,
+    rgba(8, 10, 9, 0.95) 10%,
+    rgba(8, 10, 9, 0.5) 55%,
+    transparent
+  );
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+  color: var(--color-text);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-2);
+}
+
+.subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.content {
+  margin-top: var(--space-6);
+}
+
+.section {
+  margin-bottom: var(--space-7);
+}
+
+.summary {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.sidebarCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.setlist {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.actList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.actRole {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+}
+
+.peopleList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.source {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+}
+.sourceLink {
+  color: var(--color-emerald);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.emptyMedia {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.editLink {
+  margin-top: var(--space-4);
+}
+.editLink a {
+  color: var(--color-emerald);
+}

@@ -1,0 +1,72 @@
+/* Liner-note style annotation: a thin brass rule, not a chat bubble
+   (PRD Sec: Component Style). */
+.memory {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 0 var(--space-4) var(--space-5);
+  border-left: 2px solid var(--color-brass);
+  position: relative;
+}
+
+.memory + .memory {
+  margin-top: var(--space-4);
+}
+
+.body {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.quote {
+  font-style: italic;
+  font-size: var(--text-base);
+}
+
+.attribution {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.author {
+  color: var(--color-brass);
+}
+
+.typeLabel {
+  color: var(--color-text-secondary);
+}
+
+.people {
+  color: var(--color-emerald);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+.actionButton:hover {
+  color: var(--color-text);
+}
+.danger:hover {
+  color: var(--color-orange);
+}

@@ -1,0 +1,66 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-raised) 37%,
+    var(--color-surface) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-8) var(--space-5);
+  color: var(--color-text-secondary);
+}
+
+.messageTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--color-text);
+}
+
+.messageIcon {
+  color: var(--color-brass);
+  opacity: 0.8;
+}
+
+.errorTitle {
+  color: var(--color-orange);
+}
+
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2.5px solid var(--color-border-strong);
+  border-top-color: var(--color-emerald);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,52 @@
+.section {
+  padding-block: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.section:first-of-type {
+  border-top: none;
+}
+
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-violet);
+  margin-bottom: var(--space-4);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.swatch {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.swatchColor {
+  height: 64px;
+}
+.swatchLabel {
+  padding: var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.typeRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

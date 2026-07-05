@@ -1,0 +1,119 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition:
+    border-color var(--motion-base),
+    transform var(--motion-base);
+}
+
+.card:hover {
+  border-color: var(--color-brass);
+  transform: translateY(-2px);
+}
+
+/* Fixed aspect image, metadata below (not overlaid) - PRD prototype. */
+.media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--color-raised);
+  overflow: hidden;
+}
+
+.media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      rgba(196, 154, 71, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(circle at 75% 80%, rgba(7, 138, 112, 0.16), transparent 55%),
+    var(--color-raised);
+  color: var(--color-brass);
+  opacity: 0.7;
+}
+
+.featured {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-bg);
+  background: var(--color-brass);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.indicators {
+  position: absolute;
+  bottom: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+}
+
+.indicator {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  background: rgba(8, 10, 9, 0.72);
+  color: var(--color-text);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-brass);
+  letter-spacing: 0.02em;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.metaItem svg {
+  color: var(--color-text-secondary);
+}

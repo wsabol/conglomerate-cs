@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "scripts",
+    "drizzle.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

@@ -1,0 +1,26 @@
+---
+description: Core architecture and layout for The Conglomerate archive
+alwaysApply: true
+---
+
+# The Conglomerate - Architecture
+
+Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
+
+## Layout
+- `src/client/` React app (routes, components, design tokens, lib, types).
+- `src/server/` Worker+Hono (routes, middleware, db, media, audit, lib, auth).
+- `src/shared/` types + Zod schemas reused by client and server.
+- `migrations/` Drizzle-generated SQL. `scripts/` seed + export. `tests/` Vitest.
+
+## Request routing
+The Worker (`src/server/index.ts`) runs first and owns `/api/*` and `/media/*`;
+everything else is delegated to the `ASSETS` binding (SPA fallback). Never add
+CORS - client and API share an origin.
+
+## Golden rules
+- Shared enums live in `src/shared/types.ts`; import them, never re-declare.
+- Add config (limits, MIME lists, Access settings) to `src/server/lib/config.ts`,
+  never hard-code inline.
+- After changing `wrangler.toml`, run `npm run types`.
+- Every milestone ends with `npm test` green and a working `wrangler dev`.

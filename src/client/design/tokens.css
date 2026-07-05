@@ -1,0 +1,100 @@
+/* Design tokens - the single source of truth for color, type, spacing, etc.
+   Aesthetic: a black archival music space illuminated by live stage color.
+   (PRD Sec: Design and Styling.) */
+
+:root {
+  /* ---- Color palette ---- */
+  --color-bg: #080a09;
+  --color-surface: #171a18;
+  --color-raised: #242825;
+  --color-text: #f1e9da;
+  --color-text-secondary: #b7b0a2;
+
+  --color-emerald: #078a70; /* primary interactive / CTA */
+  --color-emerald-hover: #09a888;
+  --color-brass: #c49a47; /* featured / archival emphasis */
+  --color-brass-hover: #d6ac57;
+  --color-orange: #c64c27; /* high-energy actions */
+  --color-orange-hover: #dc5c34;
+  --color-blue: #557ca8; /* atmospheric, sparing */
+  --color-magenta: #8c4f78; /* atmospheric, sparing */
+  --color-violet: #554b69; /* atmospheric, sparing */
+
+  --color-danger: #c64c27;
+  --color-success: #078a70;
+
+  /* Derived surfaces / lines */
+  --color-border: rgba(241, 233, 218, 0.12);
+  --color-border-strong: rgba(241, 233, 218, 0.24);
+  --color-overlay: rgba(8, 10, 9, 0.72);
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-emerald);
+
+  /* ---- Typography ---- */
+  --font-impact: "Bodoni Moda", Georgia, serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Body minimum is 1rem (16px) - never render meaningful text smaller. */
+  --text-xs: 0.8125rem; /* 13px - metadata chips only */
+  --text-sm: 0.875rem; /* 14px eyebrows, small buttons */
+  --text-base: 1rem; /* 16px - minimum body size */
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.375rem;
+  --text-4xl: 3.25rem;
+  --text-5xl: 4.5rem;
+  --text-8xl: 7.25rem;
+
+  --leading-tight: 0.92;
+  --leading-snug: 1.2;
+  --leading-normal: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* ---- Radii (small, 2-4px) ---- */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-pill: 999px;
+
+  /* ---- Shadows (minimal) ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55);
+
+  /* ---- Layout ---- */
+  --container-max: 1200px;
+  --container-narrow: 780px;
+  --navbar-height: 68px;
+
+  /* ---- Motion ---- */
+  --motion-fast: 120ms ease;
+  --motion-base: 200ms ease;
+  --motion-slow: 320ms ease;
+
+  /* ---- Z-index ---- */
+  --z-nav: 100;
+  --z-overlay: 200;
+  --z-modal: 210;
+  --z-toast: 300;
+}
+
+/* Breakpoints are documented here and used via media queries in modules:
+   sm 480px, md 768px, lg 1024px, xl 1280px. */

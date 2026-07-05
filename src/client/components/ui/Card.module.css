@@ -1,0 +1,17 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.padded {
+  padding: var(--space-5);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-brass);
+  margin-bottom: var(--space-3);
+}

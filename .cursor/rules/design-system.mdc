@@ -1,0 +1,27 @@
+---
+description: Design system, tokens, and accessibility rules for the client
+globs: src/client/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Design System
+
+Aesthetic: a black archival music space illuminated by live stage color.
+Target balance ~70% black/charcoal/ivory, 20% emerald/brass, 10% orange/magenta/violet.
+
+## Tokens (never hard-code hex/px)
+Use CSS variables / the token object from `src/client/design/tokens`.
+Palette: bg `#080A09`, surface `#171A18`, raised `#242825`, text `#F1E9DA`,
+secondary text `#B7B0A2`, emerald `#078A70` (primary interactive/CTA),
+brass `#C49A47` (featured/archival), orange `#C64C27` (high-energy),
+magenta `#8C4F78`, violet `#554B69` (sparingly). Radii 4-8px, minimal shadows.
+
+## Typography
+Display: Cormorant Garamond. Body/UI: Inter. Metadata/dates/setlists: IBM Plex Mono.
+
+## Accessibility (hard requirements)
+- No text below the design-system minimum body size; no small/low-contrast copy.
+- Icons supplement labels, never replace meaningful text; keep accessible labels.
+- Important actions must be visible without hover.
+- Sidebars reflow into content flow on mobile - never horizontally compressed.
+- Memories render as liner-note annotations with a thin brass rule, not chat bubbles.

@@ -1,0 +1,32 @@
+---
+description: API response envelope, validation, auth, soft-delete and audit rules
+globs: src/server/**/*.ts
+alwaysApply: false
+---
+
+# API Conventions
+
+## Response envelope
+Every endpoint returns `ApiResponse<T> = { data: T | null; message: string }`.
+Use the helpers in `src/server/lib/response.ts`:
+
+```ts
+return ok(c, event, "Returned event");        // { data, message }
+return okList(c, results, "Returned events"); // { data: { results }, message }
+```
+
+Errors: `throw new ApiError(status, message, details?)` (see `lib/errors.ts`).
+The single `errorHandler` serializes them; never return raw errors or leak stacks.
+
+## Validation
+Validate every request body/query with a Zod schema from `src/shared/schemas`
+at the route boundary. A `ZodError` is auto-mapped to a 400 envelope.
+
+## Auth
+Identity is attached by the `identity` middleware as `c.get("user")`.
+Guard writes with `requireUser` / `requireEditor` from `middleware/auth.ts`.
+
+## Soft delete + audit
+No hard deletes in normal UI - set `is_deleted = true`. Every create/update/
+delete on events, people, places, media, and annotations MUST write an
+`object_revisions` row via `recordRevision()` in the same D1 batch.

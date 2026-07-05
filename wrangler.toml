@@ -1,0 +1,68 @@
+name = "conglomerate-cs"
+main = "src/server/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the built React SPA. The Worker runs first so it can own /api and
+# /media; everything else is delegated to the ASSETS binding (SPA fallback).
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "conglomerate"
+# Placeholder id: local development ignores this. Replace for remote/prod.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "conglomerate-media"
+
+[vars]
+ENVIRONMENT = "development"
+# Local-only identity override (Cloudflare Access cannot run in `wrangler dev`).
+# MUST be empty / disabled in production (see [env.production]).
+DEV_USER_EMAIL = "dev@theconglomerate.local"
+DEV_USER_ROLE = "editor"
+ACCESS_ENFORCED = "false"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+# ---- Production environment ----------------------------------------------
+[env.production]
+name = "conglomerate-cs"
+
+[env.production.assets]
+directory = "./dist/client"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[env.production.observability]
+enabled = true
+
+[env.production.vars]
+ENVIRONMENT = "production"
+DEV_USER_EMAIL = ""
+DEV_USER_ROLE = ""
+ACCESS_ENFORCED = "true"
+# Set ACCESS_TEAM_DOMAIN and ACCESS_AUD via `wrangler secret put` or vars.
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "conglomerate"
+database_id = "REPLACE_WITH_PRODUCTION_D1_ID"
+migrations_dir = "migrations"
+
+[[env.production.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "conglomerate-media"

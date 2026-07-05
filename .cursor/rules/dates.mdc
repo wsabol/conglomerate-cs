@@ -1,0 +1,19 @@
+---
+description: Date and time formatting rules (Luxon + date precision)
+alwaysApply: true
+---
+
+# Dates & Times
+
+Store `event_date` (ISO `yyyy-MM-dd`), optional `event_time` (24h `HH:mm`), and
+a `date_precision`: `exact | month | semester | year | approximate | unknown`.
+
+Always render via `formatEventDate(date, time, precision)` in
+`src/shared/date.ts` - never format dates ad hoc. It uses Luxon presets:
+
+- exact -> `DATE_SHORT` (`5/14/2011`), or `DATETIME_SHORT` when time is known
+- month -> `May 2011`  |  semester -> `Spring 2011` / `Fall 2011`
+- year -> `2011`  |  approximate -> `Around 5/14/2011`  |  unknown -> `Unknown`
+
+Never imply precision the data does not have (e.g. do not show a day for a
+`year`-precision date).

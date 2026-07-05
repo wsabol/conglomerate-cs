@@ -1,0 +1,36 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-bottom: var(--space-5);
+  position: sticky;
+  top: var(--navbar-height);
+  background: linear-gradient(var(--color-bg) 70%, transparent);
+  padding-top: var(--space-3);
+  z-index: 10;
+}
+
+.yearGroup {
+  margin-bottom: var(--space-7);
+}
+
+.yearHeading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.year {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--color-text);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}

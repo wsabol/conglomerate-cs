@@ -1,0 +1,73 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--color-raised);
+}
+
+.imageButton {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  display: block;
+}
+
+.video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.audio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.audio audio {
+  width: 100%;
+}
+
+.doc {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--color-text);
+}
+.doc svg {
+  color: var(--color-brass);
+  flex-shrink: 0;
+}
+
+.caption {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+}
+
+.iconRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-brass);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.download {
+  color: var(--color-emerald);
+  text-decoration: underline;
+}
