@@ -1,5 +1,6 @@
-import { formatEventDate } from "@shared/date";
-import type { DatePrecision } from "@shared/types";
+import { DateTime } from "luxon";
+import { formatEventDate, normalizeTime } from "@shared/date";
+import type { Confidence, DatePrecision, EventType } from "@shared/types";
 
 interface DateFields {
   eventDate: string | null;
@@ -9,6 +10,32 @@ interface DateFields {
 
 export function eventDateLabel(e: DateFields): string {
   return formatEventDate(e.eventDate, e.eventTime, e.datePrecision);
+}
+
+/** Date portion only — omits time even when one is stored. */
+export function eventDateOnlyLabel(e: DateFields): string {
+  return formatEventDate(e.eventDate, null, e.datePrecision);
+}
+
+export function eventTimeLabel(time: string | null): string | null {
+  const normalized = normalizeTime(time);
+  if (!normalized) return null;
+  const dt = DateTime.fromISO(`2000-01-01T${normalized}`).setLocale("en-US");
+  return dt.isValid ? dt.toLocaleString(DateTime.TIME_SIMPLE) : null;
+}
+
+const CONFIDENCE_LABELS: Record<Confidence, string> = {
+  high: "High confidence",
+  medium: "Medium confidence",
+  low: "Low confidence",
+};
+
+export function confidenceLabel(confidence: Confidence): string {
+  return CONFIDENCE_LABELS[confidence];
+}
+
+export function eventTypeLabel(type: EventType): string {
+  return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
 export function yearOf(dateISO: string | null): string {

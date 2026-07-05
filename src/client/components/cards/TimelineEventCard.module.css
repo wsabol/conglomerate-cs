@@ -1,0 +1,133 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition:
+    border-color var(--motion-base),
+    background var(--motion-base);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--color-brass) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-brass));
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.title {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.detailItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.detailItem svg {
+  flex-shrink: 0;
+}
+
+.aside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.asideMeta {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+@media (min-width: 640px) {
+  .asideMeta {
+    display: flex;
+  }
+}
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.confidence.high {
+  color: var(--color-emerald);
+}
+
+.confidence.medium {
+  color: var(--color-brass);
+}
+
+.confidence.low {
+  color: var(--color-text-secondary);
+}
+
+.eventType {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+}
+
+.media {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mediaItem {
+  display: inline-flex;
+  color: var(--color-text-secondary);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chevron {
+  color: var(--color-text-secondary);
+}

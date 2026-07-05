@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
-import { Container, Grid } from "../components/layout";
+import { Container } from "../components/layout";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Pill } from "../components/ui/Pill";
-import { PerformanceCard } from "../components/cards/PerformanceCard";
+import { TimelineEventCard } from "../components/cards/TimelineEventCard";
 import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { apiFetch } from "../lib/api";
-import { eventDateLabel, yearOf } from "../lib/format";
+import {
+  confidenceLabel,
+  eventDateOnlyLabel,
+  eventTimeLabel,
+  eventTypeLabel,
+  yearOf,
+} from "../lib/format";
 import type { EventListItemDTO } from "@shared/dto";
 import type { ListResult } from "@shared/types";
 import styles from "./Timeline.module.css";
@@ -38,7 +44,7 @@ export default function Timeline() {
   return (
     <Container>
       <PageHeader
-        eyebrow="History"
+        eyebrow="Archive"
         title="Timeline"
         subtitle="A chronological account of everything that happened - most recent first."
       />
@@ -68,30 +74,39 @@ export default function Timeline() {
         <EmptyState title="The timeline is empty" icon="calendar" />
       )}
 
-      {visible.map(([year, events]) => (
-        <section key={year} className={styles.yearGroup}>
-          <div className={styles.yearHeading}>
-            <span className={styles.year}>{year}</span>
-            <span className={styles.count}>
-              {events.length} {events.length === 1 ? "event" : "events"}
-            </span>
-          </div>
-          <Grid min={240}>
-            {events.map((e) => (
-              <PerformanceCard
-                key={e.id}
-                slug={e.slug}
-                title={e.title}
-                dateLabel={eventDateLabel(e)}
-                place={e.place?.name}
-                eventType={e.eventType}
-                imageUrl={e.heroImageUrl}
-                media={e.media}
-              />
-            ))}
-          </Grid>
-        </section>
-      ))}
+      {visible.length > 0 && (
+        <div className={styles.timeline}>
+          {visible.map(([year, events]) => (
+            <section key={year} className={styles.yearGroup}>
+              <div className={styles.yearHeading}>
+                <span className={styles.marker} aria-hidden />
+                <span className={styles.year}>{year}</span>
+                <span className={styles.count}>
+                  {events.length} {events.length === 1 ? "event" : "events"}
+                </span>
+              </div>
+              <div className={styles.events}>
+                {events.map((e) => (
+                  <TimelineEventCard
+                    key={e.id}
+                    slug={e.slug}
+                    title={e.title}
+                    dateLabel={eventDateOnlyLabel(e)}
+                    timeLabel={
+                      e.datePrecision === "exact" ? eventTimeLabel(e.eventTime) : null
+                    }
+                    place={e.place?.name}
+                    eventTypeLabel={eventTypeLabel(e.eventType)}
+                    confidence={e.confidence}
+                    confidenceLabel={confidenceLabel(e.confidence)}
+                    media={e.media}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </Container>
   );
 }

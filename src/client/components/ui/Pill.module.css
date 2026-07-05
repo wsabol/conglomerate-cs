@@ -19,13 +19,13 @@
 
 .pill:hover {
   color: var(--color-text);
-  border-color: var(--color-brass);
+  border-color: var(--color-emerald);
 }
 
 .active {
   color: var(--color-bg);
-  background: var(--color-brass);
-  border-color: var(--color-brass);
+  background: var(--color-emerald);
+  border-color: var(--color-emerald);
   font-weight: var(--weight-semibold);
 }
 
@@ -44,12 +44,5 @@
 }
 
 .tag svg {
-  color: var(--color-brass);
-}
-
-.emerald {
   color: var(--color-emerald);
-}
-.brass {
-  color: var(--color-brass);
 }
