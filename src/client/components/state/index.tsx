@@ -32,16 +32,20 @@ export function Spinner({ label = "Loading" }: { label?: string }) {
 }
 
 interface MessageProps {
+  size?: "sm" | "md" | "lg";
   title: string;
   children?: ReactNode;
   icon?: IconName;
   action?: ReactNode;
 }
 
-export function EmptyState({ title, children, icon = "star", action }: MessageProps) {
+export function EmptyState({ title, children, size = "md", icon = "star", action }: MessageProps) {
+  size = ['sm', 'md', 'lg'].includes(size.toLowerCase()) ? size.toLowerCase() as "sm" | "md" | "lg" : "md";
+  const iconSize = size === "sm" ? 30 : size === "md" ? 40 : 60;
+
   return (
-    <div className={styles.message}>
-      <Icon name={icon} size={40} className={styles.messageIcon} />
+    <div className={cn(styles.message, styles[`message-${size}`])}>
+      <Icon name={icon} size={iconSize} className={styles.messageIcon} />
       <p className={styles.messageTitle}>{title}</p>
       {children && <p>{children}</p>}
       {action}

@@ -82,7 +82,7 @@ export function MemoriesSection({
 
       <div className={styles.list}>
         {items.length === 0 ? (
-          <EmptyState title="No memories yet" icon="mic">
+          <EmptyState title="No memberies yet" icon="mic" size="sm">
             Be the first to add what you remember.
           </EmptyState>
         ) : (

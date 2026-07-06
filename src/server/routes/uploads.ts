@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { AppEnv } from "../env";
 import { getDb } from "../db/client";
 import { events, media } from "../db/schema";
@@ -176,6 +176,48 @@ route.post("/:id/complete", requireUser, async (c) => {
     after: updated,
     changedBy: user.id,
   });
+
+  if (
+    existing.eventId &&
+    updated.mediaType === "photo"
+  ) {
+    const event = await db
+      .select()
+      .from(events)
+      .where(
+        and(eq(events.id, existing.eventId), eq(events.isDeleted, false)),
+      )
+      .get();
+
+    if (event && event.heroImageId == null) {
+      const patched = await db
+        .update(events)
+        .set({
+          heroImageId: id,
+          modifiedOn: sql`(CURRENT_TIMESTAMP)`,
+        })
+        .where(
+          and(
+            eq(events.id, event.id),
+            eq(events.isDeleted, false),
+            isNull(events.heroImageId),
+          ),
+        )
+        .returning()
+        .get();
+
+      if (patched) {
+        await recordRevision(db, {
+          targetType: "event",
+          targetId: event.id,
+          action: "update",
+          before: event,
+          after: patched,
+          changedBy: user.id,
+        });
+      }
+    }
+  }
 
   const dto = await getMediaItemById(db, id);
   return ok(c, dto, "Media published");
