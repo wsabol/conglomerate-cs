@@ -53,10 +53,6 @@ export default function Home() {
         The people and the stories that grew around all of it. Facebook forgets. This doesn't.
         </p>
         <p>
-        Every event page holds two layers: a curated account of what happened, 
-        and the raw member memories from which that account was built.
-        </p>
-        <p>
         Every member can browse the timeline, contribute memories, and upload media. 
         The archive grows as we remember together.
         </p>

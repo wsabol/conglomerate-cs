@@ -59,13 +59,11 @@ route.post("/", requireUser, async (c) => {
   const r2Key = mediaObjectKey(row.id, input.filename);
   await db.update(media).set({ r2Key }).where(eq(media.id, row.id));
 
-  const origin = new URL(c.req.url).origin;
   const target = await createUploadTarget(
     c.env,
     r2Key,
     input.mimeType,
     row.id,
-    origin,
   );
 
   return ok(

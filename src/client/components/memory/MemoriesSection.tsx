@@ -78,7 +78,7 @@ export function MemoriesSection({
 
   return (
     <section>
-      <SectionTitle>Memories</SectionTitle>
+      <SectionTitle>Memberberries</SectionTitle>
 
       <div className={styles.list}>
         {items.length === 0 ? (

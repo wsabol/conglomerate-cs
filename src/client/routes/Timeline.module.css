@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-6);
   position: sticky;
   top: var(--navbar-height);
   background: linear-gradient(var(--color-bg) 70%, transparent);

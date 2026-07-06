@@ -25,7 +25,10 @@ export type IconName =
   | "external"
   | "check"
   | "upload"
-  | "star";
+  | "star"
+  | "confidence-high"
+  | "confidence-medium"
+  | "confidence-low";
 
 const PATHS: Record<IconName, string> = {
   menu: "M3 6h18M3 12h18M3 18h18",
@@ -55,6 +58,12 @@ const PATHS: Record<IconName, string> = {
   check: "M5 13l4 4L19 7",
   upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
   star: "M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.1 21.9l1.1-6.5L2.5 9.8l6.5-.9z",
+  "confidence-high":
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12.5l2.5 2.5 5-5",
+  "confidence-medium":
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12h8",
+  "confidence-low":
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4M12 16h.01",
 };
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {

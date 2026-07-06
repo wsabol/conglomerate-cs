@@ -90,7 +90,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--color-brass);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .title {

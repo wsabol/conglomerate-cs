@@ -1,9 +1,7 @@
 .hero {
   position: relative;
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-top: var(--space-5);
-  min-height: 260px;
+  min-height: 240px;
   display: flex;
   align-items: flex-end;
   background: var(--color-raised);
@@ -26,8 +24,7 @@
     var(--color-raised);
 }
 
-/* Dark bottom gradient to preserve text contrast (PRD Sec: Approved Patterns). */
-.heroScrim {
+.heroOverlay {
   position: relative;
   width: 100%;
   padding: var(--space-8) var(--space-5) var(--space-5);
@@ -39,12 +36,17 @@
   );
 }
 
+.header {
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
+  color: var(--color-emerald);
 }
 
 .title {
@@ -56,26 +58,105 @@
   margin-top: var(--space-2);
 }
 
-.subtitle {
+.meta {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.metaIcon {
+  color: var(--color-brass);
+  flex-shrink: 0;
+}
+
+.metaItem[data-tone="high"] {
+  color: var(--color-emerald);
+}
+
+.metaItem[data-tone="medium"] {
+  color: var(--color-brass);
+}
+
+.metaItem[data-tone="low"] {
+  color: var(--color-text-secondary);
+}
+
+.metaItem[data-tone] .metaIcon {
+  color: inherit;
 }
 
 .content {
-  margin-top: var(--space-6);
+  margin-top: var(--space-5);
 }
 
-.section {
+.tabList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: var(--space-3) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition:
+    color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--color-text);
+  border-bottom-color: var(--color-text);
+}
+
+.tabPanel {
   margin-bottom: var(--space-7);
 }
 
-.summary {
+.summary,
+.description {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--color-text);
   white-space: pre-wrap;
+}
+
+.emptyPanel {
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.memories {
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.mediaSection {
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
 }
 
 .sidebarCard {
@@ -86,52 +167,35 @@
   margin-bottom: var(--space-4);
 }
 
-.setlist {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-  color: var(--color-text);
-  white-space: pre-wrap;
-}
-
-.actList {
+.billList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.act {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border);
-}
-.actRole {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  text-transform: capitalize;
-}
-
-.peopleList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.billList li {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
 }
 
 .sources {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
+
 .source {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   color: var(--color-text-secondary);
+  font-size: var(--text-base);
 }
+
 .sourceLink {
   color: var(--color-emerald);
   text-decoration: underline;
@@ -146,6 +210,7 @@
 .editLink {
   margin-top: var(--space-4);
 }
+
 .editLink a {
   color: var(--color-emerald);
 }

@@ -29,7 +29,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .title {
@@ -99,7 +99,7 @@
 }
 
 .confidence.low {
-  color: var(--color-text-secondary);
+  color: var(--color-orange);
 }
 
 .eventType {

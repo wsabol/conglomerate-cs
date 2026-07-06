@@ -191,7 +191,7 @@ export default function Styleguide() {
 
       <Section label="Memories">
         <Card>
-          <SectionTitle>Memories</SectionTitle>
+          <SectionTitle>Memberberries</SectionTitle>
           <Memory
             body="I distinctly remember Brent ripping the Brent note that night."
             authorName="McIan"

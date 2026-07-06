@@ -15,6 +15,6 @@
   color: var(--color-brass);
   margin-bottom: var(--space-3);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   font-weight: var(--weight-semibold);
 }

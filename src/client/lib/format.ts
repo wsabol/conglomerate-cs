@@ -24,6 +24,16 @@ export function eventTimeLabel(time: string | null): string | null {
   return dt.isValid ? dt.toLocaleString(DateTime.TIME_SIMPLE) : null;
 }
 
+/** Date and time for event metadata, separated by a middot when time is known. */
+export function eventDateTimeMetaLabel(e: DateFields): string {
+  const date = eventDateOnlyLabel(e);
+  if (e.datePrecision === "exact") {
+    const time = eventTimeLabel(e.eventTime);
+    if (time) return `${date} · ${time}`;
+  }
+  return date;
+}
+
 const CONFIDENCE_LABELS: Record<Confidence, string> = {
   high: "High confidence",
   medium: "Medium confidence",

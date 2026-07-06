@@ -15,7 +15,6 @@ export async function createUploadTarget(
   key: string,
   mimeType: string,
   mediaId: number,
-  origin: string,
 ): Promise<PresignedUpload> {
   const { presignTtlSeconds } = getConfig(env);
 
@@ -48,8 +47,10 @@ export async function createUploadTarget(
   }
 
   // Local dev fallback: upload through the Worker to the R2 binding.
+  // Use a same-origin relative path so Vite's proxy (or the ASSETS binding)
+  // handles the PUT without a cross-origin preflight.
   return {
-    url: `${origin}/api/uploads/${mediaId}/body`,
+    url: `/api/uploads/${mediaId}/body`,
     method: "PUT",
     direct: false,
   };
