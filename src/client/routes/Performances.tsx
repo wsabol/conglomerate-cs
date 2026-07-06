@@ -119,7 +119,7 @@ export default function Performances() {
                 title={e.title}
                 dateLabel={eventDateLabel(e)}
                 place={e.place?.name}
-                eventType={e.eventType}
+                eventType={''}
                 imageUrl={e.heroImageUrl}
                 media={e.media}
               />
