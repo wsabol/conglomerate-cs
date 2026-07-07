@@ -1,0 +1,281 @@
+import { useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Container, Grid, SidebarLayout } from "../layout";
+import { SectionTitle } from "../ui/Card";
+import { Icon, type IconName } from "../ui/Icon";
+import { MediaFrame } from "../media/MediaFrame";
+import { MediaUpload } from "../media/MediaUpload";
+import { MemoriesSection } from "../memory/MemoriesSection";
+import { useAuth } from "../../lib/auth";
+import {
+  confidenceLabel,
+  eventDateTimeMetaLabel,
+  eventTypeLabel,
+} from "../../lib/format";
+import type { Confidence } from "@shared/types";
+import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
+import { EventPosterCard } from "./EventPosterCard";
+import { OtherActsSection } from "./OtherActsSection";
+import { SetlistSection } from "./SetlistSection";
+import styles from "./EventDetailView.module.css";
+
+type DetailTab = "summary" | "description" | "sources";
+
+const CONFIDENCE_ICONS: Record<Confidence, IconName> = {
+  high: "confidence-high",
+  medium: "confidence-medium",
+  low: "confidence-low",
+};
+
+const TABS: { id: DetailTab; label: string }[] = [
+  { id: "summary", label: "Summary" },
+  { id: "description", label: "Event Description" },
+  { id: "sources", label: "Sources" },
+];
+
+interface EventDetailViewProps {
+  event: EventDetailDTO;
+  onReload: () => void;
+}
+
+export function EventDetailView({ event, onReload }: EventDetailViewProps) {
+  const { user, isEditor } = useAuth();
+  const [tab, setTab] = useState<DetailTab>("summary");
+  const [mediaItems, setMediaItems] = useState<MediaItemDTO[]>(
+    event.mediaItems,
+  );
+
+  const performers = event.people.filter(
+    (person) => person.relationshipType === "performer",
+  );
+  const gallery = mediaItems.filter(
+    (item) => item.url && item.status === "published",
+  );
+  const uniquePeople = Array.from(
+    new Map(
+      event.people.map((person) => [
+        person.personId,
+        { id: person.personId, displayName: person.displayName },
+      ]),
+    ).values(),
+  );
+  const promotionText = event.performance?.promotionText;
+
+  return (
+    <Container>
+      <div className={styles.hero}>
+        {event.heroImageUrl ? (
+          <img className={styles.heroImage} src={event.heroImageUrl} alt="" />
+        ) : (
+          <div className={styles.heroPlaceholder} />
+        )}
+        <div className={styles.heroOverlay} />
+      </div>
+
+      <header className={styles.header}>
+        <span className={styles.eyebrow}>{eventTypeLabel(event.eventType)}</span>
+        <h1 className={styles.title}>{event.title}</h1>
+        <div className={styles.meta}>
+          <MetaItem icon="calendar" iconLabel="Date">
+            {eventDateTimeMetaLabel(event)}
+          </MetaItem>
+          {event.place && (
+            <MetaItem icon="place" iconLabel="Place">
+              {event.place.name}
+            </MetaItem>
+          )}
+          {performers.length > 0 && (
+            <MetaItem icon="people" iconLabel="Personnel">
+              {performers.map((person) => person.displayName).join(", ")}
+            </MetaItem>
+          )}
+          {event.headlined && (
+            <MetaItem icon="star" iconLabel="Headlined">
+              Headlined
+            </MetaItem>
+          )}
+          <MetaItem
+            icon={CONFIDENCE_ICONS[event.confidence]}
+            iconLabel="Confidence"
+            tone={event.confidence}
+          >
+            {confidenceLabel(event.confidence)}
+          </MetaItem>
+        </div>
+      </header>
+
+      <div className={styles.content}>
+        <SidebarLayout
+          aside={
+            <>
+              <OtherActsSection
+                event={event}
+                isEditor={isEditor}
+                onReload={onReload}
+              />
+              <EventPosterCard event={event} onReload={onReload} />
+              <SetlistSection
+                event={event}
+                isEditor={isEditor}
+                onReload={onReload}
+              />
+            </>
+          }
+        >
+          <div
+            className={styles.tabList}
+            role="tablist"
+            aria-label="Event details"
+          >
+            {TABS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                id={`tab-${id}`}
+                aria-selected={tab === id}
+                aria-controls={`panel-${id}`}
+                className={styles.tab}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "summary" && (
+            <div
+              role="tabpanel"
+              id="panel-summary"
+              aria-labelledby="tab-summary"
+              className={styles.tabPanel}
+            >
+              {event.summary ? (
+                <p className={styles.summary}>{event.summary}</p>
+              ) : (
+                <p className={styles.emptyPanel}>No summary yet.</p>
+              )}
+
+              <div className={styles.memories}>
+                <MemoriesSection
+                  targetType="event"
+                  targetId={event.id}
+                  initial={event.annotations}
+                  people={uniquePeople}
+                />
+              </div>
+            </div>
+          )}
+
+          {tab === "description" && (
+            <div
+              role="tabpanel"
+              id="panel-description"
+              aria-labelledby="tab-description"
+              className={styles.tabPanel}
+            >
+              {promotionText ? (
+                <p className={styles.description}>{promotionText}</p>
+              ) : (
+                <p className={styles.emptyPanel}>No event description yet.</p>
+              )}
+
+              <section className={styles.mediaSection}>
+                <SectionTitle>Media</SectionTitle>
+                {gallery.length > 0 ? (
+                  <Grid min={220}>
+                    {gallery.map((item) => (
+                      <MediaFrame
+                        key={item.id}
+                        type={item.mediaType}
+                        src={item.url ?? ""}
+                        title={item.title}
+                        caption={item.description}
+                        poster={item.thumbUrl}
+                      />
+                    ))}
+                  </Grid>
+                ) : (
+                  <p className={styles.emptyMedia}>No media uploaded yet.</p>
+                )}
+                {user && (
+                  <MediaUpload
+                    eventId={event.id}
+                    onUploaded={(item) => {
+                      setMediaItems((current) => [item, ...current]);
+                      onReload();
+                    }}
+                  />
+                )}
+              </section>
+            </div>
+          )}
+
+          {tab === "sources" && (
+            <div
+              role="tabpanel"
+              id="panel-sources"
+              aria-labelledby="tab-sources"
+              className={styles.tabPanel}
+            >
+              {event.sources.length > 0 ? (
+                <div className={styles.sources}>
+                  {event.sources.map((source) => (
+                    <div key={source.id} className={styles.source}>
+                      <Icon
+                        name={source.sourceType === "url" ? "link" : "document"}
+                        size={16}
+                      />
+                      {source.url ? (
+                        <a
+                          className={styles.sourceLink}
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {source.description || source.url}
+                        </a>
+                      ) : (
+                        <span>{source.description}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyPanel}>No sources recorded yet.</p>
+              )}
+            </div>
+          )}
+
+          {isEditor && (
+            <p className={styles.editLink}>
+              <Link to={`/events/${event.slug}/edit`}>Edit this event</Link>
+            </p>
+          )}
+        </SidebarLayout>
+      </div>
+    </Container>
+  );
+}
+
+function MetaItem({
+  icon,
+  iconLabel,
+  children,
+  tone = "default",
+}: {
+  icon: IconName;
+  iconLabel: string;
+  children: ReactNode;
+  tone?: Confidence | "default";
+}) {
+  return (
+    <span
+      className={styles.metaItem}
+      data-tone={tone === "default" ? undefined : tone}
+    >
+      <Icon name={icon} size={14} label={iconLabel} className={styles.metaIcon} />
+      {children}
+    </span>
+  );
+}
