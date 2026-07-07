@@ -1,40 +1,26 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../ui/Icon";
+import { eventDateLabel } from "../../lib/format";
+import type { EventListItemDTO } from "@shared/dto";
 import styles from "./cards.module.css";
 
-export interface MediaAvailability {
-  photo?: boolean;
-  video?: boolean;
-  audio?: boolean;
-  setlist?: boolean;
-}
-
 export interface PerformanceCardProps {
-  slug: string;
-  title: string;
-  dateLabel: string;
-  place?: string | null;
-  eventType?: string;
-  imageUrl?: string | null;
-  headlined?: boolean;
-  media?: MediaAvailability;
+  event: EventListItemDTO;
+  showEventType?: boolean;
 }
 
 export function PerformanceCard({
-  slug,
-  title,
-  dateLabel,
-  place,
-  eventType,
-  imageUrl,
-  headlined,
-  media,
+  event,
+  showEventType = true,
 }: PerformanceCardProps) {
+  const { slug, title, place, eventType, heroImageUrl, headlined, media } =
+    event;
+
   return (
     <Link to={`/events/${slug}`} className={styles.card}>
       <div className={styles.media}>
-        {imageUrl ? (
-          <img src={imageUrl} alt="" loading="lazy" />
+        {heroImageUrl ? (
+          <img src={heroImageUrl} alt="" loading="lazy" />
         ) : (
           <div className={styles.placeholder}>
             <Icon name="mic" size={40} label="No image available" />
@@ -45,7 +31,7 @@ export function PerformanceCard({
             <Icon name="star" size={12} /> Headlined
           </span>
         )}
-        {media && (
+        {(media.photo || media.video || media.audio || media.setlist) && (
           <div className={styles.indicators}>
             {media.photo && (
               <span className={styles.indicator}>
@@ -71,15 +57,15 @@ export function PerformanceCard({
         )}
       </div>
       <div className={styles.body}>
-        <span className={styles.date}>{dateLabel}</span>
+        <span className={styles.date}>{eventDateLabel(event)}</span>
         <span className={styles.title}>{title}</span>
         <div className={styles.meta}>
           {place && (
             <span className={styles.metaItem}>
-              <Icon name="place" size={14} /> {place}
+              <Icon name="place" size={14} /> {place.name}
             </span>
           )}
-          {eventType && (
+          {showEventType && (
             <span className={styles.metaItem} style={{ textTransform: "capitalize" }}>
               {eventType}
             </span>

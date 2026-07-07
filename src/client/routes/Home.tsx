@@ -4,16 +4,13 @@ import { buttonClass } from "../components/ui/Button";
 import { PerformanceCard } from "../components/cards/PerformanceCard";
 import { Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
-import { apiFetch } from "../lib/api";
-import { eventDateLabel } from "../lib/format";
-import type { EventListItemDTO } from "@shared/dto";
-import type { ListResult } from "@shared/types";
+import { listEvents } from "../lib/events";
 import heroImage from "../../../images/652176842_26582093478065608_5395107200525570428_n.jpg";
 import styles from "./Home.module.css";
 
 export default function Home() {
   const { data, loading } = useAsync(
-    () => apiFetch<ListResult<EventListItemDTO>>("/api/events?sort=modified"),
+    () => listEvents({ sort: "modified" }),
     [],
   );
 
@@ -72,18 +69,8 @@ export default function Home() {
           <Spinner label="Loading recent additions" />
         ) : (
           <Grid min={240}>
-            {recent.map((e) => (
-              <PerformanceCard
-                key={e.id}
-                slug={e.slug}
-                title={e.title}
-                dateLabel={eventDateLabel(e)}
-                place={e.place?.name}
-                eventType={e.eventType}
-                imageUrl={e.heroImageUrl}
-                media={e.media}
-                headlined={e.headlined}
-              />
+            {recent.map((event) => (
+              <PerformanceCard key={event.id} event={event} />
             ))}
           </Grid>
         )}

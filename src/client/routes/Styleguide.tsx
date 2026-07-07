@@ -6,6 +6,7 @@ import { Pill, Tag } from "../components/ui/Pill";
 import { Card, SectionTitle } from "../components/ui/Card";
 import { Modal } from "../components/ui/Modal";
 import { PerformanceCard } from "../components/cards/PerformanceCard";
+import type { EventListItemDTO } from "@shared/dto";
 import { MediaFrame } from "../components/media/MediaFrame";
 import { Memory } from "../components/memory/Memory";
 import { EmptyState, ErrorState, Skeleton, Spinner } from "../components/state";
@@ -16,6 +17,41 @@ import {
   TextField,
 } from "../components/form";
 import styles from "./Styleguide.module.css";
+
+const DEMO_EVENTS: EventListItemDTO[] = [
+  {
+    id: 1,
+    slug: "demo-1",
+    name: "Downtown Uncorked Jazz Jam",
+    title: "Downtown Uncorked Jazz Jam",
+    eventType: "performance",
+    eventDate: "2009-12-09",
+    eventTime: null,
+    datePrecision: "exact",
+    confidence: "high",
+    place: { id: 1, name: "Downtown Uncorked" },
+    heroImageId: null,
+    heroImageUrl: null,
+    media: { photo: true, video: false, audio: true, setlist: true },
+    headlined: true,
+  },
+  {
+    id: 2,
+    slug: "demo-2",
+    name: "Rock Your Independence",
+    title: "Rock Your Independence",
+    eventType: "performance",
+    eventDate: "2010-07-03",
+    eventTime: null,
+    datePrecision: "approximate",
+    confidence: "medium",
+    place: { id: 2, name: "Schotzi's" },
+    heroImageId: null,
+    heroImageUrl: null,
+    media: { photo: false, video: true, audio: false, setlist: false },
+    headlined: false,
+  },
+];
 
 const SWATCHES = [
   ["Background", "#080A09"],
@@ -152,23 +188,9 @@ export default function Styleguide() {
 
       <Section label="Cards">
         <Grid min={240}>
-          <PerformanceCard
-            slug="demo-1"
-            title="Downtown Uncorked Jazz Jam"
-            dateLabel="12/9/2009"
-            place="Downtown Uncorked"
-            eventType="performance"
-            headlined
-            media={{ photo: true, audio: true, setlist: true }}
-          />
-          <PerformanceCard
-            slug="demo-2"
-            title="Rock Your Independence"
-            dateLabel="Around 7/3/2010"
-            place="Schotzi's"
-            eventType="performance"
-            media={{ video: true }}
-          />
+          {DEMO_EVENTS.map((event) => (
+            <PerformanceCard key={event.id} event={event} />
+          ))}
         </Grid>
       </Section>
 

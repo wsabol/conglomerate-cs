@@ -12,6 +12,7 @@ import { AutocompleteInput, FileInput, TextArea } from "../components/form";
 import { ErrorState, Spinner } from "../components/state";
 import { useAuth } from "../lib/auth";
 import { useAsync } from "../lib/useAsync";
+import { getEvent, patchEvent, performancePatch } from "../lib/events";
 import { apiFetch } from "../lib/api";
 import { uploadFile } from "../lib/media";
 import {
@@ -35,11 +36,11 @@ const CONFIDENCE_ICONS: Record<Confidence, IconName> = {
 export default function EventDetail() {
   const { slug } = useParams();
   const { data, error, loading, reload } = useAsync(
-    () => apiFetch<EventDetailDTO>(`/api/events/${slug}`),
+    () => getEvent(slug!),
     [slug],
   );
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <Container>
         <Spinner label="Loading event" />
@@ -83,27 +84,6 @@ function MetaItem({
       {children}
     </span>
   );
-}
-
-function performancePatch(
-  event: EventDetailDTO,
-  overrides: {
-    setlistText?: string | null;
-    eventPosterId?: number | null;
-  } = {},
-) {
-  return {
-    billingName: event.performance?.billingName ?? null,
-    promotionText: event.performance?.promotionText ?? null,
-    setlistText:
-      overrides.setlistText !== undefined
-        ? overrides.setlistText
-        : (event.performance?.setlistText ?? null),
-    eventPosterId:
-      overrides.eventPosterId !== undefined
-        ? overrides.eventPosterId
-        : (event.performance?.eventPosterId ?? null),
-  };
 }
 
 function SidebarEmptyState({
@@ -220,11 +200,8 @@ function OtherActsModal({
     setSubmitting(true);
     setError(null);
     try {
-      await apiFetch<EventDetailDTO>(`/api/events/${event.slug}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          acts: draftActs.map((name) => ({ name, billingRole: "unknown" })),
-        }),
+      await patchEvent(event.slug, {
+        acts: draftActs.map((name) => ({ name, billingRole: "unknown" })),
       });
       onSaved();
     } catch (err) {
@@ -371,12 +348,9 @@ function SetlistModal({
     setSubmitting(true);
     setError(null);
     try {
-      await apiFetch<EventDetailDTO>(`/api/events/${event.slug}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          performance: performancePatch(event, {
-            setlistText: setlistText.trim() || null,
-          }),
+      await patchEvent(event.slug, {
+        performance: performancePatch(event, {
+          setlistText: setlistText.trim() || null,
         }),
       });
       onSaved();
@@ -445,12 +419,9 @@ function EventPosterCard({
         throw new Error("Event poster must be an image.");
       }
 
-      await apiFetch<EventDetailDTO>(`/api/events/${event.slug}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          performance: performancePatch(event, {
-            eventPosterId: item.id,
-          }),
+      await patchEvent(event.slug, {
+        performance: performancePatch(event, {
+          eventPosterId: item.id,
         }),
       });
       onReload();

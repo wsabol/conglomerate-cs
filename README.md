@@ -139,5 +139,5 @@ tests/      Vitest unit + integration
 - [-] Fix headliner in search
 - [ ] Edit opener/headliner in the 'acts' modal
 
-- [ ] Add hash to the navigation when the tab is changed on event pages
+- [-] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content

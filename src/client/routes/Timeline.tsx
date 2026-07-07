@@ -5,7 +5,7 @@ import { Pill } from "../components/ui/Pill";
 import { TimelineEventCard } from "../components/cards/TimelineEventCard";
 import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
-import { apiFetch } from "../lib/api";
+import { listEvents } from "../lib/events";
 import {
   confidenceLabel,
   eventDateOnlyLabel,
@@ -14,12 +14,11 @@ import {
   yearOf,
 } from "../lib/format";
 import type { EventListItemDTO } from "@shared/dto";
-import type { ListResult } from "@shared/types";
 import styles from "./Timeline.module.css";
 
 export default function Timeline() {
   const { data, error, loading, reload } = useAsync(
-    () => apiFetch<ListResult<EventListItemDTO>>("/api/events?sort=date"),
+    () => listEvents({ sort: "date" }),
     [],
   );
   const [selectedYear, setSelectedYear] = useState<string | null>(null);

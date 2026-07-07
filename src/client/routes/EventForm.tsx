@@ -6,9 +6,8 @@ import { Button } from "../components/ui/Button";
 import { TextField, TextArea, Select } from "../components/form";
 import { ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
-import { apiFetch } from "../lib/api";
-import type { EventDetailDTO, PlaceDTO } from "@shared/dto";
-import type { ListResult } from "@shared/types";
+import { createEvent, getEvent, patchEvent } from "../lib/events";
+import { useFilterOptions } from "../lib/useFilterOptions";
 import {
   CONFIDENCE_LEVELS,
   DATE_PRECISIONS,
@@ -54,15 +53,12 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: placesData } = useAsync(
-    () => apiFetch<ListResult<PlaceDTO>>("/api/places"),
-    [],
-  );
+  const { places } = useFilterOptions({ places: true });
 
   const { data: eventData, loading: eventLoading } = useAsync(
     () =>
       mode === "edit" && slug
-        ? apiFetch<EventDetailDTO>(`/api/events/${slug}`)
+        ? getEvent(slug)
         : Promise.resolve(null),
     [mode, slug],
   );
@@ -86,11 +82,11 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
 
   const placeOptions = useMemo(
     () =>
-      (placesData?.results ?? []).map((p) => ({
+      places.map((p) => ({
         value: String(p.id),
         label: p.name,
       })),
-    [placesData],
+    [places],
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -115,16 +111,10 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
 
     try {
       if (mode === "new") {
-        const created = await apiFetch<EventDetailDTO>("/api/events", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        const created = await createEvent(body);
         navigate(`/events/${created.slug}`);
       } else {
-        const updated = await apiFetch<EventDetailDTO>(`/api/events/${slug}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
+        const updated = await patchEvent(slug!, body);
         navigate(`/events/${updated.slug}`);
       }
     } catch (err) {

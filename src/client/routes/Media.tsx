@@ -6,9 +6,10 @@ import { Pill } from "../components/ui/Pill";
 import { Select } from "../components/form";
 import { EmptyState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
+import { useFilterOptions } from "../lib/useFilterOptions";
 import { apiFetch, toQuery } from "../lib/api";
 import { eventDateLabel } from "../lib/format";
-import type { MediaItemDTO, PersonDTO } from "@shared/dto";
+import type { MediaItemDTO } from "@shared/dto";
 import type { ListResult, MediaType } from "@shared/types";
 import { useMemo, useState } from "react";
 import styles from "./Media.module.css";
@@ -29,10 +30,7 @@ export default function Media() {
     [query],
   );
 
-  const { data: peopleData } = useAsync(
-    () => apiFetch<ListResult<PersonDTO>>("/api/people"),
-    [],
-  );
+  const { people } = useFilterOptions({ people: true });
 
   const years = useMemo(() => {
     const set = new Set<number>();
@@ -86,10 +84,10 @@ export default function Media() {
           onChange={(e) => setPerson(e.target.value)}
           options={[
             { value: "", label: "Anyone" },
-            ...(peopleData?.results ?? []).map((p) => ({
+            ...(people.map((p) => ({
               value: String(p.id),
               label: p.displayName,
-            })),
+            }))),
           ]}
         />
       </div>

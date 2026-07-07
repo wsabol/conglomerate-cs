@@ -177,7 +177,7 @@ export function AutocompleteInput({
           className={styles.add}
           disabled={disabled || !value.trim()}
           onClick={() => add(value)}
-          aria-label="Add act"
+          aria-label="Add item"
         >
           <Icon name="plus" size={16} />
         </button>

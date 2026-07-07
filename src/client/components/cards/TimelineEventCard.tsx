@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../ui/Icon";
 import { cn } from "../../lib/cn";
+import type { MediaAvailabilityDTO } from "@shared/dto";
 import type { Confidence } from "@shared/types";
-import type { MediaAvailability } from "./PerformanceCard";
 import styles from "./TimelineEventCard.module.css";
 
 export interface TimelineEventCardProps {
@@ -14,7 +14,7 @@ export interface TimelineEventCardProps {
   eventTypeLabel: string;
   confidence: Confidence;
   confidenceLabel: string;
-  media: MediaAvailability;
+  media: MediaAvailabilityDTO;
 }
 
 export function TimelineEventCard({

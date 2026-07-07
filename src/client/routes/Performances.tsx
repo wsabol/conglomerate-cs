@@ -1,50 +1,38 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Container, Grid } from "../components/layout";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Select, TextField } from "../components/form";
 import { PerformanceCard } from "../components/cards/PerformanceCard";
 import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
-import { apiFetch, toQuery } from "../lib/api";
-import { eventDateLabel } from "../lib/format";
-import type { EventListItemDTO, PersonDTO, PlaceDTO } from "@shared/dto";
-import type { ListResult } from "@shared/types";
+import { useDebouncedValue } from "../lib/useDebouncedValue";
+import { useFilterOptions } from "../lib/useFilterOptions";
+import { listEvents } from "../lib/events";
+import type { BillingRole } from "@shared/types";
 import styles from "./Performances.module.css";
 
 export default function Performances() {
   const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [place, setPlace] = useState("");
   const [person, setPerson] = useState("");
   const [lineup, setLineup] = useState("");
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(search.trim()), 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  const filters = useAsync(async () => {
-    const [places, people] = await Promise.all([
-      apiFetch<ListResult<PlaceDTO>>("/api/places"),
-      apiFetch<ListResult<PersonDTO>>("/api/people"),
-    ]);
-    return { places: places.results, people: people.results };
-  }, []);
+  const filters = useFilterOptions({ places: true, people: true });
 
   const query = useMemo(
-    () =>
-      toQuery({
-        event_type: "performance",
-        q: debounced || undefined,
-        place: place || undefined,
-        person: person || undefined,
-        lineup: lineup || undefined,
-      }),
-    [debounced, place, person, lineup],
+    () => ({
+      event_type: "performance" as const,
+      q: debouncedSearch.trim() || undefined,
+      place: place || undefined,
+      person: person || undefined,
+      lineup: (lineup || undefined) as BillingRole | undefined,
+    }),
+    [debouncedSearch, place, person, lineup],
   );
 
   const { data, error, loading, reload } = useAsync(
-    () => apiFetch<ListResult<EventListItemDTO>>(`/api/events${query}`),
+    () => listEvents(query),
     [query],
   );
 
@@ -72,7 +60,7 @@ export default function Performances() {
             placeholder="All venues"
             value={place}
             onChange={(e) => setPlace(e.target.value)}
-            options={(filters.data?.places ?? []).map((p) => ({
+            options={filters.places.map((p) => ({
               value: String(p.id),
               label: p.name,
             }))}
@@ -82,7 +70,7 @@ export default function Performances() {
             placeholder="Anyone"
             value={person}
             onChange={(e) => setPerson(e.target.value)}
-            options={(filters.data?.people ?? []).map((p) => ({
+            options={filters.people.map((p) => ({
               value: String(p.id),
               label: p.displayName,
             }))}
@@ -112,18 +100,8 @@ export default function Performances() {
             {events.length} {events.length === 1 ? "performance" : "performances"}
           </p>
           <Grid min={240}>
-            {events.map((e) => (
-              <PerformanceCard
-                key={e.id}
-                slug={e.slug}
-                title={e.title}
-                dateLabel={eventDateLabel(e)}
-                place={e.place?.name}
-                eventType={''}
-                imageUrl={e.heroImageUrl}
-                media={e.media}
-                headlined={e.headlined}
-              />
+            {events.map((event) => (
+              <PerformanceCard key={event.id} event={event} showEventType={false} />
             ))}
           </Grid>
         </>
