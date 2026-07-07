@@ -25,3 +25,13 @@ Display: Cormorant Garamond. Body/UI: Inter. Metadata/dates/setlists: IBM Plex M
 - Important actions must be visible without hover.
 - Sidebars reflow into content flow on mobile - never horizontally compressed.
 - Memories render as liner-note annotations with a thin brass rule, not chat bubbles.
+
+## Shared components & CSS
+- **Cards:** `PerformanceCard` (grid cards), `TimelineEventCard` (timeline rows).
+  Both use `MediaAvailabilityIndicators` for media badges — do not duplicate icon logic.
+- **Filter bars:** `filterBar`, `filterBarDropdowns`, `filterBarInline` in
+  `components/layout/layout.module.css` — not per-route `.filters` blocks.
+- **Editor modals:** form layout in `components/form/modal.module.css`
+  (`.modalForm`, `.modalActions`, `.modalList`, `.modalError`).
+- **Event sidebar:** card chrome in `components/event/event.module.css`.
+- Form controls accept an `error` prop — use it for client-side Zod validation feedback.

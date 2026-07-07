@@ -30,3 +30,11 @@ Guard writes with `requireUser` / `requireEditor` from `middleware/auth.ts`.
 No hard deletes in normal UI - set `is_deleted = true`. Every create/update/
 delete on events, people, places, media, and annotations MUST write an
 `object_revisions` row via `recordRevision()` in the same D1 batch.
+
+## Read queries (`src/server/db/queries/`)
+- Import from `../db/queries` (barrel) — never add a monolithic `queries.ts`.
+- One file per domain: `events`, `media`, `annotations`, `people`, `admin`.
+- Shared helpers (`emptyAvailability`, `localPart`, `toPlaceDTO`) live in `helpers.ts`.
+- DTO mapping helpers (e.g. `toAnnotationDTO`) belong next to their query file;
+  reuse them across list/detail queries instead of duplicating mapping logic.
+- Routes stay thin: validate input → call query/mutation → `ok` / `okList`.

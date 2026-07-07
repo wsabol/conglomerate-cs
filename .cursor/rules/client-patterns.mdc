@@ -1,0 +1,41 @@
+---
+description: Client data fetching, API clients, forms, and event page patterns
+globs: src/client/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Client Patterns
+
+## API layer
+- All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).
+- Domain modules wrap endpoints — do not scatter raw URL strings in routes:
+  - `lib/events.ts` — `listEvents`, `getEvent`, `createEvent`, `patchEvent`, `performancePatch`
+  - `lib/annotations.ts` — annotation CRUD
+  - `lib/media.ts` — uploads
+- Import DTOs from `@shared/dto`; never re-declare API shapes on the client.
+
+## Hooks (`src/client/lib/`)
+- `useAsync` — default data-fetch hook (loading/error/data/reload).
+- `useDebouncedValue(value, ms)` — search inputs.
+- `useFilterOptions({ places?, people? })` — filter dropdown data for list pages.
+
+## Forms
+- Server validates with Zod at the route boundary; client forms should too before submit.
+- Reuse schemas from `@shared/schemas/*` + `zodFieldErrors()` from `lib/zodErrors.ts`.
+- Pass validation messages to form controls via their `error` prop.
+
+## List pages
+- `PerformanceCard` takes `event: EventListItemDTO` (not individual props).
+- `MediaAvailabilityIndicators` — shared photo/video/audio/setlist badges (`overlay` | `inline`).
+- Filter bars: use layout classes from `components/layout/layout.module.css`:
+  - `filterBar` + `filterBarDropdowns` (Performances)
+  - `filterBarInline` (Media)
+
+## Event detail page
+- Route (`routes/EventDetail.tsx`) = thin loader only (fetch + error/loading states).
+- View + sidebar live in `components/event/`:
+  - `EventDetailView` — hero, tabs, memories, media gallery
+  - `OtherActsSection`, `SetlistSection`, `EventPosterCard` — sidebar editors
+- Editable sidebar pattern: `EditableSidebarSection` + `EditorModalForm` + `useEditorModal`.
+- Editor modal form CSS: `components/form/modal.module.css` (not route-scoped).
+- Sidebar card CSS: `components/event/event.module.css`.
