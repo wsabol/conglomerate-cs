@@ -1,7 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
-import styles from "./event.module.css";
+import styles from "../form/modal.module.css";
 
 interface EditorModalFormProps {
   open: boolean;

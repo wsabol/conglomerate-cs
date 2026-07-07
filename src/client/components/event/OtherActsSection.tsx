@@ -9,7 +9,7 @@ import type { ListResult } from "@shared/types";
 import { EditableSidebarSection } from "./EditableSidebarSection";
 import { EditorModalForm } from "./EditorModalForm";
 import { useEditorModal } from "./useEditorModal";
-import styles from "./event.module.css";
+import styles from "../form/modal.module.css";
 
 interface OtherActsSectionProps {
   event: EventDetailDTO;

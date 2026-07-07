@@ -43,6 +43,33 @@
   );
 }
 
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.filterBarInline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+  margin-bottom: var(--space-5);
+}
+
+.filterBarDropdowns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+@media (max-width: 767px) {
+  .filterBarDropdowns {
+    display: none;
+  }
+}
+
 /* Sidebar layout: content + right sidebar on desktop; sidebar reflows into the
    normal flow (below content) on narrow screens - never compressed. */
 .sidebarLayout {

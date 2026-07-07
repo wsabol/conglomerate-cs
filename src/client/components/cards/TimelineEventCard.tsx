@@ -3,6 +3,7 @@ import { Icon } from "../ui/Icon";
 import { cn } from "../../lib/cn";
 import type { MediaAvailabilityDTO } from "@shared/dto";
 import type { Confidence } from "@shared/types";
+import { MediaAvailabilityIndicators } from "./MediaAvailabilityIndicators";
 import styles from "./TimelineEventCard.module.css";
 
 export interface TimelineEventCardProps {
@@ -28,8 +29,6 @@ export function TimelineEventCard({
   confidenceLabel,
   media,
 }: TimelineEventCardProps) {
-  const hasMedia = media.audio || media.video;
-
   return (
     <Link to={`/events/${slug}`} className={styles.card}>
       <div className={styles.main}>
@@ -58,21 +57,12 @@ export function TimelineEventCard({
             <span className={styles.dot} aria-hidden />
             {confidenceLabel}
           </span>
-          
-          {hasMedia && (
-            <div className={styles.media}>
-              {media.video && (
-                <span className={styles.mediaItem}>
-                  <Icon name="video" size={14} label="Has video" />
-                </span>
-              )}
-              {media.audio && (
-                <span className={styles.mediaItem}>
-                  <Icon name="audio" size={14} label="Has audio" />
-                </span>
-              )}
-            </div>
-          )}
+
+          <MediaAvailabilityIndicators
+            media={media}
+            variant="inline"
+            types={["video", "audio"]}
+          />
         </div>
         <Icon name="chevron-right" size={18} className={styles.chevron} />
       </div>

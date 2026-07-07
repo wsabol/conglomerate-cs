@@ -8,6 +8,11 @@ import { ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { createEvent, getEvent, patchEvent } from "../lib/events";
 import { useFilterOptions } from "../lib/useFilterOptions";
+import { zodFieldErrors } from "../lib/zodErrors";
+import {
+  eventCreateSchema,
+  eventUpdateSchema,
+} from "@shared/schemas/event";
 import {
   CONFIDENCE_LEVELS,
   DATE_PRECISIONS,
@@ -32,6 +37,22 @@ type FormState = {
   promotionText: string;
 };
 
+type FormField = keyof FormState;
+
+const ZOD_PATHS: Record<FormField, string> = {
+  name: "name",
+  eventType: "eventType",
+  eventDate: "eventDate",
+  eventTime: "eventTime",
+  datePrecision: "datePrecision",
+  placeId: "placeId",
+  summary: "summary",
+  confidence: "confidence",
+  billingName: "performance.billingName",
+  setlistText: "performance.setlistText",
+  promotionText: "performance.promotionText",
+};
+
 const emptyForm: FormState = {
   name: "",
   eventType: "performance",
@@ -46,10 +67,41 @@ const emptyForm: FormState = {
   promotionText: "",
 };
 
+function buildEventBody(form: FormState) {
+  return {
+    name: form.name,
+    eventType: form.eventType,
+    eventDate: form.eventDate || null,
+    eventTime: form.eventTime || null,
+    datePrecision: form.datePrecision,
+    placeId: form.placeId ? Number(form.placeId) : null,
+    summary: form.summary || null,
+    confidence: form.confidence,
+    performance: {
+      billingName: form.billingName || null,
+      setlistText: form.setlistText || null,
+      promotionText: form.promotionText || null,
+    },
+  };
+}
+
+function mapZodErrorsToForm(
+  zodErrors: Record<string, string>,
+): Partial<Record<FormField, string>> {
+  const mapped: Partial<Record<FormField, string>> = {};
+  for (const [field, path] of Object.entries(ZOD_PATHS) as [FormField, string][]) {
+    if (zodErrors[path]) mapped[field] = zodErrors[path];
+  }
+  return mapped;
+}
+
 export default function EventForm({ mode }: { mode: "new" | "edit" }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<FormField, string>>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +130,7 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
       setlistText: eventData.performance?.setlistText ?? "",
       promotionText: eventData.performance?.promotionText ?? "",
     });
+    setFieldErrors({});
   }, [eventData]);
 
   const placeOptions = useMemo(
@@ -89,34 +142,58 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
     [places],
   );
 
+  function updateField<K extends FormField>(field: K, value: FormState[K]) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const body = {
-      name: form.name,
-      eventType: form.eventType,
-      eventDate: form.eventDate || null,
-      eventTime: form.eventTime || null,
-      datePrecision: form.datePrecision,
-      placeId: form.placeId ? Number(form.placeId) : null,
-      summary: form.summary || null,
-      confidence: form.confidence,
-      performance: {
-        billingName: form.billingName || null,
-        setlistText: form.setlistText || null,
-        promotionText: form.promotionText || null,
-      },
-    };
+
+    const body = buildEventBody(form);
+
+    if (mode === "new") {
+      const parsed = eventCreateSchema.safeParse(body);
+      if (!parsed.success) {
+        setFieldErrors(mapZodErrorsToForm(zodFieldErrors(parsed.error)));
+        setError("Fix the highlighted fields and try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      setFieldErrors({});
+
+      try {
+        const created = await createEvent(parsed.data);
+        navigate(`/events/${created.slug}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save event.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    const parsed = eventUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      setFieldErrors(mapZodErrorsToForm(zodFieldErrors(parsed.error)));
+      setError("Fix the highlighted fields and try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    setFieldErrors({});
 
     try {
-      if (mode === "new") {
-        const created = await createEvent(body);
-        navigate(`/events/${created.slug}`);
-      } else {
-        const updated = await patchEvent(slug!, body);
-        navigate(`/events/${updated.slug}`);
-      }
+      const updated = await patchEvent(slug!, parsed.data);
+      navigate(`/events/${updated.slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save event.");
     } finally {
@@ -143,15 +220,17 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
         <TextField
           label="Name"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) => updateField("name", e.target.value)}
+          error={fieldErrors.name}
           required
         />
         <Select
           label="Event type"
           value={form.eventType}
           onChange={(e) =>
-            setForm({ ...form, eventType: e.target.value as EventType })
+            updateField("eventType", e.target.value as EventType)
           }
+          error={fieldErrors.eventType}
           options={EVENT_TYPES.map((t) => ({
             value: t,
             label: t.charAt(0).toUpperCase() + t.slice(1),
@@ -161,29 +240,30 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
           label="Date"
           type="date"
           value={form.eventDate}
-          onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
+          onChange={(e) => updateField("eventDate", e.target.value)}
+          error={fieldErrors.eventDate}
         />
         <TextField
           label="Start time"
           type="time"
           value={form.eventTime}
-          onChange={(e) => setForm({ ...form, eventTime: e.target.value })}
+          onChange={(e) => updateField("eventTime", e.target.value)}
+          error={fieldErrors.eventTime}
         />
         <Select
           label="Date precision"
           value={form.datePrecision}
           onChange={(e) =>
-            setForm({
-              ...form,
-              datePrecision: e.target.value as DatePrecision,
-            })
+            updateField("datePrecision", e.target.value as DatePrecision)
           }
+          error={fieldErrors.datePrecision}
           options={DATE_PRECISIONS.map((p) => ({ value: p, label: p }))}
         />
         <Select
           label="Place"
           value={form.placeId}
-          onChange={(e) => setForm({ ...form, placeId: e.target.value })}
+          onChange={(e) => updateField("placeId", e.target.value)}
+          error={fieldErrors.placeId}
           placeholder="Select a place"
           options={[{ value: "", label: "None" }, ...placeOptions]}
         />
@@ -191,35 +271,37 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
           label="Confidence"
           value={form.confidence}
           onChange={(e) =>
-            setForm({
-              ...form,
-              confidence: e.target.value as Confidence,
-            })
+            updateField("confidence", e.target.value as Confidence)
           }
+          error={fieldErrors.confidence}
           options={CONFIDENCE_LEVELS.map((c) => ({ value: c, label: c }))}
         />
         <TextArea
           label="Summary"
           value={form.summary}
-          onChange={(e) => setForm({ ...form, summary: e.target.value })}
+          onChange={(e) => updateField("summary", e.target.value)}
+          error={fieldErrors.summary}
           rows={6}
         />
         <TextField
           label="Billing name"
           value={form.billingName}
-          onChange={(e) => setForm({ ...form, billingName: e.target.value })}
+          onChange={(e) => updateField("billingName", e.target.value)}
+          error={fieldErrors.billingName}
           hint="Shown as the performance title when set"
         />
         <TextArea
           label="Setlist"
           value={form.setlistText}
-          onChange={(e) => setForm({ ...form, setlistText: e.target.value })}
+          onChange={(e) => updateField("setlistText", e.target.value)}
+          error={fieldErrors.setlistText}
           rows={4}
         />
         <TextArea
           label="Promotion text"
           value={form.promotionText}
-          onChange={(e) => setForm({ ...form, promotionText: e.target.value })}
+          onChange={(e) => updateField("promotionText", e.target.value)}
+          error={fieldErrors.promotionText}
           rows={3}
         />
 

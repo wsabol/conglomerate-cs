@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Icon } from "../ui/Icon";
 import { eventDateLabel } from "../../lib/format";
 import type { EventListItemDTO } from "@shared/dto";
+import { MediaAvailabilityIndicators } from "./MediaAvailabilityIndicators";
 import styles from "./cards.module.css";
 
 export interface PerformanceCardProps {
@@ -31,30 +32,7 @@ export function PerformanceCard({
             <Icon name="star" size={12} /> Headlined
           </span>
         )}
-        {(media.photo || media.video || media.audio || media.setlist) && (
-          <div className={styles.indicators}>
-            {media.photo && (
-              <span className={styles.indicator}>
-                <Icon name="photo" size={14} label="Has photos" />
-              </span>
-            )}
-            {media.video && (
-              <span className={styles.indicator}>
-                <Icon name="video" size={14} label="Has video" />
-              </span>
-            )}
-            {media.audio && (
-              <span className={styles.indicator}>
-                <Icon name="audio" size={14} label="Has audio" />
-              </span>
-            )}
-            {media.setlist && (
-              <span className={styles.indicator}>
-                <Icon name="document" size={14} label="Has setlist" />
-              </span>
-            )}
-          </div>
-        )}
+        <MediaAvailabilityIndicators media={media} variant="overlay" />
       </div>
       <div className={styles.body}>
         <span className={styles.date}>{eventDateLabel(event)}</span>

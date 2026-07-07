@@ -110,17 +110,6 @@
   color: var(--color-blue);
 }
 
-.media {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.mediaItem {
-  display: inline-flex;
-  color: var(--color-text-secondary);
-}
-
 .dot {
   width: 6px;
   height: 6px;

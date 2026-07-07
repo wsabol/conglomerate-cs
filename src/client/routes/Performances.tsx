@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Container, Grid } from "../components/layout";
+import layoutStyles from "../components/layout/layout.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Select, TextField } from "../components/form";
 import { PerformanceCard } from "../components/cards/PerformanceCard";
@@ -46,7 +47,7 @@ export default function Performances() {
         subtitle="Every show we can account for, with the media and memories attached."
       />
 
-      <div className={styles.filters}>
+      <div className={layoutStyles.filterBar}>
         <TextField
           label="Search performances"
           type="search"
@@ -54,7 +55,7 @@ export default function Performances() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className={styles.dropdowns}>
+        <div className={layoutStyles.filterBarDropdowns}>
           <Select
             label="Venue"
             placeholder="All venues"

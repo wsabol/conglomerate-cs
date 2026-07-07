@@ -44,60 +44,6 @@
   color: var(--color-text);
 }
 
-.modalForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.modalList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.modalList li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-raised);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-}
-
-.modalRemove {
-  display: inline-flex;
-  padding: var(--space-1);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.modalRemove:hover {
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-
-.modalError {
-  color: var(--color-warm);
-  font-size: var(--text-sm);
-  margin: 0;
-}
-
-.modalActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
 .posterImage {
   display: block;
   width: 100%;

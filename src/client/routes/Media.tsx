@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Container, Grid } from "../components/layout";
+import layoutStyles from "../components/layout/layout.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { MediaFrame } from "../components/media/MediaFrame";
 import { Pill } from "../components/ui/Pill";
@@ -50,7 +51,7 @@ export default function Media() {
         subtitle="Browse every photo, video, and recording across the archive."
       />
 
-      <div className={styles.filters}>
+      <div className={layoutStyles.filterBarInline}>
         <Pill
           active={mediaType === "photo"}
           onClick={() => setMediaType(mediaType === "photo" ? "" : "photo")}

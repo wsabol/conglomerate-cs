@@ -1,0 +1,26 @@
+.root.overlay {
+  position: absolute;
+  bottom: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+}
+
+.overlay .item {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  background: rgba(8, 10, 9, 0.72);
+  color: var(--color-text);
+}
+
+.root.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inline .item {
+  display: inline-flex;
+  color: var(--color-text-secondary);
+}
