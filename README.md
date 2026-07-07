@@ -124,3 +124,9 @@ migrations/ Drizzle SQL migrations
 scripts/    Seed + export
 tests/      Vitest unit + integration
 ```
+
+## TODO
+
+- [ ] Dedup media idems. Uplaods of the same file are not rejected
+- [ ] Add hero image to the timeline
+- [ ] 

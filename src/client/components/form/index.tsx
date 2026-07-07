@@ -221,6 +221,8 @@ export function RadioGroup({
   );
 }
 
+export { AutocompleteInput } from "./AutocompleteInput";
+
 interface FileInputProps {
   label?: string;
   accept?: string;

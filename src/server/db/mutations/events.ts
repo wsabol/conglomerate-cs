@@ -203,46 +203,43 @@ async function syncEventRelations(
     }
   }
 
-  if (input.people !== undefined) {
+  input.people = input.people ?? [];
+  if (input.people.length > 0) {
     await db.delete(eventPeople).where(eq(eventPeople.eventId, eventId));
-    if (input.people.length > 0) {
-      await db.insert(eventPeople).values(
-        input.people.map((p) => ({
-          eventId,
-          personId: p.personId,
-          relationshipType: p.relationshipType,
-          notes: p.notes ?? null,
-        })),
-      );
-    }
+    await db.insert(eventPeople).values(
+      input.people.map((p) => ({
+        eventId,
+        personId: p.personId,
+        relationshipType: p.relationshipType,
+        notes: p.notes ?? null,
+      })),
+    );
   }
 
-  if (input.acts !== undefined) {
+  input.acts = input.acts ?? [];
+  if (input.acts.length > 0) {
     await db.delete(eventActs).where(eq(eventActs.eventId, eventId));
-    if (input.acts.length > 0) {
-      await db.insert(eventActs).values(
-        input.acts.map((a) => ({
-          eventId,
-          name: a.name,
-          billingRole: a.billingRole,
-        })),
-      );
-    }
+    await db.insert(eventActs).values(
+      input.acts.map((a) => ({
+        eventId,
+        name: a.name,
+        billingRole: a.billingRole,
+      })),
+    );
   }
 
-  if (input.sources !== undefined) {
+  input.sources = input.sources ?? [];
+  if (input.sources.length > 0) {
     await db.delete(eventSources).where(eq(eventSources.eventId, eventId));
-    if (input.sources.length > 0) {
-      await db.insert(eventSources).values(
-        input.sources.map((s) => ({
-          eventId,
-          sourceType: s.sourceType,
-          description: s.description ?? null,
-          url: s.url || null,
-          mediaId: s.mediaId ?? null,
-        })),
-      );
-    }
+    await db.insert(eventSources).values(
+      input.sources.map((s) => ({
+        eventId,
+        sourceType: s.sourceType,
+        description: s.description ?? null,
+        url: s.url || null,
+        mediaId: s.mediaId ?? null,
+      })),
+    );
   }
 }
 
