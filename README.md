@@ -129,4 +129,15 @@ tests/      Vitest unit + integration
 
 - [ ] Dedup media idems. Uplaods of the same file are not rejected
 - [ ] Add hero image to the timeline
-- [ ] 
+- [ ] Auth
+- [ ] Add memory modal
+- [ ] 'Edit Event' button placement
+- [ ] Show personnel on the performance page
+
+- [-] Add headlined to the events GET data
+- [-] Fix 'Headliner' not showing up on event page
+- [-] Fix headliner in search
+- [ ] Edit opener/headliner in the 'acts' modal
+
+- [ ] Add hash to the navigation when the tab is changed on event pages
+- [ ] Home page content

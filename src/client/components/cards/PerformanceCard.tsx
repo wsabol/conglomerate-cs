@@ -16,7 +16,7 @@ export interface PerformanceCardProps {
   place?: string | null;
   eventType?: string;
   imageUrl?: string | null;
-  featured?: boolean;
+  headlined?: boolean;
   media?: MediaAvailability;
 }
 
@@ -27,7 +27,7 @@ export function PerformanceCard({
   place,
   eventType,
   imageUrl,
-  featured,
+  headlined,
   media,
 }: PerformanceCardProps) {
   return (
@@ -40,9 +40,9 @@ export function PerformanceCard({
             <Icon name="mic" size={40} label="No image available" />
           </div>
         )}
-        {featured && (
-          <span className={styles.featured}>
-            <Icon name="star" size={12} /> Featured
+        {headlined && (
+          <span className={styles.headlined}>
+            <Icon name="star" size={12} /> Headlined
           </span>
         )}
         {media && (

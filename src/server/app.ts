@@ -6,6 +6,7 @@ import healthRoute from "./routes/health";
 import meRoute from "./routes/me";
 import eventsRoute from "./routes/events";
 import peopleRoute from "./routes/people";
+import actsRoute from "./routes/acts";
 import placesRoute from "./routes/places";
 import mediaApiRoute from "./routes/media";
 import uploadsRoute from "./routes/uploads";
@@ -29,6 +30,7 @@ export function createApp() {
   api.route("/me", meRoute);
   api.route("/events", eventsRoute);
   api.route("/people", peopleRoute);
+  api.route("/acts", actsRoute);
   api.route("/places", placesRoute);
   api.route("/media", mediaApiRoute);
   api.route("/uploads", uploadsRoute);

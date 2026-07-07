@@ -70,7 +70,8 @@
 }
 
 .option:hover,
-.option:focus-visible {
+.option:focus-visible,
+.option[data-active] {
   background: var(--color-raised);
   outline: none;
 }

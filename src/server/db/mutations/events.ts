@@ -182,23 +182,40 @@ async function syncEventRelations(
   if (input.performance !== undefined) {
     const perf = input.performance;
     if (perf) {
+      const existingPerf = await db
+        .select()
+        .from(eventPerformanceDetails)
+        .where(eq(eventPerformanceDetails.eventId, eventId))
+        .get();
+
+      const merged = {
+        billingName:
+          perf.billingName !== undefined
+            ? (perf.billingName ?? null)
+            : (existingPerf?.billingName ?? null),
+        promotionText:
+          perf.promotionText !== undefined
+            ? (perf.promotionText ?? null)
+            : (existingPerf?.promotionText ?? null),
+        setlistText:
+          perf.setlistText !== undefined
+            ? (perf.setlistText ?? null)
+            : (existingPerf?.setlistText ?? null),
+        eventPosterId:
+          perf.eventPosterId !== undefined
+            ? (perf.eventPosterId ?? null)
+            : (existingPerf?.eventPosterId ?? null),
+      };
+
       await db
         .insert(eventPerformanceDetails)
         .values({
           eventId,
-          billingName: perf.billingName ?? null,
-          promotionText: perf.promotionText ?? null,
-          setlistText: perf.setlistText ?? null,
-          eventPosterId: perf.eventPosterId ?? null,
+          ...merged,
         })
         .onConflictDoUpdate({
           target: eventPerformanceDetails.eventId,
-          set: {
-            billingName: perf.billingName ?? null,
-            promotionText: perf.promotionText ?? null,
-            setlistText: perf.setlistText ?? null,
-            eventPosterId: perf.eventPosterId ?? null,
-          },
+          set: merged,
         });
     }
   }

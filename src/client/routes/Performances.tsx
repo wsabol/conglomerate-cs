@@ -122,6 +122,7 @@ export default function Performances() {
                 eventType={''}
                 imageUrl={e.heroImageUrl}
                 media={e.media}
+                headlined={e.headlined}
               />
             ))}
           </Grid>

@@ -158,7 +158,7 @@ export default function Styleguide() {
             dateLabel="12/9/2009"
             place="Downtown Uncorked"
             eventType="performance"
-            featured
+            headlined
             media={{ photo: true, audio: true, setlist: true }}
           />
           <PerformanceCard

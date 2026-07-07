@@ -58,6 +58,13 @@ export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 export const BILLING_ROLES = ["opener", "headliner", "unknown"] as const;
 export type BillingRole = (typeof BILLING_ROLES)[number];
 
+/** Core band names that count as a headlined show when billed as headliner. */
+export const HEADLINER_ACT_NAMES = [
+  "The Conglomerate",
+  "The Syndicate",
+  "The Brain Police",
+] as const;
+
 export const SOURCE_TYPES = ["media", "url", "text"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 

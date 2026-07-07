@@ -82,6 +82,7 @@ export default function Home() {
                 eventType={e.eventType}
                 imageUrl={e.heroImageUrl}
                 media={e.media}
+                headlined={e.headlined}
               />
             ))}
           </Grid>

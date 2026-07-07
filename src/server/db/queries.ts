@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { Db } from "./client";
 import {
   annotationPeople,
@@ -27,7 +27,12 @@ import type {
   RevisionDTO,
   UserDTO,
 } from "@shared/dto";
-import type { AnnotationTargetType, RevisionTargetType } from "@shared/types";
+import {
+  HEADLINER_ACT_NAMES,
+  type AnnotationTargetType,
+  type BillingRole,
+  type RevisionTargetType,
+} from "@shared/types";
 import { mediaDeliveryUrl, mediaThumbUrl } from "../media/url";
 
 const emptyAvailability = (): MediaAvailabilityDTO => ({
@@ -36,6 +41,64 @@ const emptyAvailability = (): MediaAvailabilityDTO => ({
   audio: false,
   setlist: false,
 });
+
+function isEventHeadlined(
+  acts: { name: string; billingRole: BillingRole }[],
+): boolean {
+  return acts.some(
+    (a) =>
+      a.billingRole === "headliner" &&
+      HEADLINER_ACT_NAMES.some(
+        (n) => n.toLowerCase() === a.name.toLowerCase(),
+      ),
+  );
+}
+
+function headlinerActNameCondition() {
+  return or(
+    ...HEADLINER_ACT_NAMES.map(
+      (n) => sql`lower(${eventActs.name}) = ${n.toLowerCase()}`,
+    ),
+  );
+}
+
+async function headlinedEventIds(
+  db: Db,
+  eventIds: number[],
+): Promise<Set<number>> {
+  const ids = new Set<number>();
+  if (eventIds.length === 0) return ids;
+
+  const rows = await db
+    .select({ eventId: eventActs.eventId, name: eventActs.name })
+    .from(eventActs)
+    .where(
+      and(
+        inArray(eventActs.eventId, eventIds),
+        eq(eventActs.billingRole, "headliner"),
+      ),
+    );
+
+  for (const row of rows) {
+    if (
+      HEADLINER_ACT_NAMES.some(
+        (n) => n.toLowerCase() === row.name.toLowerCase(),
+      )
+    ) {
+      ids.add(row.eventId);
+    }
+  }
+  return ids;
+}
+
+function lineupActConditions(lineup: BillingRole) {
+  const conds = [eq(eventActs.billingRole, lineup)];
+  if (lineup === "headliner") {
+    const nameMatch = headlinerActNameCondition();
+    if (nameMatch) conds.push(nameMatch);
+  }
+  return and(...conds);
+}
 
 // ---- Events -----------------------------------------------------------------
 
@@ -75,7 +138,7 @@ export async function listEvents(
         db
           .select({ id: eventActs.eventId })
           .from(eventActs)
-          .where(eq(eventActs.billingRole, q.lineup)),
+          .where(lineupActConditions(q.lineup)),
       ),
     );
   }
@@ -109,6 +172,10 @@ export async function listEvents(
     db,
     rows.map((r) => r.id),
   );
+  const headlinedIds = await headlinedEventIds(
+    db,
+    rows.map((r) => r.id),
+  );
 
   return rows.map((r) => {
     const avail = availability.get(r.id) ?? emptyAvailability();
@@ -127,6 +194,7 @@ export async function listEvents(
       heroImageId: r.heroImageId,
       heroImageUrl: r.heroImageId ? mediaDeliveryUrl(r.heroImageId) : null,
       media: avail,
+      headlined: headlinedIds.has(r.id),
     };
   });
 }
@@ -244,6 +312,7 @@ export async function getEventDetail(
       audio: mediaItems.some((m) => m.mediaType === "audio"),
       setlist: Boolean(perf?.setlistText),
     },
+    headlined: isEventHeadlined(acts),
     summary: event.summary,
     placeDetail: placeDTO,
     performance: perf
@@ -584,6 +653,14 @@ export async function listPlaces(db: Db): Promise<PlaceDTO[]> {
     .where(eq(places.isDeleted, false))
     .orderBy(places.name);
   return rows.map(toPlaceDTO);
+}
+
+export async function listActNames(db: Db): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ name: eventActs.name })
+    .from(eventActs)
+    .orderBy(eventActs.name);
+  return rows.map((r) => r.name);
 }
 
 export async function getPlace(db: Db, id: number): Promise<PlaceDTO | null> {

@@ -20,7 +20,7 @@ import {
   eventTypeLabel,
 } from "../lib/format";
 import type { Confidence } from "@shared/types";
-import type { EventDetailDTO, MediaItemDTO, PersonDTO } from "@shared/dto";
+import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
 import type { ListResult } from "@shared/types";
 import styles from "./EventDetail.module.css";
 
@@ -196,17 +196,17 @@ function OtherActsModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: peopleData } = useAsync(
+  const { data: actsData } = useAsync(
     () =>
       open
-        ? apiFetch<ListResult<PersonDTO>>("/api/people")
+        ? apiFetch<ListResult<string>>("/api/acts")
         : Promise.resolve(null),
     [open],
   );
 
   const suggestions = useMemo(
-    () => (peopleData?.results ?? []).map((p) => p.displayName),
-    [peopleData],
+    () => actsData?.results ?? [],
+    [actsData],
   );
 
   useEffect(() => {
@@ -259,7 +259,7 @@ function OtherActsModal({
 
         <AutocompleteInput
           label="Add an act"
-          placeholder="Search people or type a name"
+          placeholder="Search or type an act name"
           suggestions={suggestions}
           exclude={draftActs}
           disabled={submitting}
@@ -552,8 +552,13 @@ function EventDetailView({
             </MetaItem>
           )}
           {performers.length > 0 && (
-            <MetaItem icon="people" iconLabel="Headliner">
+            <MetaItem icon="people" iconLabel="Personnel">
               {performers.map((p) => p.displayName).join(", ")}
+            </MetaItem>
+          )}
+          {event.headlined && (
+            <MetaItem icon="star" iconLabel="Headlined">
+              Headlined
             </MetaItem>
           )}
           <MetaItem

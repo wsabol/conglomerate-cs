@@ -49,6 +49,7 @@ export interface EventListItemDTO {
   heroImageId: number | null;
   heroImageUrl: string | null;
   media: MediaAvailabilityDTO;
+  headlined: boolean;
 }
 
 export interface EventPersonDTO {
