@@ -145,8 +145,8 @@ tests/      Vitest unit + integration
 
 - [-] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content
-- [ ] Card meta tags should have brass icons, use MetaItem component.
-- [ ] Mediaframe is not clickable - needs to open up, expand the image, show annotations, and people.
+- [-] Card meta tags should have brass icons, use MetaItem component.
+- [ ] Mediaframe is not clickable - needs to open up and view the image full size.
 - [ ] Autodetect people by name and alias in annotations and add to annotion people xref
 
 Mobile
