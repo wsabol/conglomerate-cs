@@ -50,14 +50,14 @@ export function EditableSidebarSection<T>({
       <div className={styles.sidebarCard}>
         <SectionTitle>{title}</SectionTitle>
         {items.length > 0 ? (
-          <>
-            <ul className={styles.billList}>
-              {items.map((item) => (
-                <li key={getItemKey(item)}>{renderItem(item)}</li>
-              ))}
-            </ul>
-          </>
-        ) : null}
+          <ul className={styles.billList}>
+            {items.map((item) => (
+              <li key={getItemKey(item)}>{renderItem(item)}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.sidebarEmpty}>{emptyMessage}</p>
+        )}
 
         {isEditor && (
           <div className={styles.sidebarActions}>

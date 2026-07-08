@@ -1,7 +1,12 @@
 import { DateTime } from "luxon";
 import { formatEventDate, normalizeTime } from "@shared/date";
-import type { EventActDTO } from "@shared/dto";
-import type { Confidence, DatePrecision, EventType } from "@shared/types";
+import type { EventActDTO, EventPersonDTO } from "@shared/dto";
+import type {
+  Confidence,
+  DatePrecision,
+  EventType,
+  RelationshipType,
+} from "@shared/types";
 
 interface DateFields {
   eventDate: string | null;
@@ -61,5 +66,37 @@ export function sortActsForDisplay(acts: EventActDTO[]): EventActDTO[] {
     const aHead = a.billingRole === "headliner" ? 1 : 0;
     const bHead = b.billingRole === "headliner" ? 1 : 0;
     return aHead - bHead || a.name.localeCompare(b.name);
+  });
+}
+
+const RELATIONSHIP_TYPE_LABELS: Record<RelationshipType, string> = {
+  performer: "Performer",
+  attendee: "Attendee",
+  organizer: "Organizer",
+  photographer: "Photographer",
+  unknown: "Unknown",
+};
+
+export function relationshipTypeLabel(type: RelationshipType): string {
+  return RELATIONSHIP_TYPE_LABELS[type];
+}
+
+const RELATIONSHIP_TYPE_ORDER: Record<RelationshipType, number> = {
+  performer: 0,
+  organizer: 1,
+  photographer: 2,
+  attendee: 3,
+  unknown: 4,
+};
+
+/** Performers first; within each role group, sort alphabetically by name. */
+export function sortPeopleForDisplay(
+  people: EventPersonDTO[],
+): EventPersonDTO[] {
+  return [...people].sort((a, b) => {
+    const roleDiff =
+      RELATIONSHIP_TYPE_ORDER[a.relationshipType] -
+      RELATIONSHIP_TYPE_ORDER[b.relationshipType];
+    return roleDiff || a.displayName.localeCompare(b.displayName);
   });
 }

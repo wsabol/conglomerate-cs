@@ -440,3 +440,199 @@ describe("PATCH /api/events/:slug sources", () => {
     expect(rows).toHaveLength(0);
   });
 });
+
+describe("PATCH /api/events/:slug people", () => {
+  beforeEach(async () => {
+    const db = getDb(env);
+    await db.delete(eventPeople);
+    await db.delete(eventSources);
+    await db.delete(eventActs);
+    await db.delete(eventPerformanceDetails);
+    await db.delete(events);
+    await db.delete(people);
+    await db.delete(places);
+  });
+
+  it("replaces people and clears them when given an empty array", async () => {
+    const db = getDb(env);
+    const personA = await db
+      .insert(people)
+      .values({ displayName: "McIan" })
+      .returning()
+      .get();
+    const personB = await db
+      .insert(people)
+      .values({ displayName: "Greg" })
+      .returning()
+      .get();
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "people-show",
+        name: "People Show",
+        eventType: "performance",
+        eventDate: "2010-07-02",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+
+    const replaceRes = await app.request(
+      "/api/events/people-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          people: [
+            { personId: personA.id, relationshipType: "performer" },
+            { personId: personB.id, relationshipType: "photographer" },
+          ],
+        }),
+      },
+      env,
+    );
+    expect(replaceRes.status).toBe(200);
+    const replaced = (await replaceRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(replaced.data?.people).toHaveLength(2);
+    expect(replaced.data?.people[0].displayName).toBe("McIan");
+    expect(replaced.data?.people[0].relationshipType).toBe("performer");
+    expect(replaced.data?.people[1].relationshipType).toBe("photographer");
+
+    const updateRes = await app.request(
+      "/api/events/people-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          people: [{ personId: personB.id, relationshipType: "organizer" }],
+        }),
+      },
+      env,
+    );
+    expect(updateRes.status).toBe(200);
+    const updated = (await updateRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(updated.data?.people).toHaveLength(1);
+    expect(updated.data?.people[0].displayName).toBe("Greg");
+    expect(updated.data?.people[0].relationshipType).toBe("organizer");
+
+    const clearRes = await app.request(
+      "/api/events/people-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ people: [] }),
+      },
+      env,
+    );
+    expect(clearRes.status).toBe(200);
+    const cleared = (await clearRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(cleared.data?.people).toEqual([]);
+
+    const rows = await db
+      .select()
+      .from(eventPeople)
+      .where(eq(eventPeople.eventId, event.id));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("rejects duplicate person and relationship type combinations", async () => {
+    const db = getDb(env);
+    const person = await db
+      .insert(people)
+      .values({ displayName: "McIan" })
+      .returning()
+      .get();
+    await db
+      .insert(events)
+      .values({
+        slug: "dup-people-show",
+        name: "Dup People Show",
+        eventType: "performance",
+        eventDate: "2010-07-02",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+
+    const res = await app.request(
+      "/api/events/dup-people-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          people: [
+            { personId: person.id, relationshipType: "performer" },
+            { personId: person.id, relationshipType: "performer" },
+          ],
+        }),
+      },
+      env,
+    );
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+});
+
+describe("PATCH /api/events/:slug acts", () => {
+  beforeEach(async () => {
+    const db = getDb(env);
+    await db.delete(eventPeople);
+    await db.delete(eventSources);
+    await db.delete(eventActs);
+    await db.delete(eventPerformanceDetails);
+    await db.delete(events);
+    await db.delete(people);
+    await db.delete(places);
+  });
+
+  it("clears acts when given an empty array", async () => {
+    const db = getDb(env);
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "acts-show",
+        name: "Acts Show",
+        eventType: "performance",
+        eventDate: "2010-07-02",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+
+    const replaceRes = await app.request(
+      "/api/events/acts-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acts: [{ name: "Greg Tivis", billingRole: "opener" }],
+        }),
+      },
+      env,
+    );
+    expect(replaceRes.status).toBe(200);
+    const replaced = (await replaceRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(replaced.data?.acts).toHaveLength(1);
+
+    const clearRes = await app.request(
+      "/api/events/acts-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acts: [] }),
+      },
+      env,
+    );
+    expect(clearRes.status).toBe(200);
+    const cleared = (await clearRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(cleared.data?.acts).toEqual([]);
+
+    const rows = await db
+      .select()
+      .from(eventActs)
+      .where(eq(eventActs.eventId, event.id));
+    expect(rows).toHaveLength(0);
+  });
+});

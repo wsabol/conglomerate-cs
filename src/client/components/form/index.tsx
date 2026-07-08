@@ -223,6 +223,11 @@ export function RadioGroup({
 }
 
 export { AutocompleteInput } from "./AutocompleteInput";
+export { PersonAutocompleteInput } from "./PersonAutocompleteInput";
+export type {
+  PersonAutocompleteSubmit,
+  PersonSuggestion,
+} from "./PersonAutocompleteInput";
 
 interface FileInputProps {
   label?: string;

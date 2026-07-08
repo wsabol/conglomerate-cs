@@ -15,6 +15,7 @@ import {
 } from "../../lib/format";
 import type { Confidence } from "@shared/types";
 import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
+import { EventPeopleSection } from "./EventPeopleSection";
 import { EventPosterCard } from "./EventPosterCard";
 import { OtherActsSection } from "./OtherActsSection";
 import { SetlistSection } from "./SetlistSection";
@@ -131,6 +132,11 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               />
               <EventPosterCard event={event} onReload={onReload} />
               <SetlistSection
+                event={event}
+                isEditor={isEditor}
+                onReload={onReload}
+              />
+              <EventPeopleSection
                 event={event}
                 isEditor={isEditor}
                 onReload={onReload}

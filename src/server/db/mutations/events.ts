@@ -220,29 +220,31 @@ async function syncEventRelations(
     }
   }
 
-  input.people = input.people ?? [];
-  if (input.people.length > 0) {
+  if (input.people !== undefined) {
     await db.delete(eventPeople).where(eq(eventPeople.eventId, eventId));
-    await db.insert(eventPeople).values(
-      input.people.map((p) => ({
-        eventId,
-        personId: p.personId,
-        relationshipType: p.relationshipType,
-        notes: p.notes ?? null,
-      })),
-    );
+    if (input.people.length > 0) {
+      await db.insert(eventPeople).values(
+        input.people.map((p) => ({
+          eventId,
+          personId: p.personId,
+          relationshipType: p.relationshipType,
+          notes: p.notes ?? null,
+        })),
+      );
+    }
   }
 
-  input.acts = input.acts ?? [];
-  if (input.acts.length > 0) {
+  if (input.acts !== undefined) {
     await db.delete(eventActs).where(eq(eventActs.eventId, eventId));
-    await db.insert(eventActs).values(
-      input.acts.map((a) => ({
-        eventId,
-        name: a.name,
-        billingRole: a.billingRole,
-      })),
-    );
+    if (input.acts.length > 0) {
+      await db.insert(eventActs).values(
+        input.acts.map((a) => ({
+          eventId,
+          name: a.name,
+          billingRole: a.billingRole,
+        })),
+      );
+    }
   }
 
   if (input.sources !== undefined) {
