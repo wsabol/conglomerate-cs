@@ -95,7 +95,7 @@
 }
 
 .confidence.medium {
-  color: var(--color-brass);
+  color: var(--color-blue);
 }
 
 .confidence.low {
@@ -107,7 +107,7 @@
   font-size: var(--text-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--color-blue);
+  color: var(--color-text-secondary);
 }
 
 .dot {
