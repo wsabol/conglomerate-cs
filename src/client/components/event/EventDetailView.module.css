@@ -177,3 +177,15 @@
 .editLink a {
   color: var(--color-emerald);
 }
+
+.sectionInfoFooter {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.sectionInfoFooter svg {
+  display: inline-block;
+}

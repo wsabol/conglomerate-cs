@@ -34,7 +34,7 @@ const CONFIDENCE_ICONS: Record<Confidence, IconName> = {
 
 const TABS: { id: DetailTab; label: string }[] = [
   { id: "summary", label: "Summary" },
-  { id: "description", label: "Event Description" },
+  { id: "description", label: "Event Promo" },
   { id: "sources", label: "Sources" },
 ];
 
@@ -232,8 +232,15 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               {promotionText ? (
                 <p className={styles.description}>{promotionText}</p>
               ) : (
-                <EmptyState title="No event description." icon="link" size="sm"></EmptyState>
+                <EmptyState title="No event promo." icon="link" size="sm"></EmptyState>
               )}
+
+              <hr style={{ marginTop: 'var(--space-6)' }} />
+
+              <p className={styles.sectionInfoFooter}>
+                <Icon name="info" size={16} />
+                Text from the original promotional material for the event.
+              </p>
             </div>
           )}
 
