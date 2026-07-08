@@ -125,6 +125,10 @@ scripts/    Seed + export
 tests/      Vitest unit + integration
 ```
 
+## Notes on Terminlogy
+
+- "Membery" and "Memberberry" are not typos. They are mashups of "member" and "memory" -- as in "a memory from a member of the group"
+
 ## TODO
 
 - [ ] Dedup media items. Uplaods of the same file are not rejected
@@ -141,3 +145,10 @@ tests/      Vitest unit + integration
 
 - [-] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content
+- [ ] Card meta tags should have brass icons, use MetaItem component.
+
+Mobile
+- [ ] Event page - Hide Tabs, only show summary
+- [ ] Hide all edit buttons, only action is 'Add memory'
+- [ ] display block all the Event tags so they are stacked
+- [ ] Timeline, hide the line and marker. Remove all the padding-lieft. Just leave the cards.

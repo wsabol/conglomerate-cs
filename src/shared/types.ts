@@ -93,7 +93,7 @@ export const ANNOTATION_TYPES = [
   "secondhand_account",
   "correction",
   "quote",
-  "context",
+  // "context",
 ] as const;
 export type AnnotationType = (typeof ANNOTATION_TYPES)[number];
 
