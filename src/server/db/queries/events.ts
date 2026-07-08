@@ -21,7 +21,7 @@ import {
   HEADLINER_ACT_NAMES,
   type BillingRole,
 } from "@shared/types";
-import { mediaDeliveryUrl } from "../../media/url";
+import { mediaDeliveryUrl, mediaThumbUrl } from "../../media/url";
 import { getAnnotations } from "./annotations";
 import { emptyAvailability, toPlaceDTO } from "./helpers";
 import { listMediaForEvent } from "./media";
@@ -317,6 +317,8 @@ export async function getEventDetail(
       description: source.description,
       url: source.url,
       mediaId: source.mediaId ?? null,
+      mediaUrl: source.mediaId ? mediaDeliveryUrl(source.mediaId) : null,
+      thumbUrl: source.mediaId ? mediaThumbUrl(source.mediaId) : null,
     })),
     mediaItems,
     annotations: eventAnnotations,

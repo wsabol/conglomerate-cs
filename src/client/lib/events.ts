@@ -1,5 +1,5 @@
 import { apiFetch, toQuery } from "./api";
-import type { EventDetailDTO, EventListItemDTO } from "@shared/dto";
+import type { EventDetailDTO, EventListItemDTO, EventSourceDTO } from "@shared/dto";
 import {
   eventCreateSchema,
   eventUpdateSchema,
@@ -74,4 +74,16 @@ export function performancePatch(
         ? overrides.eventPosterId
         : (event.performance?.eventPosterId ?? null),
   };
+}
+
+/** Map source DTOs to the PATCH input shape (strips server-only fields). */
+export function sourcesInput(
+  sources: EventSourceDTO[],
+): NonNullable<EventUpdateBody["sources"]> {
+  return sources.map((s) => ({
+    sourceType: s.sourceType,
+    description: s.description ?? null,
+    url: s.url || null,
+    mediaId: s.mediaId ?? null,
+  }));
 }

@@ -71,6 +71,8 @@ export interface EventSourceDTO {
   description: string | null;
   url: string | null;
   mediaId: number | null;
+  mediaUrl: string | null;
+  thumbUrl: string | null;
 }
 
 export interface MediaItemDTO {

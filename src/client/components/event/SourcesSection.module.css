@@ -1,0 +1,88 @@
+.header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.mediaSource {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sourceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sourceListItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.sourceIcon {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+  color: var(--color-text-secondary);
+}
+
+.sourceBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.sourceLink {
+  color: var(--color-emerald);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  font-size: var(--text-base);
+}
+
+.sourceText {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
+}
+
+.sourceActions {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.actionButton:hover {
+  color: var(--color-text);
+}
+
+.danger:hover {
+  color: var(--color-orange);
+}
+
+.sourceListItem .sourceActions {
+  margin-top: 0;
+}

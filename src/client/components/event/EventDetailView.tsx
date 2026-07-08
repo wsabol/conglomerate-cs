@@ -18,6 +18,7 @@ import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
 import { EventPosterCard } from "./EventPosterCard";
 import { OtherActsSection } from "./OtherActsSection";
 import { SetlistSection } from "./SetlistSection";
+import { SourcesSection } from "./SourcesSection";
 import styles from "./EventDetailView.module.css";
 import { EmptyState } from "../state";
 import { cn } from "@client/lib/cn";
@@ -243,34 +244,12 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               aria-labelledby="tab-sources"
               className={styles.tabPanel}
             >
-              {event.sources.length > 0 ? (
-                <div className={styles.sources}>
-                  {event.sources.map((source) => (
-                    <div key={source.id} className={styles.source}>
-                      <Icon
-                        name={source.sourceType === "url" ? "link" : "document"}
-                        size={16}
-                      />
-                      {source.url ? (
-                        <a
-                          className={styles.sourceLink}
-                          href={source.url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {source.description || source.url}
-                        </a>
-                      ) : (
-                        <span>{source.description}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState title="No sources recorded yet" icon="help" size="sm">
-                  Add a source to help others learn more about this event.
-                </EmptyState>
-              )}
+              <SourcesSection
+                event={event}
+                isEditor={isEditor}
+                onReload={onReload}
+                contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
+              />
             </div>
           )}
         </SidebarLayout>

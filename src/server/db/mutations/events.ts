@@ -245,18 +245,20 @@ async function syncEventRelations(
     );
   }
 
-  input.sources = input.sources ?? [];
-  if (input.sources.length > 0) {
+  if (input.sources !== undefined) {
+    const sources = input.sources;
     await db.delete(eventSources).where(eq(eventSources.eventId, eventId));
-    await db.insert(eventSources).values(
-      input.sources.map((s) => ({
-        eventId,
-        sourceType: s.sourceType,
-        description: s.description ?? null,
-        url: s.url || null,
-        mediaId: s.mediaId ?? null,
-      })),
-    );
+    if (sources.length > 0) {
+      await db.insert(eventSources).values(
+        sources.map((s) => ({
+          eventId,
+          sourceType: s.sourceType,
+          description: s.description ?? null,
+          url: s.url || null,
+          mediaId: s.mediaId ?? null,
+        })),
+      );
+    }
   }
 }
 

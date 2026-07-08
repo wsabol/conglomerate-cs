@@ -149,6 +149,8 @@ describe("GET /api/events/:slug", () => {
     expect(detail.performance?.setlistText).toContain("The Lick");
     expect(detail.acts[0].name).toBe("Greg Tivis");
     expect(detail.sources[0].url).toBe("https://example.com/post");
+    expect(detail.sources[0].mediaUrl).toBeNull();
+    expect(detail.sources[0].thumbUrl).toBeNull();
     expect(detail.people[0].displayName).toBe("McIan");
     expect(detail.annotations).toEqual([]);
     expect(detail.headlined).toBe(false);
@@ -339,5 +341,102 @@ describe("PATCH /api/events/:slug performance", () => {
       .where(eq(eventPerformanceDetails.eventId, event.id))
       .get();
     expect(row?.eventPosterId).toBe(42);
+  });
+});
+
+describe("PATCH /api/events/:slug sources", () => {
+  beforeEach(async () => {
+    const db = getDb(env);
+    await db.delete(eventPeople);
+    await db.delete(eventSources);
+    await db.delete(eventActs);
+    await db.delete(eventPerformanceDetails);
+    await db.delete(events);
+    await db.delete(people);
+    await db.delete(places);
+  });
+
+  it("replaces sources and clears them when given an empty array", async () => {
+    const db = getDb(env);
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "source-show",
+        name: "Source Show",
+        eventType: "performance",
+        eventDate: "2010-07-02",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+
+    const replaceRes = await app.request(
+      "/api/events/source-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sources: [
+            {
+              sourceType: "url",
+              description: "Facebook post",
+              url: "https://example.com/post",
+            },
+            {
+              sourceType: "text",
+              description: "Someone said they were there.",
+            },
+          ],
+        }),
+      },
+      env,
+    );
+    expect(replaceRes.status).toBe(200);
+    const replaced = (await replaceRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(replaced.data?.sources).toHaveLength(2);
+    expect(replaced.data?.sources[0].description).toBe("Facebook post");
+    expect(replaced.data?.sources[1].sourceType).toBe("text");
+
+    const updateRes = await app.request(
+      "/api/events/source-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sources: [
+            {
+              sourceType: "url",
+              description: "Updated link",
+              url: "https://example.com/updated",
+            },
+          ],
+        }),
+      },
+      env,
+    );
+    expect(updateRes.status).toBe(200);
+    const updated = (await updateRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(updated.data?.sources).toHaveLength(1);
+    expect(updated.data?.sources[0].description).toBe("Updated link");
+
+    const clearRes = await app.request(
+      "/api/events/source-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sources: [] }),
+      },
+      env,
+    );
+    expect(clearRes.status).toBe(200);
+    const cleared = (await clearRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(cleared.data?.sources).toEqual([]);
+
+    const rows = await db
+      .select()
+      .from(eventSources)
+      .where(eq(eventSources.eventId, event.id));
+    expect(rows).toHaveLength(0);
   });
 });
