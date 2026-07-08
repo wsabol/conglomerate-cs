@@ -6,6 +6,9 @@ alwaysApply: false
 
 # Client Patterns
 
+## Design
+- Mobile first
+
 ## API layer
 - All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).
 - Domain modules wrap endpoints — do not scatter raw URL strings in routes/components:

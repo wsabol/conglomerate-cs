@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileInput } from "../form";
 import { SectionTitle } from "../ui/Card";
+import { MediaLightbox } from "../media/MediaLightbox";
 import { useAuth } from "../../lib/auth";
 import { patchEvent, performancePatch } from "../../lib/events";
 import { uploadFile } from "../../lib/media";
@@ -18,6 +19,7 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (!posterUrl && !isEditor) return null;
 
@@ -52,7 +54,21 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
     <div className={styles.sidebarCard}>
       <SectionTitle>Event poster</SectionTitle>
       {posterUrl ? (
-        <img className={styles.posterImage} src={posterUrl} alt="" />
+        <>
+          <button
+            type="button"
+            className={styles.posterButton}
+            onClick={() => setLightboxOpen(true)}
+          >
+            <img className={styles.posterImage} src={posterUrl} alt="" />
+          </button>
+          <MediaLightbox
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            src={posterUrl}
+            title="Event poster"
+          />
+        </>
       ) : (
         <>
           <p className={styles.posterEmpty}>No poster yet.</p>

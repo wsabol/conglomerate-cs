@@ -1,5 +1,7 @@
+import { useState } from "react";
 import type { MediaType } from "@shared/types";
 import { Icon, type IconName } from "../ui/Icon";
+import { MediaLightbox } from "./MediaLightbox";
 import styles from "./MediaFrame.module.css";
 
 export interface MediaFrameProps {
@@ -30,17 +32,40 @@ export function MediaFrame({
   poster,
   onOpen,
 }: MediaFrameProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  function handlePhotoOpen() {
+    if (onOpen) {
+      onOpen();
+    } else {
+      setLightboxOpen(true);
+    }
+  }
+
   return (
     <figure className={styles.frame}>
       {type === "photo" && (
-        <button type="button" className={styles.imageButton} onClick={onOpen}>
-          <img
-            className={styles.image}
+        <>
+          <button
+            type="button"
+            className={styles.imageButton}
+            onClick={handlePhotoOpen}
+          >
+            <img
+              className={styles.image}
+              src={src}
+              alt={title ?? "Archived photo"}
+              loading="lazy"
+            />
+          </button>
+          <MediaLightbox
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
             src={src}
-            alt={title ?? "Archived photo"}
-            loading="lazy"
+            title={title}
+            caption={caption}
           />
-        </button>
+        </>
       )}
 
       {type === "video" &&

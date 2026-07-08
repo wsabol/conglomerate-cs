@@ -9,6 +9,7 @@ import { PerformanceCard } from "../components/cards/PerformanceCard";
 import type { EventListItemDTO } from "@shared/dto";
 import { MediaFrame } from "../components/media/MediaFrame";
 import { Memory } from "../components/memory/Memory";
+import demoPhoto from "../../../images/652176842_26582093478065608_5395107200525570428_n.jpg";
 import { EmptyState, ErrorState, Skeleton, Spinner } from "../components/state";
 import {
   RadioGroup,
@@ -196,6 +197,12 @@ export default function Styleguide() {
 
       <Section label="Media frames">
         <Grid min={260}>
+          <MediaFrame
+            type="photo"
+            src={demoPhoto}
+            title="Archive photo"
+            caption="Click to view full size"
+          />
           <MediaFrame
             type="audio"
             src=""
