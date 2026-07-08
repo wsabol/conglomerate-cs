@@ -148,6 +148,15 @@
   white-space: pre-wrap;
 }
 
+.eventPromoHeading {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-3);
+}
+
 .emptyPanel {
   color: var(--color-text-secondary);
   font-size: var(--text-base);

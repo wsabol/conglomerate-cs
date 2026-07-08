@@ -283,13 +283,6 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.summary}
           rows={6}
         />
-        <TextField
-          label="Billing name"
-          value={form.billingName}
-          onChange={(e) => updateField("billingName", e.target.value)}
-          error={fieldErrors.billingName}
-          hint="Shown as the performance title when set"
-        />
         <TextArea
           label="Setlist"
           value={form.setlistText}
@@ -297,11 +290,19 @@ export default function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.setlistText}
           rows={4}
         />
+        <TextField
+          label="Billing name"
+          value={form.billingName}
+          onChange={(e) => updateField("billingName", e.target.value)}
+          error={fieldErrors.billingName}
+          hint="Name the event was billed as"
+        />
         <TextArea
           label="Promotion text"
           value={form.promotionText}
           onChange={(e) => updateField("promotionText", e.target.value)}
           error={fieldErrors.promotionText}
+          hint="Original promotional content for the event"
           rows={3}
         />
 

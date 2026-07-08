@@ -78,6 +78,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
     ).values(),
   );
   const promotionText = event.performance?.promotionText;
+  const billingName = event.performance?.billingName;
 
   return (
     <Container>
@@ -229,6 +230,8 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               aria-labelledby="tab-description"
               className={styles.tabPanel}
             >
+              {billingName && billingName !== event.title && <h4 className={styles.eventPromoHeading}>{billingName}</h4>}
+
               {promotionText ? (
                 <p className={styles.description}>{promotionText}</p>
               ) : (

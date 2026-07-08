@@ -152,7 +152,7 @@ export function MemoriesSection({
         open={adding}
         onClose={closeAdd}
         title="Add a membery"
-        context={contextLabel && contextLabel.length > 50 ? contextLabel.slice(0, 50) + '...' : contextLabel}
+        context={contextLabel}
       >
         <MemoryForm
           key="add"

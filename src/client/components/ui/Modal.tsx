@@ -81,7 +81,7 @@ export function Modal({ open, onClose, title, context, children }: ModalProps) {
             <h2 id={titleId} className={styles.title}>
               {title}
             </h2>
-            {context && <p className={styles.context}>{context}</p>}
+            {context && <p className={styles.context}>{context.length > 50 ? context.slice(0, 50) + '...' : context}</p>}
           </div>
           <button
             type="button"
