@@ -5,12 +5,65 @@ import type { UploadCreateInput } from "@shared/schemas/media";
 import type { AppUser, Env } from "../../env";
 import { recordRevision } from "../../audit/revision";
 import { getConfig, mediaTypeForMime } from "../../lib/config";
-import { badRequest, notFound } from "../../lib/errors";
+import { badRequest, conflict, notFound } from "../../lib/errors";
 import { mediaObjectKey } from "../../media/keys";
 import { createUploadTarget } from "../../media/presign";
 import { sha256Hex } from "../../media/checksum";
 import { finalizeImageVariants, isImageMime } from "../../media/process";
-import { getMediaItemById } from "../queries";
+import { findPublishedMediaByChecksum, getMediaItemById } from "../queries";
+
+type DuplicateMedia = NonNullable<
+  Awaited<ReturnType<typeof findPublishedMediaByChecksum>>
+>;
+
+function duplicateConflict(existing: DuplicateMedia) {
+  return conflict("This file already exists in the archive.", [
+    {
+      message: existing.eventTitle
+        ? `Already uploaded for ${existing.eventTitle}`
+        : `Already uploaded as media #${existing.id}`,
+      error_code: "duplicate_media",
+    },
+  ]);
+}
+
+/** Delete R2 objects for a rejected upload and mark the row failed. */
+async function abortDuplicateUpload(
+  env: Env,
+  db: Db,
+  row: typeof media.$inferSelect,
+): Promise<void> {
+  const keys = new Set<string>();
+  if (row.r2Key) keys.add(row.r2Key);
+  if (row.displayKey) keys.add(row.displayKey);
+  if (row.thumbKey) keys.add(row.thumbKey);
+  // Variants may have been written before publish failed.
+  keys.add(mediaObjectKey(row.id, "image", "display"));
+  keys.add(mediaObjectKey(row.id, "image", "thumb"));
+
+  for (const key of keys) {
+    try {
+      await env.MEDIA.delete(key);
+    } catch {
+      // Best-effort cleanup; do not block the conflict response.
+    }
+  }
+
+  await db
+    .update(media)
+    .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+    .where(eq(media.id, row.id));
+}
+
+function isUniqueConstraintError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const message =
+    "message" in err && typeof err.message === "string" ? err.message : "";
+  return (
+    message.includes("UNIQUE constraint failed") ||
+    message.includes("media_checksum_published_uidx")
+  );
+}
 
 export async function beginUpload(
   env: Env,
@@ -26,6 +79,11 @@ export async function beginUpload(
     .where(and(eq(events.id, input.eventId), eq(events.isDeleted, false)))
     .get();
   if (!event) throw notFound("Event not found.");
+
+  if (input.checksum) {
+    const existing = await findPublishedMediaByChecksum(db, input.checksum);
+    if (existing) throw duplicateConflict(existing);
+  }
 
   const category = mediaTypeForMime(env, input.mimeType);
   if (!category) {
@@ -125,6 +183,12 @@ export async function completeUpload(
   const checksum = await sha256Hex(buffer);
   const size = object.size;
 
+  const duplicate = await findPublishedMediaByChecksum(db, checksum);
+  if (duplicate && duplicate.id !== id) {
+    await abortDuplicateUpload(env, db, existing);
+    throw duplicateConflict(duplicate);
+  }
+
   let displayKey: string | null = null;
   let thumbKey: string | null = null;
   if (existing.mimeType && isImageMime(existing.mimeType)) {
@@ -138,19 +202,39 @@ export async function completeUpload(
     thumbKey = variants.thumbKey;
   }
 
-  const updated = await db
-    .update(media)
-    .set({
-      status: "published",
-      size,
-      checksum,
-      displayKey,
-      thumbKey,
-      modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-    })
-    .where(eq(media.id, id))
-    .returning()
-    .get();
+  let updated: typeof media.$inferSelect;
+  try {
+    updated = await db
+      .update(media)
+      .set({
+        status: "published",
+        size,
+        checksum,
+        displayKey,
+        thumbKey,
+        modifiedOn: sql`(CURRENT_TIMESTAMP)`,
+      })
+      .where(eq(media.id, id))
+      .returning()
+      .get();
+  } catch (err) {
+    if (isUniqueConstraintError(err)) {
+      const raced = await findPublishedMediaByChecksum(db, checksum);
+      await abortDuplicateUpload(env, db, {
+        ...existing,
+        displayKey,
+        thumbKey,
+      });
+      if (raced) throw duplicateConflict(raced);
+      throw conflict("This file already exists in the archive.", [
+        {
+          message: "Already uploaded as a duplicate.",
+          error_code: "duplicate_media",
+        },
+      ]);
+    }
+    throw err;
+  }
 
   await recordRevision(db, {
     targetType: "media",

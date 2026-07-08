@@ -15,6 +15,13 @@
       "when": 1783049017615,
       "tag": "0001_archive_model",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783540577168,
+      "tag": "0002_abnormal_vengeance",
+      "breakpoints": true
     }
   ]
 }

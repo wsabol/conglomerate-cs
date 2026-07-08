@@ -131,7 +131,7 @@ tests/      Vitest unit + integration
 
 ## TODO
 
-- [ ] Dedup media items. Uplaods of the same file are not rejected
+- [-] Dedup media items. Uplaods of the same file are not rejected
 - [-] Add hero image to the timeline
 - [-] Add memory modal
 - [-] 'Edit Event' button placement
@@ -146,6 +146,7 @@ tests/      Vitest unit + integration
 - [-] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content
 - [ ] Card meta tags should have brass icons, use MetaItem component.
+- [ ] Mediaframe is not clickable - needs to open up, expand the image, show annotations, and people.
 
 Mobile
 - [ ] Event page - Hide Tabs, only show summary

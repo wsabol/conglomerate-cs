@@ -7,15 +7,13 @@ import styles from "./cards.module.css";
 
 export interface PerformanceCardProps {
   event: EventListItemDTO;
-  showEventType?: boolean;
 }
 
-export function PerformanceCard({
-  event,
-  showEventType = true,
-}: PerformanceCardProps) {
-  const { slug, title, place, eventType, heroImageUrl, headlined, media } =
-    event;
+export function PerformanceCard({event}: PerformanceCardProps) {
+  const { slug, title, place, eventType, heroImageUrl, headlined, media } = event;
+  if (eventType !== "performance") {
+    return null;
+  }
 
   return (
     <Link to={`/events/${slug}`} className={styles.card}>
@@ -41,11 +39,6 @@ export function PerformanceCard({
           {place && (
             <span className={styles.metaItem}>
               <Icon name="place" size={14} /> {place.name}
-            </span>
-          )}
-          {showEventType && (
-            <span className={styles.metaItem} style={{ textTransform: "capitalize" }}>
-              {eventType}
             </span>
           )}
         </div>

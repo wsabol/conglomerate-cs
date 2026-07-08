@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `media_checksum_published_uidx` ON `media` (`checksum`) WHERE "media"."checksum" IS NOT NULL AND "media"."is_deleted" = 0 AND "media"."status" = 'published';

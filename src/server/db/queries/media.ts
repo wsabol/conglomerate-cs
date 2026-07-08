@@ -157,3 +157,46 @@ export async function getMediaItemById(
   );
   return dto ?? null;
 }
+
+/** Published, non-deleted media with the given checksum (for upload dedup). */
+export async function findPublishedMediaByChecksum(
+  db: Db,
+  checksum: string,
+): Promise<{
+  id: number;
+  eventId: number | null;
+  eventTitle: string | null;
+  eventSlug: string | null;
+} | null> {
+  const row = await db
+    .select({
+      id: media.id,
+      eventId: media.eventId,
+      eventSlug: events.slug,
+      eventName: events.name,
+      billingName: eventPerformanceDetails.billingName,
+    })
+    .from(media)
+    .leftJoin(events, eq(events.id, media.eventId))
+    .leftJoin(
+      eventPerformanceDetails,
+      eq(eventPerformanceDetails.eventId, media.eventId),
+    )
+    .where(
+      and(
+        eq(media.checksum, checksum),
+        eq(media.status, "published"),
+        eq(media.isDeleted, false),
+      ),
+    )
+    .get();
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    eventId: row.eventId,
+    eventTitle: row.billingName || row.eventName,
+    eventSlug: row.eventSlug,
+  };
+}

@@ -34,6 +34,6 @@
 }
 
 .error {
-  color: var(--color-warm);
+  color: var(--color-orange);
   margin: 0;
 }

@@ -102,7 +102,7 @@ export default function Performances() {
           </p>
           <Grid min={240}>
             {events.map((event) => (
-              <PerformanceCard key={event.id} event={event} showEventType={false} />
+              <PerformanceCard key={event.id} event={event} />
             ))}
           </Grid>
         </>

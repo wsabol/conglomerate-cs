@@ -7,6 +7,11 @@ export const uploadCreateSchema = z.object({
   mimeType: z.string().trim().min(1).max(255),
   size: z.number().int().positive(),
   title: z.string().trim().max(512).optional(),
+  /** Optional client-computed SHA-256 (lowercase hex) for early dedup. */
+  checksum: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
 });
 export type UploadCreateInput = z.infer<typeof uploadCreateSchema>;
 

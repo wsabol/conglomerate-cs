@@ -1,7 +1,8 @@
-import { apiFetch, toQuery } from "./api";
+import { apiFetch, ApiClientError, toQuery } from "./api";
 import type { MediaItemDTO } from "@shared/dto";
-import type { ListResult, MediaType } from "@shared/types";
+import type { ListResult, MediaType, ApiErrorDetail } from "@shared/types";
 import type { UploadCreateInput } from "@shared/schemas/media";
+import { sha256Hex } from "@shared/checksum";
 
 export interface ListMediaParams {
   media_type?: MediaType;
@@ -24,28 +25,57 @@ export interface UploadTarget {
   directUpload: boolean;
 }
 
+function duplicateMessage(err: ApiClientError): string {
+  const details = err.details;
+  if (Array.isArray(details)) {
+    const first = details[0] as ApiErrorDetail | undefined;
+    if (first?.error_code === "duplicate_media" && first.message) {
+      return first.message;
+    }
+  }
+  return err.message;
+}
+
 /** Request an upload slot and push the file to R2 (or the dev proxy). */
 export async function uploadFile(
   eventId: number,
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<MediaItemDTO> {
-  const init = await apiFetch<UploadTarget>("/api/uploads", {
-    method: "POST",
-    body: JSON.stringify({
-      eventId,
-      filename: file.name,
-      mimeType: file.type || "application/octet-stream",
-      size: file.size,
-      title: file.name,
-    } satisfies UploadCreateInput),
-  });
+  const checksum = await sha256Hex(await file.arrayBuffer());
+
+  let init: UploadTarget;
+  try {
+    init = await apiFetch<UploadTarget>("/api/uploads", {
+      method: "POST",
+      body: JSON.stringify({
+        eventId,
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        title: file.name,
+        checksum,
+      } satisfies UploadCreateInput),
+    });
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status === 409) {
+      throw new ApiClientError(duplicateMessage(err), err.status, err.details);
+    }
+    throw err;
+  }
 
   await putWithProgress(init.uploadUrl, file, init.uploadMethod, onProgress);
 
-  return apiFetch<MediaItemDTO>(`/api/uploads/${init.mediaId}/complete`, {
-    method: "POST",
-  });
+  try {
+    return await apiFetch<MediaItemDTO>(`/api/uploads/${init.mediaId}/complete`, {
+      method: "POST",
+    });
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status === 409) {
+      throw new ApiClientError(duplicateMessage(err), err.status, err.details);
+    }
+    throw err;
+  }
 }
 
 function putWithProgress(

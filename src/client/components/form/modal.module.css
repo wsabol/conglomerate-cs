@@ -65,7 +65,7 @@
 }
 
 .modalError {
-  color: var(--color-warm);
+  color: var(--color-orange);
   font-size: var(--text-sm);
   margin: 0;
 }

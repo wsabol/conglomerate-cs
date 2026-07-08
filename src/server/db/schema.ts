@@ -239,6 +239,11 @@ export const media = sqliteTable(
     index("media_event_id_idx").on(t.eventId),
     index("media_media_type_idx").on(t.mediaType),
     index("media_status_idx").on(t.status),
+    uniqueIndex("media_checksum_published_uidx")
+      .on(t.checksum)
+      .where(
+        sql`${t.checksum} IS NOT NULL AND ${t.isDeleted} = 0 AND ${t.status} = 'published'`,
+      ),
   ],
 );
 
