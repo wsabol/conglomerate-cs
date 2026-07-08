@@ -19,6 +19,7 @@ import { EventPosterCard } from "./EventPosterCard";
 import { OtherActsSection } from "./OtherActsSection";
 import { SetlistSection } from "./SetlistSection";
 import styles from "./EventDetailView.module.css";
+import { EmptyState } from "../state";
 
 type DetailTab = "summary" | "description" | "sources";
 
@@ -154,7 +155,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               {event.summary ? (
                 <p className={styles.summary}>{event.summary}</p>
               ) : (
-                <p className={styles.emptyPanel}>No summary yet.</p>
+                <EmptyState title="No summary yet." icon="document" size="sm"></EmptyState>
               )}
 
               <div className={styles.memories}>
@@ -179,7 +180,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               {promotionText ? (
                 <p className={styles.description}>{promotionText}</p>
               ) : (
-                <p className={styles.emptyPanel}>No event description yet.</p>
+                <EmptyState title="No event description." icon="link" size="sm"></EmptyState>
               )}
 
               <section className={styles.mediaSection}>
@@ -244,7 +245,9 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   ))}
                 </div>
               ) : (
-                <p className={styles.emptyPanel}>No sources recorded yet.</p>
+                <EmptyState title="No sources recorded yet" icon="external" size="sm">
+                  Add a source to help others learn more about this event.
+                </EmptyState>
               )}
             </div>
           )}
