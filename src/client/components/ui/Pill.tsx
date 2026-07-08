@@ -25,7 +25,7 @@ export function Pill({ children, active, onClick, className }: PillProps) {
 }
 
 interface TagProps {
-  children: ReactNode;
+  children?: ReactNode;
   icon?: IconName;
   iconLabel?: string;
   className?: string;
@@ -33,6 +33,7 @@ interface TagProps {
 
 /** Non-interactive metadata label (date, place, personnel...). */
 export function Tag({ children, icon, iconLabel, className }: TagProps) {
+  children = children ?? iconLabel;
   return (
     <span className={cn(styles.tag, className)}>
       {icon && <Icon name={icon} size={14} label={iconLabel} />}

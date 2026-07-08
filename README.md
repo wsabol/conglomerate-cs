@@ -137,7 +137,7 @@ tests/      Vitest unit + integration
 - [-] Add headlined to the events GET data
 - [-] Fix 'Headliner' not showing up on event page
 - [-] Fix headliner in search
-- [ ] Edit opener/headliner in the 'acts' modal
+- [-] Edit opener/headliner in the 'acts' modal
 
 - [-] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content

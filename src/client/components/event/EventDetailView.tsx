@@ -23,6 +23,7 @@ import styles from "./EventDetailView.module.css";
 import { EmptyState } from "../state";
 import { cn } from "@client/lib/cn";
 import { Button } from "../ui/Button";
+import { Tag } from "../ui/Pill";
 
 type DetailTab = "summary" | "description" | "sources";
 
@@ -95,24 +96,20 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
         <span className={styles.eyebrow}>{eventTypeLabel(event.eventType)}</span>
         <h1 className={styles.title}>{event.title}</h1>
         <div className={styles.meta}>
-          <MetaItem icon="calendar" iconLabel="Date">
+          <Tag icon="calendar" iconLabel="Date">
             {eventDateTimeMetaLabel(event)}
-          </MetaItem>
+          </Tag>
           {event.place && (
-            <MetaItem icon="place" iconLabel="Place">
+            <Tag icon="place" iconLabel="Place">
               {event.place.name}
-            </MetaItem>
+            </Tag>
           )}
           {performers.length > 0 && (
-            <MetaItem icon="people" iconLabel="Personnel">
+            <Tag icon="people" iconLabel="Personnel">
               {performers.map((person) => person.displayName).join(", ")}
-            </MetaItem>
+            </Tag>
           )}
-          {event.headlined && (
-            <MetaItem icon="star" iconLabel="Headlined">
-              Headlined
-            </MetaItem>
-          )}
+          {event.headlined && <Tag icon="star" iconLabel="Headliner" />}
           <MetaItem
             icon={CONFIDENCE_ICONS[event.confidence]}
             iconLabel="Confidence"
@@ -276,9 +273,10 @@ function MetaItem({
 }: {
   icon: IconName;
   iconLabel: string;
-  children: ReactNode;
+  children?: ReactNode;
   tone?: Confidence | "default";
 }) {
+  children = children ?? iconLabel;
   return (
     <span
       className={styles.metaItem}

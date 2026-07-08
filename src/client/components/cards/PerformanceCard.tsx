@@ -29,7 +29,7 @@ export function PerformanceCard({
         )}
         {headlined && (
           <span className={styles.headlined}>
-            <Icon name="star" size={12} /> Headlined
+            <Icon name="star" size={12} /> Headliner
           </span>
         )}
         <MediaAvailabilityIndicators media={media} variant="overlay" />

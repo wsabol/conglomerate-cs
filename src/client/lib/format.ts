@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { formatEventDate, normalizeTime } from "@shared/date";
+import type { EventActDTO } from "@shared/dto";
 import type { Confidence, DatePrecision, EventType } from "@shared/types";
 
 interface DateFields {
@@ -52,4 +53,13 @@ export function yearOf(dateISO: string | null): string {
   if (!dateISO) return "Unknown";
   const year = dateISO.slice(0, 4);
   return /^\d{4}$/.test(year) ? year : "Unknown";
+}
+
+/** Headliner last; within each group, sort alphabetically by name. */
+export function sortActsForDisplay(acts: EventActDTO[]): EventActDTO[] {
+  return [...acts].sort((a, b) => {
+    const aHead = a.billingRole === "headliner" ? 1 : 0;
+    const bHead = b.billingRole === "headliner" ? 1 : 0;
+    return aHead - bHead || a.name.localeCompare(b.name);
+  });
 }
