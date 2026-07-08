@@ -536,6 +536,68 @@ describe("PATCH /api/events/:slug people", () => {
     expect(rows).toHaveLength(0);
   });
 
+  it("preserves sources and acts when only people are patched", async () => {
+    const db = getDb(env);
+    const person = await db
+      .insert(people)
+      .values({ displayName: "McIan" })
+      .returning()
+      .get();
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "preserve-relations-show",
+        name: "Preserve Relations Show",
+        eventType: "performance",
+        eventDate: "2010-07-02",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+    await db.insert(eventSources).values({
+      eventId: event.id,
+      sourceType: "url",
+      url: "https://example.com/post",
+      description: "Original source",
+    });
+    await db.insert(eventActs).values({
+      eventId: event.id,
+      name: "Greg Tivis",
+      billingRole: "opener",
+    });
+
+    const res = await app.request(
+      "/api/events/preserve-relations-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          people: [{ personId: person.id, relationshipType: "performer" }],
+        }),
+      },
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ApiResponse<EventDetailDTO>;
+    expect(body.data?.people).toHaveLength(1);
+    expect(body.data?.sources).toHaveLength(1);
+    expect(body.data?.sources[0].description).toBe("Original source");
+    expect(body.data?.acts).toHaveLength(1);
+    expect(body.data?.acts[0].name).toBe("Greg Tivis");
+
+    const sourceRows = await db
+      .select()
+      .from(eventSources)
+      .where(eq(eventSources.eventId, event.id));
+    expect(sourceRows).toHaveLength(1);
+    const actRows = await db
+      .select()
+      .from(eventActs)
+      .where(eq(eventActs.eventId, event.id));
+    expect(actRows).toHaveLength(1);
+  });
+
   it("rejects duplicate person and relationship type combinations", async () => {
     const db = getDb(env);
     const person = await db

@@ -66,7 +66,26 @@ export const eventCreateSchema = z.object({
 });
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 
+// Omit fields with create-time defaults, then re-add as optional without defaults.
+// Otherwise Zod fills omitted PATCH keys (e.g. sources: []) and syncEventRelations
+// wipes relations that were not in the request body.
 export const eventUpdateSchema = eventCreateSchema
+  .omit({
+    eventType: true,
+    datePrecision: true,
+    confidence: true,
+    people: true,
+    acts: true,
+    sources: true,
+  })
   .partial()
+  .extend({
+    eventType: z.enum(EVENT_TYPES).optional(),
+    datePrecision: z.enum(DATE_PRECISIONS).optional(),
+    confidence: z.enum(CONFIDENCE_LEVELS).optional(),
+    people: z.array(eventPersonInputSchema).optional(),
+    acts: z.array(eventActInputSchema).optional(),
+    sources: z.array(eventSourceInputSchema).optional(),
+  })
   .refine((v) => Object.keys(v).length > 0, { message: "Nothing to update." });
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;
