@@ -32,10 +32,10 @@ export function TimelineEventCard({
   media,
 }: TimelineEventCardProps) {
   return (
-    <Link to={`/events/${slug}`} className={styles.card}>
+    <Link to={`/events/${slug}`} className={cn(styles.card, heroImageUrl && styles.hasHeroImage)}>
       {heroImageUrl && (
         <div className={styles.thumbnail}>
-          <img src={heroImageUrl} alt="" loading="lazy" />
+          <img src={heroImageUrl} alt={title} loading="lazy"  />
         </div>
       )}
       {/* <div className={styles.thumbnail}>
@@ -47,40 +47,42 @@ export function TimelineEventCard({
           </div>
         )}
       </div> */}
-      <div className={styles.main}>
-        <span className={styles.date}>{dateLabel}</span>
-        <span className={styles.title}>{title}</span>
-        {(place || timeLabel) && (
-          <div className={styles.details}>
-            {place && (
-              <span className={styles.detailItem}>
-                <Icon name="place" size={14} /> {place}
-              </span>
-            )}
-            {timeLabel && (
-              <span className={styles.detailItem}>
-                <Icon name="clock" size={14} /> {timeLabel}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-      <div className={styles.aside}>
-        <div className={styles.asideMeta}>
-          <span className={styles.eventType}>{eventTypeLabel}</span>
-          
-          <span className={cn(styles.confidence, styles[confidence])}>
-            <span className={styles.dot} aria-hidden />
-            {confidenceLabel}
-          </span>
-
-          <MediaAvailabilityIndicators
-            media={media}
-            variant="inline"
-            types={["video", "audio"]}
-          />
+      <div className={styles.cardBody}>
+        <div className={styles.main}>
+          <span className={styles.date}>{dateLabel}</span>
+          <span className={styles.title}>{title}</span>
+          {(place || timeLabel) && (
+            <div className={styles.details}>
+              {place && (
+                <span className={styles.detailItem}>
+                  <Icon name="place" size={14} /> {place}
+                </span>
+              )}
+              {timeLabel && (
+                <span className={styles.detailItem}>
+                  <Icon name="clock" size={14} /> {timeLabel}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <Icon name="chevron-right" size={18} className={styles.chevron} />
+        <div className={styles.aside}>
+          <div className={styles.asideMeta}>
+            <span className={styles.eventType}>{eventTypeLabel}</span>
+            
+            <span className={cn(styles.confidence, styles[confidence])}>
+              <span className={styles.dot} aria-hidden />
+              {confidenceLabel}
+            </span>
+
+            <MediaAvailabilityIndicators
+              media={media}
+              variant="inline"
+              types={["video", "audio"]}
+            />
+          </div>
+          <Icon name="chevron-right" size={18} className={styles.chevron} />
+        </div>
       </div>
     </Link>
   );
