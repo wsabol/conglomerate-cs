@@ -131,7 +131,7 @@ tests/      Vitest unit + integration
 - [-] Add hero image to the timeline
 - [-] Add memory modal
 - [-] 'Edit Event' button placement
-- [ ] Show personnel on the performance page
+- [-] Show personnel on the performance page
 - [-] Add/edit sources
 
 - [-] Add headlined to the events GET data
