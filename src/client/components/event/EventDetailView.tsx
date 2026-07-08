@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Container, Grid, SidebarLayout } from "../layout";
 import { SectionTitle } from "../ui/Card";
 import { Icon, type IconName } from "../ui/Icon";
@@ -37,6 +37,13 @@ const TABS: { id: DetailTab; label: string }[] = [
   { id: "sources", label: "Sources" },
 ];
 
+const DETAIL_TAB_IDS = new Set<DetailTab>(TABS.map(({ id }) => id));
+
+function tabFromHash(hash: string): DetailTab {
+  const id = hash.replace(/^#/, "") as DetailTab;
+  return DETAIL_TAB_IDS.has(id) ? id : "summary";
+}
+
 interface EventDetailViewProps {
   event: EventDetailDTO;
   onReload: () => void;
@@ -44,10 +51,16 @@ interface EventDetailViewProps {
 
 export function EventDetailView({ event, onReload }: EventDetailViewProps) {
   const { user, isEditor } = useAuth();
-  const [tab, setTab] = useState<DetailTab>("summary");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tab = tabFromHash(location.hash);
   const [mediaItems, setMediaItems] = useState<MediaItemDTO[]>(
     event.mediaItems,
   );
+
+  function selectTab(id: DetailTab) {
+    navigate({ hash: id }, { replace: true });
+  }
 
   const performers = event.people.filter(
     (person) => person.relationshipType === "performer",
@@ -140,7 +153,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                 aria-selected={tab === id}
                 aria-controls={`panel-${id}`}
                 className={styles.tab}
-                onClick={() => setTab(id)}
+                onClick={() => selectTab(id)}
               >
                 {label}
               </button>
