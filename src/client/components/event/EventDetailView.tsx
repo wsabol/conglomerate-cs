@@ -146,11 +146,11 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               </button>
             ))}
             {isEditor && (
-              <div className={cn(styles.tab, styles.editTab)}>
+              <Link to={`/events/${event.slug}/edit`} className={cn(styles.tab, styles.editTab)}>
                 <Button type="button" variant="ghost-primary" size="sm" className={styles.editButton}>
                   <Icon name="edit" size={14} /> Edit event
                 </Button>
-              </div>
+              </Link>
             )}
           </div>
 
@@ -254,7 +254,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   ))}
                 </div>
               ) : (
-                <EmptyState title="No sources recorded yet" icon="external" size="sm">
+                <EmptyState title="No sources recorded yet" icon="help" size="sm">
                   Add a source to help others learn more about this event.
                 </EmptyState>
               )}
