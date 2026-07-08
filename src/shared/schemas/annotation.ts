@@ -31,6 +31,5 @@ export const memoryFormSchema = annotationCreateSchema.pick({
   body: true,
   annotationType: true,
   incorporatePref: true,
-  peopleIds: true,
 });
 export type MemoryFormValue = z.infer<typeof memoryFormSchema>;

@@ -223,6 +223,7 @@ export function RadioGroup({
 }
 
 export { AutocompleteInput } from "./AutocompleteInput";
+export { MentionTextArea } from "./MentionTextArea";
 export { PersonAutocompleteInput } from "./PersonAutocompleteInput";
 export type {
   PersonAutocompleteSubmit,

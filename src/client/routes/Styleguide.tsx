@@ -222,11 +222,10 @@ export default function Styleguide() {
         <Card>
           <SectionTitle>Memberberries</SectionTitle>
           <Memory
-            body="I distinctly remember Brent ripping the Brent note that night."
+            body="I distinctly remember @[Brent](1) ripping the Brent note that night."
             authorName="McIan"
             dateLabel="6/6/2026"
             annotationType="personal_memory"
-            people={["Brent"]}
           />
           <Memory
             body="Don't bring that guy around."

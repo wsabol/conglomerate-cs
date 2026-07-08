@@ -14,6 +14,7 @@ import type {
 } from "@shared/schemas/annotation";
 import type { AnnotationTargetType } from "@shared/types";
 import type { AppUser } from "../../env";
+import { extractPeopleIds } from "@shared/mentions";
 import { recordRevision } from "../../audit/revision";
 import { getAnnotationById } from "../queries";
 import { forbidden, notFound } from "../../lib/errors";
@@ -39,7 +40,11 @@ export async function createAnnotation(
     .returning()
     .get();
 
-  await setAnnotationPeople(db, inserted.id, input.peopleIds);
+  await setAnnotationPeople(
+    db,
+    inserted.id,
+    extractPeopleIds(input.body),
+  );
   await recordRevision(db, {
     targetType: "annotation",
     targetId: inserted.id,
@@ -83,11 +88,11 @@ export async function updateAnnotation(
     })
     .where(eq(annotations.id, id));
 
-  if (input.peopleIds !== undefined) {
+  if (input.body !== undefined) {
     await db
       .delete(annotationPeople)
       .where(eq(annotationPeople.annotationId, id));
-    await setAnnotationPeople(db, id, input.peopleIds);
+    await setAnnotationPeople(db, id, extractPeopleIds(input.body));
   }
 
   await recordRevision(db, {

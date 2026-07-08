@@ -16,15 +16,6 @@ export function EventSummaryPanel({
   canUpload,
   onReload,
 }: EventSummaryPanelProps) {
-  const uniquePeople = Array.from(
-    new Map(
-      event.people.map((person) => [
-        person.personId,
-        { id: person.personId, displayName: person.displayName },
-      ]),
-    ).values(),
-  );
-
   return (
     <>
       {event.summary ? (
@@ -38,7 +29,6 @@ export function EventSummaryPanel({
           targetType="event"
           targetId={event.id}
           initial={event.annotations}
-          people={uniquePeople}
           contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
         />
       </div>

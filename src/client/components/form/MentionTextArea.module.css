@@ -1,0 +1,90 @@
+.wrap {
+  position: relative;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.editor {
+  width: 100%;
+  min-height: 6rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  transition: border-color var(--motion-fast);
+}
+
+.editor:focus-visible {
+  border-color: var(--color-emerald);
+  outline: none;
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.mentionChip {
+  display: inline;
+  font-weight: var(--weight-semibold);
+  color: var(--color-brass);
+  background: color-mix(in srgb, var(--color-brass) 12%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0 0.15em;
+  white-space: nowrap;
+}
+
+.listbox {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.option {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover,
+.option:focus-visible,
+.option[data-active] {
+  background: var(--color-raised);
+  outline: none;
+}
+
+.mentionHint {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  margin-top: var(--space-1);
+}

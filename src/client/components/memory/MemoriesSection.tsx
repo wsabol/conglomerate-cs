@@ -21,7 +21,6 @@ interface MemoriesSectionProps {
   targetType: AnnotationTargetType;
   targetId: number;
   initial: AnnotationDTO[];
-  people: { id: number; displayName: string }[];
   contextLabel?: string;
 }
 
@@ -29,7 +28,6 @@ export function MemoriesSection({
   targetType,
   targetId,
   initial,
-  people,
   contextLabel,
 }: MemoriesSectionProps) {
   const { user, isEditor, loading } = useAuth();
@@ -135,7 +133,6 @@ export function MemoriesSection({
                 datePrecision: "exact",
               })}
               annotationType={a.annotationType}
-              people={a.people.map((p) => p.displayName)}
               canEdit={canModify(a)}
               onEdit={canModify(a) ? () => openEdit(a) : undefined}
               onDelete={canModify(a) ? () => handleDelete(a) : undefined}
@@ -156,7 +153,6 @@ export function MemoriesSection({
       >
         <MemoryForm
           key="add"
-          people={people}
           submitLabel="Add to the record"
           inModal
           submitting={submitting}
@@ -175,7 +171,6 @@ export function MemoriesSection({
         {editing && (
           <MemoryForm
             key={editing.id}
-            people={people}
             submitLabel="Save changes"
             inModal
             submitting={submitting}
@@ -184,7 +179,6 @@ export function MemoriesSection({
               body: editing.body,
               annotationType: editing.annotationType,
               incorporatePref: editing.incorporatePref,
-              peopleIds: editing.people.map((p) => p.id),
             }}
             onSubmit={handleUpdate}
             onCancel={closeEdit}

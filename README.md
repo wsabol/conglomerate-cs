@@ -131,23 +131,23 @@ tests/      Vitest unit + integration
 
 ## TODO
 
-- [-] Dedup media items. Uplaods of the same file are not rejected
-- [-] Add hero image to the timeline
-- [-] Add memory modal
-- [-] 'Edit Event' button placement
-- [-] Show personnel on the performance page
-- [-] Add/edit sources
+- [x] Dedup media items. Uplaods of the same file are not rejected
+- [x] Add hero image to the timeline
+- [x] Add memory modal
+- [x] 'Edit Event' button placement
+- [x] Show personnel on the performance page
+- [x] Add/edit sources
 
-- [-] Add headlined to the events GET data
-- [-] Fix 'Headliner' not showing up on event page
-- [-] Fix headliner in search
-- [-] Edit opener/headliner in the 'acts' modal
+- [x] Add headlined to the events GET data
+- [x] Fix 'Headliner' not showing up on event page
+- [x] Fix headliner in search
+- [x] Edit opener/headliner in the 'acts' modal
 
-- [-] Add hash to the navigation when the tab is changed on event pages
+- [x] Add hash to the navigation when the tab is changed on event pages
 - [ ] Home page content
-- [-] Card meta tags should have brass icons, use MetaItem component.
-- [-] Mediaframe is not clickable - needs to open up and view the image full size.
-- [ ] Autodetect people by name and alias in annotations and add to annotion people xref
+- [x] Card meta tags should have brass icons, use MetaItem component.
+- [x] Mediaframe is not clickable - needs to open up and view the image full size.
+- [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
 
 Mobile
 - [ ] Event page - Hide Tabs, only show summary
