@@ -116,7 +116,7 @@ export function MemoryForm({
         </div>
       )}
 
-      <Select
+      {/* <Select
         label="Should editors incorporate this?"
         value={incorporatePref}
         onChange={(e) => setIncorporatePref(e.target.value as IncorporatePref)}
@@ -127,7 +127,7 @@ export function MemoryForm({
         <p className={errorClass} role="alert">
           {error}
         </p>
-      )}
+      )} */}
 
       <div className={actionsClass}>
         {onCancel && (

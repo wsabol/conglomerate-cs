@@ -106,7 +106,7 @@ export function MemoriesSection({
       <div className={styles.header}>
         <SectionTitle>Memberberries</SectionTitle>
         {!loading && user && (
-          <Button type="button" size="sm" onClick={openAdd}>
+          <Button type="button" variant={items.length === 0 ? "ghost-primary" : "primary"} size="sm" onClick={openAdd}>
             <Icon name="plus" size={14} />
             Add membery
           </Button>
@@ -115,7 +115,12 @@ export function MemoriesSection({
 
       <div className={styles.list}>
         {items.length === 0 ? (
-          <EmptyState title="No memberies yet" icon="flask" size="sm">
+          <EmptyState 
+            title="No memberies yet"
+            icon="flask"
+            size="sm"
+            action={<Button type="button" size="sm" variant="primary" style={{marginTop: 'var(--space-2)'}} onClick={openAdd}><Icon name="plus" size={14} /> Add a membery</Button>}
+          >
             Be the first to add what you remember.
           </EmptyState>
         ) : (
@@ -146,8 +151,8 @@ export function MemoriesSection({
       <Modal
         open={adding}
         onClose={closeAdd}
-        title="Add a memory"
-        context={contextLabel}
+        title="Add a membery"
+        context={contextLabel && contextLabel.length > 50 ? contextLabel.slice(0, 50) + '...' : contextLabel}
       >
         <MemoryForm
           key="add"

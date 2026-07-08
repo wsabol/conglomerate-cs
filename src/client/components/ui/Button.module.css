@@ -78,6 +78,15 @@
   border-color: var(--color-brass);
 }
 
+.ghost-primary {
+  background: transparent;
+  border-color: var(--color-emerald);
+}
+.ghost-primary:hover:not(:disabled) {
+  background: var(--color-raised);
+  border-color: var(--color-emerald-hover);
+}
+
 .danger {
   background: transparent;
   color: var(--color-orange);

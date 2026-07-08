@@ -135,6 +135,11 @@
   margin-bottom: var(--space-7);
 }
 
+.editTab {
+  padding: 0;
+  margin-left: auto;
+}
+
 .summary,
 .description {
   font-size: var(--text-base);

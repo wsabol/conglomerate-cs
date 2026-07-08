@@ -20,6 +20,8 @@ import { OtherActsSection } from "./OtherActsSection";
 import { SetlistSection } from "./SetlistSection";
 import styles from "./EventDetailView.module.css";
 import { EmptyState } from "../state";
+import { cn } from "@client/lib/cn";
+import { Button } from "../ui/Button";
 
 type DetailTab = "summary" | "description" | "sources";
 
@@ -143,6 +145,13 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                 {label}
               </button>
             ))}
+            {isEditor && (
+              <div className={cn(styles.tab, styles.editTab)}>
+                <Button type="button" variant="ghost-primary" size="sm" className={styles.editButton}>
+                  <Icon name="edit" size={14} /> Edit event
+                </Button>
+              </div>
+            )}
           </div>
 
           {tab === "summary" && (
@@ -250,12 +259,6 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                 </EmptyState>
               )}
             </div>
-          )}
-
-          {isEditor && (
-            <p className={styles.editLink}>
-              <Link to={`/events/${event.slug}/edit`}>Edit this event</Link>
-            </p>
           )}
         </SidebarLayout>
       </div>
