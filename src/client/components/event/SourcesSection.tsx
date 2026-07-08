@@ -126,20 +126,6 @@ export function SourcesSection({
 
   return (
     <section>
-      {isEditor && (
-        <div className={styles.header}>
-          <Button
-            type="button"
-            variant={sources.length === 0 ? "ghost-primary" : "primary"}
-            size="sm"
-            onClick={openAdd}
-          >
-            <Icon name="plus" size={14} />
-            Add source
-          </Button>
-        </div>
-      )}
-
       {sources.length === 0 ? (
         <EmptyState title="No sources recorded yet" icon="help" size="sm">
           {isEditor ? (
@@ -214,6 +200,22 @@ export function SourcesSection({
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      <hr />
+      
+      {isEditor && (
+        <div className={styles.header}>
+          <Button
+            type="button"
+            variant={sources.length === 0 ? "ghost-primary" : "primary"}
+            size="sm"
+            onClick={openAdd}
+          >
+            <Icon name="plus" size={14} />
+            Add source
+          </Button>
         </div>
       )}
 

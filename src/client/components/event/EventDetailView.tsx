@@ -190,21 +190,6 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
                 />
               </div>
-            </div>
-          )}
-
-          {tab === "description" && (
-            <div
-              role="tabpanel"
-              id="panel-description"
-              aria-labelledby="tab-description"
-              className={styles.tabPanel}
-            >
-              {promotionText ? (
-                <p className={styles.description}>{promotionText}</p>
-              ) : (
-                <EmptyState title="No event description." icon="link" size="sm"></EmptyState>
-              )}
 
               <section className={styles.mediaSection}>
                 <SectionTitle>Media</SectionTitle>
@@ -222,7 +207,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                     ))}
                   </Grid>
                 ) : (
-                  <p className={styles.emptyMedia}>No media uploaded yet.</p>
+                  <EmptyState title="No media yet." icon="photo" size="sm"></EmptyState>
                 )}
                 {user && (
                   <MediaUpload
@@ -234,6 +219,21 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   />
                 )}
               </section>
+            </div>
+          )}
+
+          {tab === "description" && (
+            <div
+              role="tabpanel"
+              id="panel-description"
+              aria-labelledby="tab-description"
+              className={styles.tabPanel}
+            >
+              {promotionText ? (
+                <p className={styles.description}>{promotionText}</p>
+              ) : (
+                <EmptyState title="No event description." icon="link" size="sm"></EmptyState>
+              )}
             </div>
           )}
 

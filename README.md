@@ -132,7 +132,7 @@ tests/      Vitest unit + integration
 - [-] Add memory modal
 - [-] 'Edit Event' button placement
 - [ ] Show personnel on the performance page
-- [ ] Add/edit sources
+- [-] Add/edit sources
 
 - [-] Add headlined to the events GET data
 - [-] Fix 'Headliner' not showing up on event page

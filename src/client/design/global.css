@@ -65,6 +65,12 @@ a {
   text-decoration: none;
 }
 
+hr {
+  margin: var(--space-5) 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
 img,
 picture,
 video,

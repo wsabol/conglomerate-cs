@@ -20,6 +20,12 @@ const TYPE_OPTIONS = [
   { value: "text", label: "Text" },
 ];
 
+const FACEBOOK_EVENT_CAPTION = "Facebook event page";
+
+function isFacebookEventUrl(value: string): boolean {
+  return value.toLowerCase().includes("facebook.com/events");
+}
+
 interface SourceFormProps {
   eventId: number;
   initial?: Partial<SourceFormValue>;
@@ -89,6 +95,13 @@ export function SourceForm({
     if (type !== "media") {
       setMediaId(null);
       setMediaUrl(null);
+    }
+  }
+
+  function handleUrlChange(nextUrl: string) {
+    setUrl(nextUrl);
+    if (!description.trim() && isFacebookEventUrl(nextUrl)) {
+      setDescription(FACEBOOK_EVENT_CAPTION);
     }
   }
 
@@ -166,7 +179,7 @@ export function SourceForm({
               type="url"
               placeholder="https://..."
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
               required
             />
           )}
