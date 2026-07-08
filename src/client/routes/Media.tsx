@@ -8,10 +8,9 @@ import { Select } from "../components/form";
 import { EmptyState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { useFilterOptions } from "../lib/useFilterOptions";
-import { apiFetch, toQuery } from "../lib/api";
+import { listMedia } from "../lib/media";
 import { eventDateLabel } from "../lib/format";
-import type { MediaItemDTO } from "@shared/dto";
-import type { ListResult, MediaType } from "@shared/types";
+import type { MediaType } from "@shared/types";
 import { useMemo, useState } from "react";
 import styles from "./Media.module.css";
 
@@ -20,15 +19,14 @@ export default function Media() {
   const [year, setYear] = useState("");
   const [person, setPerson] = useState("");
 
-  const query = toQuery({
-    media_type: mediaType || undefined,
-    year: year || undefined,
-    person: person || undefined,
-  });
-
   const { data, loading, error } = useAsync(
-    () => apiFetch<ListResult<MediaItemDTO>>(`/api/media${query}`),
-    [query],
+    () =>
+      listMedia({
+        media_type: mediaType || undefined,
+        year: year || undefined,
+        person: person || undefined,
+      }),
+    [mediaType, year, person],
   );
 
   const { people } = useFilterOptions({ people: true });

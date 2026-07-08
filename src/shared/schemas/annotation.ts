@@ -26,3 +26,11 @@ export const annotationUpdateSchema = z
     message: "Nothing to update.",
   });
 export type AnnotationUpdateInput = z.infer<typeof annotationUpdateSchema>;
+
+export const memoryFormSchema = annotationCreateSchema.pick({
+  body: true,
+  annotationType: true,
+  incorporatePref: true,
+  peopleIds: true,
+});
+export type MemoryFormValue = z.infer<typeof memoryFormSchema>;

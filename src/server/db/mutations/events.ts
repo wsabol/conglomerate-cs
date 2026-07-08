@@ -10,7 +10,9 @@ import {
 import type { EventCreateInput, EventUpdateInput } from "@shared/schemas/event";
 import { eventSlug } from "../../lib/slug";
 import { recordRevision } from "../../audit/revision";
-import { getEventDetail } from "../queries";
+import { getEventDetail } from "../queries/events";
+import { createPeopleBatch } from "./people";
+import type { EventPersonInput } from "@shared/schemas/event";
 
 /** Generate a unique slug, appending `-2`, `-3`, … on collision. */
 export async function uniqueEventSlug(
@@ -61,7 +63,7 @@ export async function createEvent(
     .returning()
     .get();
 
-  await syncEventRelations(db, inserted.id, input);
+  await syncEventRelations(db, inserted.id, input, changedBy);
   await recordRevision(db, {
     targetType: "event",
     targetId: inserted.id,
@@ -127,12 +129,17 @@ export async function updateEventBySlug(
     input.acts !== undefined ||
     input.sources !== undefined
   ) {
-    await syncEventRelations(db, existing.id, {
-      performance: input.performance,
-      people: input.people,
-      acts: input.acts,
-      sources: input.sources,
-    });
+    await syncEventRelations(
+      db,
+      existing.id,
+      {
+        performance: input.performance,
+        people: input.people,
+        acts: input.acts,
+        sources: input.sources,
+      },
+      changedBy,
+    );
   }
 
   await recordRevision(db, {
@@ -174,10 +181,38 @@ export async function softDeleteEvent(
   return true;
 }
 
+async function resolveEventPeople(
+  db: Db,
+  peopleInput: EventPersonInput[],
+  changedBy: number,
+) {
+  const newPeople = peopleInput.filter((p) => p.personId == null);
+  const nameToId = await createPeopleBatch(
+    db,
+    newPeople.map((p) => ({ displayName: p.displayName! })),
+    changedBy,
+  );
+
+  return peopleInput.map((p) => {
+    const personId =
+      p.personId ??
+      nameToId.get(p.displayName!.trim().toLowerCase()) ??
+      (() => {
+        throw new Error(`Could not resolve person: ${p.displayName}`);
+      })();
+    return {
+      personId,
+      relationshipType: p.relationshipType,
+      notes: p.notes ?? null,
+    };
+  });
+}
+
 async function syncEventRelations(
   db: Db,
   eventId: number,
   input: Partial<EventCreateInput>,
+  changedBy: number,
 ) {
   if (input.performance !== undefined) {
     const perf = input.performance;
@@ -223,8 +258,9 @@ async function syncEventRelations(
   if (input.people !== undefined) {
     await db.delete(eventPeople).where(eq(eventPeople.eventId, eventId));
     if (input.people.length > 0) {
+      const resolved = await resolveEventPeople(db, input.people, changedBy);
       await db.insert(eventPeople).values(
-        input.people.map((p) => ({
+        resolved.map((p) => ({
           eventId,
           personId: p.personId,
           relationshipType: p.relationshipType,

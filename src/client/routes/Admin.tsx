@@ -6,10 +6,8 @@ import { Pill } from "../components/ui/Pill";
 import { Select } from "../components/form";
 import { Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
-import { apiFetch } from "../lib/api";
-import type { RevisionDTO, UserDTO } from "@shared/dto";
-import type { ListResult, RevisionTargetType, UserRole } from "@shared/types";
-import { REVISION_TARGET_TYPES } from "@shared/types";
+import { listUsers, listRevisions, setUserRole, setUserDisabled } from "../lib/admin";
+import { REVISION_TARGET_TYPES, type RevisionTargetType, type UserRole } from "@shared/types";
 import styles from "./Admin.module.css";
 
 type Tab = "users" | "history";
@@ -19,32 +17,23 @@ export default function Admin() {
   const [targetType, setTargetType] = useState<RevisionTargetType | "">("");
 
   const { data: users, loading: usersLoading, reload: reloadUsers } = useAsync(
-    () => apiFetch<ListResult<UserDTO>>("/api/admin/users"),
+    () => listUsers(),
     [],
   );
 
-  const revisionQuery = targetType ? `?target_type=${targetType}` : "";
+  const revisionQuery = targetType ? { target_type: targetType } : {};
   const { data: revisions, loading: revLoading } = useAsync(
-    () =>
-      apiFetch<ListResult<RevisionDTO>>(
-        `/api/admin/revisions${revisionQuery}`,
-      ),
-    [revisionQuery],
+    () => listRevisions(revisionQuery),
+    [targetType],
   );
 
-  async function setUserRole(id: number, role: UserRole) {
-    await apiFetch(`/api/admin/users/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ role }),
-    });
+  async function handleSetUserRole(id: number, role: UserRole) {
+    await setUserRole(id, role);
     reloadUsers();
   }
 
-  async function toggleDisabled(user: UserDTO) {
-    await apiFetch(`/api/admin/users/${user.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ isDeleted: !user.isDeleted }),
-    });
+  async function toggleDisabled(user: { id: number; isDeleted: boolean }) {
+    await setUserDisabled(user.id, !user.isDeleted);
     reloadUsers();
   }
 
@@ -88,7 +77,7 @@ export default function Admin() {
                         label="Role"
                         value={u.role}
                         onChange={(e) =>
-                          setUserRole(u.id, e.target.value as UserRole)
+                          handleSetUserRole(u.id, e.target.value as UserRole)
                         }
                         options={[
                           { value: "member", label: "Member" },

@@ -8,6 +8,7 @@ import { MediaFrame } from "../media/MediaFrame";
 import { cn } from "../../lib/cn";
 import { patchEvent, sourcesInput, type EventUpdateBody } from "../../lib/events";
 import { SourceForm, type SourceFormValue } from "./SourceForm";
+import { useEditorModal } from "./useEditorModal";
 import type { EventDetailDTO, EventSourceDTO } from "@shared/dto";
 import styles from "./SourcesSection.module.css";
 
@@ -44,10 +45,10 @@ export function SourcesSection({
   contextLabel,
 }: SourcesSectionProps) {
   const [sources, setSources] = useState<EventSourceDTO[]>(event.sources);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<EventSourceDTO | null>(null);
+  const modalOpen = adding || editing !== null;
+  const { submitting, error, save } = useEditorModal(modalOpen);
 
   useEffect(() => {
     setSources(event.sources);
@@ -57,45 +58,33 @@ export function SourcesSection({
   const listSources = sources.filter((s) => s.sourceType !== "media");
 
   function openAdd() {
-    setError(null);
     setAdding(true);
   }
 
   function closeAdd() {
     setAdding(false);
-    setError(null);
   }
 
   function openEdit(source: EventSourceDTO) {
-    setError(null);
     setEditing(source);
   }
 
   function closeEdit() {
     setEditing(null);
-    setError(null);
   }
 
-  async function saveSources(
+  async function persistSources(
     next: NonNullable<EventUpdateBody["sources"]>,
-  ) {
-    setSubmitting(true);
-    setError(null);
-    try {
+  ): Promise<boolean> {
+    return save(async () => {
       const updated = await patchEvent(event.slug, { sources: next });
       setSources(updated.sources);
       onReload();
-      return true;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save source.");
-      return false;
-    } finally {
-      setSubmitting(false);
-    }
+    }, "Could not save source.");
   }
 
   async function handleCreate(value: SourceFormValue) {
-    const ok = await saveSources([
+    const ok = await persistSources([
       ...sourcesInput(sources),
       formValueToInput(value),
     ]);
@@ -104,7 +93,7 @@ export function SourcesSection({
 
   async function handleUpdate(value: SourceFormValue) {
     if (!editing) return;
-    const ok = await saveSources(
+    const ok = await persistSources(
       sourcesInput(
         sources.map((s) =>
           s.id === editing.id ? { ...s, ...formValueToInput(value) } : s,
@@ -116,7 +105,7 @@ export function SourcesSection({
 
   async function handleDelete(source: EventSourceDTO) {
     if (!window.confirm("Delete this source? This cannot be undone.")) return;
-    await saveSources(sourcesInput(sources.filter((s) => s.id !== source.id)));
+    await persistSources(sourcesInput(sources.filter((s) => s.id !== source.id)));
   }
 
   const modalContext =
@@ -204,7 +193,7 @@ export function SourcesSection({
       )}
 
       <hr />
-      
+
       {isEditor && (
         <div className={styles.header}>
           <Button

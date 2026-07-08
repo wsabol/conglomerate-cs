@@ -3,7 +3,9 @@ import { Button } from "../ui/Button";
 import { FileInput, RadioGroup, TextArea, TextField } from "../form";
 import modalStyles from "../form/modal.module.css";
 import { uploadFile } from "../../lib/media";
-import type { SourceType } from "@shared/types";
+import { eventSourceInputSchema } from "@shared/schemas/event";
+import { SOURCE_TYPES, type SourceType } from "@shared/types";
+import { zodFieldErrors } from "../../lib/zodErrors";
 import styles from "./SourceForm.module.css";
 
 export interface SourceFormValue {
@@ -14,16 +16,24 @@ export interface SourceFormValue {
   mediaUrl: string | null;
 }
 
-const TYPE_OPTIONS = [
-  { value: "url", label: "Link" },
-  { value: "media", label: "Image" },
-  { value: "text", label: "Text" },
-];
+const TYPE_OPTIONS = SOURCE_TYPES.map((value) => ({
+  value,
+  label: value === "url" ? "Link" : value === "media" ? "Image" : "Text",
+}));
 
 const FACEBOOK_EVENT_CAPTION = "Facebook event page";
 
 function isFacebookEventUrl(value: string): boolean {
   return value.toLowerCase().includes("facebook.com/events");
+}
+
+function toSourceInput(value: SourceFormValue) {
+  return {
+    sourceType: value.sourceType,
+    description: value.description || null,
+    url: value.sourceType === "url" ? value.url || null : null,
+    mediaId: value.sourceType === "media" ? value.mediaId : null,
+  };
 }
 
 interface SourceFormProps {
@@ -105,32 +115,27 @@ export function SourceForm({
     }
   }
 
-  function validate(): string | null {
-    if (sourceType === "url") {
-      if (!url.trim()) return "URL is required.";
-      try {
-        new URL(url.trim());
-      } catch {
-        return "Enter a valid URL.";
-      }
-    }
-    if (sourceType === "text" && !description.trim()) {
-      return "Source text is required.";
-    }
-    if (sourceType === "media" && !mediaId) {
-      return "Upload an image.";
-    }
-    return null;
-  }
-
   return (
     <form
       className={formClass}
       onSubmit={(e) => {
         e.preventDefault();
-        const message = validate();
-        if (message) {
-          setValidationError(message);
+        if (sourceType === "media" && !mediaId) {
+          setValidationError("Upload an image.");
+          return;
+        }
+        const parsed = eventSourceInputSchema.safeParse(toSourceInput({
+          sourceType,
+          description,
+          url,
+          mediaId,
+          mediaUrl,
+        }));
+        if (!parsed.success) {
+          const errors = zodFieldErrors(parsed.error);
+          setValidationError(
+            errors.url ?? errors.description ?? "Fix the highlighted fields.",
+          );
           return;
         }
         setValidationError(null);

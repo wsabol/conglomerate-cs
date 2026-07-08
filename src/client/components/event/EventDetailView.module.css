@@ -198,3 +198,9 @@
 .sectionInfoFooter svg {
   display: inline-block;
 }
+
+.promoDivider {
+  margin-top: var(--space-6);
+  border: none;
+  border-top: 1px solid var(--color-border);
+}

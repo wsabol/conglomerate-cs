@@ -1,6 +1,21 @@
-import { apiFetch } from "./api";
+import { apiFetch, toQuery } from "./api";
 import type { MediaItemDTO } from "@shared/dto";
+import type { ListResult, MediaType } from "@shared/types";
 import type { UploadCreateInput } from "@shared/schemas/media";
+
+export interface ListMediaParams {
+  media_type?: MediaType;
+  year?: string | number;
+  person?: string | number;
+}
+
+export function listMedia(params: ListMediaParams = {}) {
+  return apiFetch<ListResult<MediaItemDTO>>(
+    `/api/media${toQuery(
+      params as Record<string, string | number | undefined | null>,
+    )}`,
+  );
+}
 
 export interface UploadTarget {
   mediaId: number;

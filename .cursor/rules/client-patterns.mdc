@@ -8,21 +8,28 @@ alwaysApply: false
 
 ## API layer
 - All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).
-- Domain modules wrap endpoints — do not scatter raw URL strings in routes:
-  - `lib/events.ts` — `listEvents`, `getEvent`, `createEvent`, `patchEvent`, `performancePatch`
-  - `lib/annotations.ts` — annotation CRUD
-  - `lib/media.ts` — uploads
+- Domain modules wrap endpoints — do not scatter raw URL strings in routes/components:
+  - `lib/events.ts` — `listEvents`, `getEvent`, `createEvent`, `patchEvent`, `performancePatch`, `sourcesInput`
+  - `lib/annotations.ts` — annotation CRUD (`AnnotationCreateBody` / `AnnotationUpdateBody` from schemas)
+  - `lib/media.ts` — `listMedia`, `uploadFile`, `deleteMedia`
+  - `lib/people.ts` — `listPeople`, `createPerson`
+  - `lib/places.ts` — `listPlaces`
+  - `lib/acts.ts` — `listActNames`
+  - `lib/admin.ts` — `listUsers`, `listRevisions`, `updateUser`
 - Import DTOs from `@shared/dto`; never re-declare API shapes on the client.
 
 ## Hooks (`src/client/lib/`)
 - `useAsync` — default data-fetch hook (loading/error/data/reload).
 - `useDebouncedValue(value, ms)` — search inputs.
-- `useFilterOptions({ places?, people? })` — filter dropdown data for list pages.
+- `useFilterOptions({ places?, people? })` — filter dropdown data for list pages
+  (uses `listPlaces` / `listPeople` internally).
 
 ## Forms
 - Server validates with Zod at the route boundary; client forms should too before submit.
 - Reuse schemas from `@shared/schemas/*` + `zodFieldErrors()` from `lib/zodErrors.ts`.
 - Pass validation messages to form controls via their `error` prop.
+- Form-specific schemas: `memoryFormSchema` (`schemas/annotation.ts`),
+  `eventSourceInputSchema`, `eventActInputSchema`, `eventPersonInputSchema` (`schemas/event.ts`).
 
 ## List pages
 - `PerformanceCard` takes `event: EventListItemDTO` (not individual props).
@@ -31,11 +38,18 @@ alwaysApply: false
   - `filterBar` + `filterBarDropdowns` (Performances)
   - `filterBarInline` (Media)
 
-## Event detail page
-- Route (`routes/EventDetail.tsx`) = thin loader only (fetch + error/loading states).
-- View + sidebar live in `components/event/`:
-  - `EventDetailView` — hero, tabs, memories, media gallery
-  - `OtherActsSection`, `SetlistSection`, `EventPosterCard` — sidebar editors
-- Editable sidebar pattern: `EditableSidebarSection` + `EditorModalForm` + `useEditorModal`.
-- Editor modal form CSS: `components/form/modal.module.css` (not route-scoped).
-- Sidebar card CSS: `components/event/event.module.css`.
+## Event pages
+- **Detail route** (`routes/EventDetail.tsx`) — thin loader only (fetch + error/loading).
+- **Form route** (`routes/EventForm.tsx`) — re-exports `components/event/EventForm.tsx`.
+- **Detail view** (`components/event/EventDetailView.tsx`) orchestrates sidebar + tabs.
+  Subcomponents: `EventHero`, `EventSummaryPanel`, `EventPromoPanel`, `EventMediaGallery`.
+- **Sidebar editors** (acts, setlist, poster, personnel): `EditableSidebarSection` +
+  `EditorModalForm` + `useEditorModal`.
+- **Sources tab** (`SourcesSection`): modal CRUD with `useEditorModal` + `SourceForm`
+  (not `EditableSidebarSection` — lives in tab panel, not sidebar).
+- **Personnel save**: send new people inline as `{ displayName, relationshipType }`
+  on event PATCH; server batch-creates via `createPeopleBatch` — do not loop `createPerson()`.
+
+## Event editor modal CSS
+- Form layout: `components/form/modal.module.css` (`.modalForm`, `.modalActions`, etc.).
+- Sidebar card chrome: `components/event/event.module.css`.

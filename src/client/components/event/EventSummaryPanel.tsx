@@ -1,0 +1,53 @@
+import { MemoriesSection } from "../memory/MemoriesSection";
+import { EmptyState } from "../state";
+import { eventDateOnlyLabel } from "../../lib/format";
+import type { EventDetailDTO } from "@shared/dto";
+import { EventMediaGallery } from "./EventMediaGallery";
+import styles from "./EventDetailView.module.css";
+
+interface EventSummaryPanelProps {
+  event: EventDetailDTO;
+  canUpload: boolean;
+  onReload: () => void;
+}
+
+export function EventSummaryPanel({
+  event,
+  canUpload,
+  onReload,
+}: EventSummaryPanelProps) {
+  const uniquePeople = Array.from(
+    new Map(
+      event.people.map((person) => [
+        person.personId,
+        { id: person.personId, displayName: person.displayName },
+      ]),
+    ).values(),
+  );
+
+  return (
+    <>
+      {event.summary ? (
+        <p className={styles.summary}>{event.summary}</p>
+      ) : (
+        <EmptyState title="No summary yet." icon="document" size="sm" />
+      )}
+
+      <div className={styles.memories}>
+        <MemoriesSection
+          targetType="event"
+          targetId={event.id}
+          initial={event.annotations}
+          people={uniquePeople}
+          contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
+        />
+      </div>
+
+      <EventMediaGallery
+        event={event}
+        canUpload={canUpload}
+        onReload={onReload}
+      />
+    </>
+  );
+}

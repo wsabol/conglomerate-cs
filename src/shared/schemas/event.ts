@@ -20,11 +20,17 @@ export const eventActInputSchema = z.object({
   billingRole: z.enum(BILLING_ROLES).default("unknown"),
 });
 
-export const eventPersonInputSchema = z.object({
-  personId: z.number().int().positive(),
-  relationshipType: z.enum(RELATIONSHIP_TYPES).default("performer"),
-  notes: z.string().trim().max(2000).nullable().optional(),
-});
+export const eventPersonInputSchema = z
+  .object({
+    personId: z.number().int().positive().optional(),
+    displayName: z.string().trim().min(1).max(256).optional(),
+    relationshipType: z.enum(RELATIONSHIP_TYPES).default("performer"),
+    notes: z.string().trim().max(2000).nullable().optional(),
+  })
+  .refine((v) => v.personId != null || v.displayName, {
+    message: "Each person needs an id or display name.",
+  });
+export type EventPersonInput = z.infer<typeof eventPersonInputSchema>;
 
 export const eventPerformanceInputSchema = z
   .object({

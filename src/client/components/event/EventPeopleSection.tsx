@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import {
   PersonAutocompleteInput,
   type PersonAutocompleteSubmit,
@@ -10,8 +11,9 @@ import {
   relationshipTypeLabel,
   sortPeopleForDisplay,
 } from "../../lib/format";
-import { createPerson, listPeople } from "../../lib/people";
+import { listPeople } from "../../lib/people";
 import { useAsync } from "../../lib/useAsync";
+import { eventPersonInputSchema } from "@shared/schemas/event";
 import type { EventDetailDTO } from "@shared/dto";
 import type { RelationshipType } from "@shared/types";
 import { EditableSidebarSection } from "./EditableSidebarSection";
@@ -59,15 +61,6 @@ const RELATIONSHIP_TYPE_ICONS: Record<
 function relationshipTypeIcon(type: RelationshipType): IconName | null {
   if (type === "performer") return null;
   return RELATIONSHIP_TYPE_ICONS[type];
-}
-
-function draftKey(person: {
-  personId?: number;
-  displayName: string;
-  relationshipType: RelationshipType;
-}): string {
-  const identity = person.personId ?? `new:${person.displayName.trim().toLowerCase()}`;
-  return `${identity}:${person.relationshipType}`;
 }
 
 function comboKey(person: {
@@ -168,7 +161,7 @@ function EventPeopleModal({
     if (!open) return;
     setDraftPeople(
       event.people.map((person) => ({
-        key: draftKey(person),
+        key: comboKey(person),
         personId: person.personId,
         displayName: person.displayName,
         relationshipType: person.relationshipType,
@@ -198,7 +191,7 @@ function EventPeopleModal({
     setDraftPeople((current) => [
       ...current,
       {
-        key: draftKey(candidate),
+        key: comboKey(candidate),
         ...candidate,
       },
     ]);
@@ -212,7 +205,7 @@ function EventPeopleModal({
       if (hasDuplicateCombo(current, updated, key)) return current;
       return current.map((entry) =>
         entry.key === key
-          ? { ...entry, relationshipType, key: draftKey(updated) }
+          ? { ...entry, relationshipType, key: comboKey(updated) }
           : entry,
       );
     });
@@ -229,19 +222,24 @@ function EventPeopleModal({
         seen.add(key);
       }
 
-      const resolved = [];
-      for (const person of draftPeople) {
-        let personId = person.personId;
-        if (person.isNew || personId === undefined) {
-          const created = await createPerson({ displayName: person.displayName });
-          personId = created.id;
-        }
-        resolved.push({
-          personId,
-          relationshipType: person.relationshipType,
-        });
+      const payload = draftPeople.map((person) =>
+        person.isNew || person.personId === undefined
+          ? {
+              displayName: person.displayName,
+              relationshipType: person.relationshipType,
+            }
+          : {
+              personId: person.personId,
+              relationshipType: person.relationshipType,
+            },
+      );
+
+      const parsed = z.array(eventPersonInputSchema).safeParse(payload);
+      if (!parsed.success) {
+        throw new Error("Invalid personnel data.");
       }
-      await patchEvent(event.slug, { people: resolved });
+
+      await patchEvent(event.slug, { people: parsed.data });
     }, "Could not save personnel.");
     if (ok) onSaved();
   }

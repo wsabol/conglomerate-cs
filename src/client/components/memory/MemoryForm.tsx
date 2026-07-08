@@ -1,33 +1,29 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Pill } from "../ui/Pill";
-import { RadioGroup, Select, TextArea } from "../form";
+import { RadioGroup, TextArea } from "../form";
 import modalStyles from "../form/modal.module.css";
-import type {
-  AnnotationType,
-  IncorporatePref,
-} from "@shared/types";
+import {
+  memoryFormSchema,
+  type MemoryFormValue,
+} from "@shared/schemas/annotation";
+import { ANNOTATION_TYPES } from "@shared/types";
+import { zodFieldErrors } from "../../lib/zodErrors";
 import styles from "./MemoriesSection.module.css";
 
-export interface MemoryFormValue {
-  body: string;
-  annotationType: AnnotationType;
-  incorporatePref: IncorporatePref;
-  peopleIds: number[];
-}
+export type { MemoryFormValue };
 
-const TYPE_OPTIONS = [
-  { value: "personal_memory", label: "Something I personally remember" },
-  { value: "secondhand_account", label: "Something someone else told me" },
-  { value: "correction", label: "A correction or clarification" },
-  { value: "quote", label: "A quote or saying" },
-];
-
-const INCORPORATE_OPTIONS = [
-  { value: "no_pref", label: "No preference" },
-  { value: "yes", label: "Yes - fold this into the main record" },
-  { value: "separate", label: "Keep this as a separate memory" },
-];
+const TYPE_OPTIONS = ANNOTATION_TYPES.map((value) => ({
+  value,
+  label:
+    value === "personal_memory"
+      ? "Something I personally remember"
+      : value === "secondhand_account"
+        ? "Something someone else told me"
+        : value === "correction"
+          ? "A correction or clarification"
+          : "A quote or saying",
+}));
 
 interface MemoryFormProps {
   people: { id: number; displayName: string }[];
@@ -53,13 +49,14 @@ export function MemoryForm({
   onCancel,
 }: MemoryFormProps) {
   const [body, setBody] = useState(initial?.body ?? "");
-  const [annotationType, setAnnotationType] = useState<AnnotationType>(
+  const [annotationType, setAnnotationType] = useState(
     initial?.annotationType ?? "personal_memory",
   );
-  const [incorporatePref, setIncorporatePref] = useState<IncorporatePref>(
+  const [incorporatePref, setIncorporatePref] = useState(
     initial?.incorporatePref ?? "no_pref",
   );
   const [peopleIds, setPeopleIds] = useState<number[]>(initial?.peopleIds ?? []);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const togglePerson = (id: number) =>
     setPeopleIds((cur) =>
@@ -75,8 +72,19 @@ export function MemoryForm({
       className={formClass}
       onSubmit={(e) => {
         e.preventDefault();
-        if (!body.trim()) return;
-        onSubmit({ body: body.trim(), annotationType, incorporatePref, peopleIds });
+        const parsed = memoryFormSchema.safeParse({
+          body,
+          annotationType,
+          incorporatePref,
+          peopleIds,
+        });
+        if (!parsed.success) {
+          const errors = zodFieldErrors(parsed.error);
+          setValidationError(errors.body ?? "Fix the highlighted fields.");
+          return;
+        }
+        setValidationError(null);
+        onSubmit(parsed.data);
       }}
     >
       {title && !inModal && <p className={styles.formTitle}>{title}</p>}
@@ -94,7 +102,7 @@ export function MemoryForm({
         legend="This is -"
         name="annotation-type"
         value={annotationType}
-        onChange={(v) => setAnnotationType(v as AnnotationType)}
+        onChange={(v) => setAnnotationType(v as MemoryFormValue["annotationType"])}
         options={TYPE_OPTIONS}
         compact={inModal}
       />
@@ -116,18 +124,11 @@ export function MemoryForm({
         </div>
       )}
 
-      {/* <Select
-        label="Should editors incorporate this?"
-        value={incorporatePref}
-        onChange={(e) => setIncorporatePref(e.target.value as IncorporatePref)}
-        options={INCORPORATE_OPTIONS}
-      />
-
-      {error && (
+      {(validationError || error) && (
         <p className={errorClass} role="alert">
-          {error}
+          {validationError ?? error}
         </p>
-      )} */}
+      )}
 
       <div className={actionsClass}>
         {onCancel && (

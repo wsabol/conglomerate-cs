@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { AutocompleteInput } from "../form";
 import { Icon } from "../ui/Icon";
-import { apiFetch } from "../../lib/api";
+import { listActNames } from "../../lib/acts";
 import { patchEvent } from "../../lib/events";
 import { sortActsForDisplay } from "../../lib/format";
 import { useAsync } from "../../lib/useAsync";
+import { eventActInputSchema } from "@shared/schemas/event";
 import type { EventDetailDTO } from "@shared/dto";
-import type { BillingRole, ListResult } from "@shared/types";
+import type { BillingRole } from "@shared/types";
 import { EditableSidebarSection } from "./EditableSidebarSection";
 import { EditorModalForm } from "./EditorModalForm";
 import { useEditorModal } from "./useEditorModal";
@@ -82,10 +84,7 @@ function OtherActsModal({
   const { submitting, error, save } = useEditorModal(open);
 
   const { data: actsData } = useAsync(
-    () =>
-      open
-        ? apiFetch<ListResult<string>>("/api/acts")
-        : Promise.resolve(null),
+    () => (open ? listActNames() : Promise.resolve(null)),
     [open],
   );
 
@@ -119,7 +118,11 @@ function OtherActsModal({
 
   async function handleSubmit() {
     const ok = await save(async () => {
-      await patchEvent(event.slug, { acts: draftActs });
+      const parsed = z.array(eventActInputSchema).safeParse(draftActs);
+      if (!parsed.success) {
+        throw new Error("Each act needs a name.");
+      }
+      await patchEvent(event.slug, { acts: parsed.data });
     }, "Could not save acts.");
     if (ok) onSaved();
   }

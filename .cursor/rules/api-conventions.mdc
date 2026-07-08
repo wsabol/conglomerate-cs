@@ -33,8 +33,25 @@ delete on events, people, places, media, and annotations MUST write an
 
 ## Read queries (`src/server/db/queries/`)
 - Import from `../db/queries` (barrel) — never add a monolithic `queries.ts`.
-- One file per domain: `events`, `media`, `annotations`, `people`, `admin`.
+- One module per domain; `events/` is a subfolder (`headliner`, `list`, `detail`).
+- Other query files: `media`, `annotations`, `people`, `admin`, `helpers`.
+  (`listPlaces` / `listActNames` live in `people.ts` for now.)
 - Shared helpers (`emptyAvailability`, `localPart`, `toPlaceDTO`) live in `helpers.ts`.
 - DTO mapping helpers (e.g. `toAnnotationDTO`) belong next to their query file;
   reuse them across list/detail queries instead of duplicating mapping logic.
-- Routes stay thin: validate input → call query/mutation → `ok` / `okList`.
+
+## Mutations (`src/server/db/mutations/`)
+- One file per write domain: `events`, `people`, `places`, `media`, `annotations`, `uploads`.
+- Each export does Drizzle write(s) + `recordRevision()`; return DTOs or booleans.
+- Routes stay thin: validate input → call mutation (or query) → `ok` / `okList`.
+- Never embed insert/update/delete logic directly in route files.
+
+### Event relation sync
+`mutations/events.ts` owns `syncEventRelations` for performance, people, acts, sources.
+New people on an event PATCH accept inline `{ displayName }` (no `personId`);
+`createPeopleBatch()` in `mutations/people.ts` resolves them before inserting
+`event_people` rows.
+
+## Uploads
+Upload lifecycle (presign, dev body proxy, finalize + hero-image promotion) lives in
+`mutations/uploads.ts`. Routes pass `c.env` for R2 binding access.

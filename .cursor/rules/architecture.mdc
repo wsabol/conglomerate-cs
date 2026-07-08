@@ -8,15 +8,18 @@ alwaysApply: true
 Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
 
 ## Layout
-- `src/client/` React app (routes, components, design tokens, lib, types).
+- `src/client/` React app (routes, components, design tokens, lib).
   - `routes/` — thin page loaders; heavy UI belongs in `components/`.
-  - `components/event/` — event detail view + editable sidebar sections.
-  - `lib/` — `api.ts` envelope helper + domain clients (`events`, `annotations`, `media`)
-    and hooks (`useAsync`, `useDebouncedValue`, `useFilterOptions`).
+  - `components/event/` — event detail, form, sidebar editors, tab panels.
+  - `lib/` — `api.ts` envelope helper + domain clients and hooks.
+    - Domain clients: `events`, `annotations`, `media`, `people`, `places`, `acts`, `admin`
+    - Hooks: `useAsync`, `useDebouncedValue`, `useFilterOptions`
 - `src/server/` Worker+Hono (routes, middleware, db, media, audit, lib, auth).
-  - `db/queries/` — read queries split by domain (`events`, `media`, `annotations`,
-    `people`, `admin`, `helpers`); barrel re-export at `db/queries/index.ts`.
-  - `db/mutations/` — writes + audit.
+  - `db/queries/` — read queries by domain; barrel at `db/queries/index.ts`.
+    - `events/` — `headliner.ts`, `list.ts`, `detail.ts` (barrel `events/index.ts`)
+    - Also: `media`, `annotations`, `people` (includes places + act names), `admin`, `helpers`
+  - `db/mutations/` — writes + audit; one file per domain:
+    `events`, `people`, `places`, `media`, `annotations`, `uploads`
 - `src/shared/` types + Zod schemas + DTOs reused by client and server.
 - `migrations/` Drizzle-generated SQL. `scripts/` seed + export. `tests/` Vitest.
 
@@ -29,7 +32,8 @@ CORS - client and API share an origin.
 - Shared enums live in `src/shared/types.ts`; DTOs in `src/shared/dto.ts` — import, never re-declare.
 - Add config (limits, MIME lists, Access settings) to `src/server/lib/config.ts`,
   never hard-code inline.
-- Client: domain API calls go in `src/client/lib/<domain>.ts`, not inline in routes.
-- Server: read queries go in `src/server/db/queries/<domain>.ts`; import from `db/queries`.
+- Client: domain API calls go in `src/client/lib/<domain>.ts`, not inline in routes/components.
+- Server reads: `src/server/db/queries/<domain>.ts` (or `queries/events/`); import from `db/queries`.
+- Server writes: `src/server/db/mutations/<domain>.ts` — routes never embed Drizzle writes.
 - After changing `wrangler.toml`, run `npm run types`.
 - Every milestone ends with `npm test` green and a working `wrangler dev`.

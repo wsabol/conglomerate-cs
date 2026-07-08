@@ -1,7 +1,7 @@
 import { useAsync } from "./useAsync";
-import { apiFetch } from "./api";
+import { listPeople } from "./people";
+import { listPlaces } from "./places";
 import type { PersonDTO, PlaceDTO } from "@shared/dto";
-import type { ListResult } from "@shared/types";
 
 export interface FilterOptionsConfig {
   places?: boolean;
@@ -23,12 +23,8 @@ export function useFilterOptions(
 
   const { data, error, loading } = useAsync(async () => {
     const [placesResult, peopleResult] = await Promise.all([
-      places
-        ? apiFetch<ListResult<PlaceDTO>>("/api/places")
-        : Promise.resolve(null),
-      people
-        ? apiFetch<ListResult<PersonDTO>>("/api/people")
-        : Promise.resolve(null),
+      places ? listPlaces() : Promise.resolve(null),
+      people ? listPeople() : Promise.resolve(null),
     ]);
     return {
       places: placesResult?.results ?? [],
