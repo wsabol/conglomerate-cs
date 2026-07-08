@@ -15,6 +15,7 @@ export interface TimelineEventCardProps {
   eventTypeLabel: string;
   confidence: Confidence;
   confidenceLabel: string;
+  heroImageUrl?: string | null;
   media: MediaAvailabilityDTO;
 }
 
@@ -27,10 +28,25 @@ export function TimelineEventCard({
   eventTypeLabel,
   confidence,
   confidenceLabel,
+  heroImageUrl,
   media,
 }: TimelineEventCardProps) {
   return (
     <Link to={`/events/${slug}`} className={styles.card}>
+      {heroImageUrl && (
+        <div className={styles.thumbnail}>
+          <img src={heroImageUrl} alt="" loading="lazy" />
+        </div>
+      )}
+      {/* <div className={styles.thumbnail}>
+        {heroImageUrl ? (
+          <img src={heroImageUrl} alt="" loading="lazy" />
+        ) : (
+          <div className={styles.thumbnailPlaceholder}>
+            <Icon name="mic" size={20} label="No image available" />
+          </div>
+        )}
+      </div> */}
       <div className={styles.main}>
         <span className={styles.date}>{dateLabel}</span>
         <span className={styles.title}>{title}</span>

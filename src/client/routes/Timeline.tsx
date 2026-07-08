@@ -98,6 +98,7 @@ export default function Timeline() {
                     eventTypeLabel={eventTypeLabel(e.eventType)}
                     confidence={e.confidence}
                     confidenceLabel={confidenceLabel(e.confidence)}
+                    heroImageUrl={e.heroImageUrl}
                     media={e.media}
                   />
                 ))}

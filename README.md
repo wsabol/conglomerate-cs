@@ -127,9 +127,8 @@ tests/      Vitest unit + integration
 
 ## TODO
 
-- [ ] Dedup media idems. Uplaods of the same file are not rejected
-- [ ] Add hero image to the timeline
-- [ ] Auth
+- [ ] Dedup media items. Uplaods of the same file are not rejected
+- [-] Add hero image to the timeline
 - [-] Add memory modal
 - [ ] 'Edit Event' button placement
 - [ ] Show personnel on the performance page
