@@ -38,6 +38,7 @@
   color: var(--color-emerald);
   text-decoration: underline;
   cursor: pointer;
+  transition: color var(--motion-fast);
 }
 
 .sidebarLink:hover {

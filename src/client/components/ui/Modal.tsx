@@ -7,13 +7,14 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  context?: string;
   children: ReactNode;
 }
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, context, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
@@ -76,9 +77,12 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         aria-labelledby={titleId}
       >
         <div className={styles.header}>
-          <h2 id={titleId} className={styles.title}>
-            {title}
-          </h2>
+          <div className={styles.headerMain}>
+            <h2 id={titleId} className={styles.title}>
+              {title}
+            </h2>
+            {context && <p className={styles.context}>{context}</p>}
+          </div>
           <button
             type="button"
             className={styles.close}

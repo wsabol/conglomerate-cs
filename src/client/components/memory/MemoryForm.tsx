@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Pill } from "../ui/Pill";
 import { RadioGroup, Select, TextArea } from "../form";
+import modalStyles from "../form/modal.module.css";
 import type {
   AnnotationType,
   IncorporatePref,
@@ -20,7 +21,6 @@ const TYPE_OPTIONS = [
   { value: "secondhand_account", label: "Something someone else told me" },
   { value: "correction", label: "A correction or clarification" },
   { value: "quote", label: "A quote or saying" },
-  { value: "context", label: "General context" },
 ];
 
 const INCORPORATE_OPTIONS = [
@@ -34,6 +34,7 @@ interface MemoryFormProps {
   initial?: Partial<MemoryFormValue>;
   submitLabel: string;
   title?: string;
+  inModal?: boolean;
   submitting?: boolean;
   error?: string | null;
   onSubmit: (value: MemoryFormValue) => void;
@@ -45,6 +46,7 @@ export function MemoryForm({
   initial,
   submitLabel,
   title,
+  inModal = false,
   submitting,
   error,
   onSubmit,
@@ -64,32 +66,37 @@ export function MemoryForm({
       cur.includes(id) ? cur.filter((p) => p !== id) : [...cur, id],
     );
 
+  const formClass = inModal ? modalStyles.modalForm : styles.form;
+  const actionsClass = inModal ? modalStyles.modalActions : styles.actions;
+  const errorClass = inModal ? modalStyles.modalError : styles.error;
+
   return (
     <form
-      className={styles.form}
+      className={formClass}
       onSubmit={(e) => {
         e.preventDefault();
         if (!body.trim()) return;
         onSubmit({ body: body.trim(), annotationType, incorporatePref, peopleIds });
       }}
     >
-      {title && <p className={styles.formTitle}>{title}</p>}
+      {title && !inModal && <p className={styles.formTitle}>{title}</p>}
 
       <TextArea
         label="What do you remember?"
-        placeholder="Share the story, the detail, the vibe..."
+        placeholder="Write it down..."
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        rows={4}
+        rows={inModal ? 5 : 4}
         required
       />
 
       <RadioGroup
-        legend="What kind of memory is this?"
+        legend="This is -"
         name="annotation-type"
         value={annotationType}
         onChange={(v) => setAnnotationType(v as AnnotationType)}
         options={TYPE_OPTIONS}
+        compact={inModal}
       />
 
       {people.length > 0 && (
@@ -116,17 +123,21 @@ export function MemoryForm({
         options={INCORPORATE_OPTIONS}
       />
 
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <p className={errorClass} role="alert">
+          {error}
+        </p>
+      )}
 
-      <div className={styles.actions}>
-        <Button type="submit" loading={submitting} disabled={!body.trim()}>
-          {submitLabel}
-        </Button>
+      <div className={actionsClass}>
         {onCancel && (
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
         )}
+        <Button type="submit" loading={submitting} disabled={!body.trim()}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

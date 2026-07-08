@@ -9,6 +9,7 @@ import { MemoriesSection } from "../memory/MemoriesSection";
 import { useAuth } from "../../lib/auth";
 import {
   confidenceLabel,
+  eventDateOnlyLabel,
   eventDateTimeMetaLabel,
   eventTypeLabel,
 } from "../../lib/format";
@@ -162,6 +163,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   targetId={event.id}
                   initial={event.annotations}
                   people={uniquePeople}
+                  contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
                 />
               </div>
             </div>

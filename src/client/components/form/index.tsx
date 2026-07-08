@@ -177,6 +177,7 @@ interface RadioGroupProps {
   onChange: (value: string) => void;
   hint?: string;
   error?: string;
+  compact?: boolean;
 }
 
 export function RadioGroup({

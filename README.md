@@ -130,7 +130,7 @@ tests/      Vitest unit + integration
 - [ ] Dedup media idems. Uplaods of the same file are not rejected
 - [ ] Add hero image to the timeline
 - [ ] Auth
-- [ ] Add memory modal
+- [-] Add memory modal
 - [ ] 'Edit Event' button placement
 - [ ] Show personnel on the performance page
 

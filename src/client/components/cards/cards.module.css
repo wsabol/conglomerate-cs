@@ -55,7 +55,7 @@
   gap: var(--space-1);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--letter-spacing-wider);
   text-transform: uppercase;
   color: var(--color-bg);
   background: var(--color-brass);
@@ -74,7 +74,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--color-brass);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--letter-spacing-wider);
 }
 
 .title {

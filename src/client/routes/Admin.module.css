@@ -27,7 +27,7 @@
   font-size: var(--text-sm);
   color: var(--color-brass);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--letter-spacing-wider);
 }
 
 .disabled {

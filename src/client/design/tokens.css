@@ -47,6 +47,13 @@
   --text-5xl: 4.5rem;
   --text-8xl: 7.25rem;
 
+  /* Letter spacing */
+  --letter-spacing-snug: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.02em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.08em;
+
   --leading-tight: 0.92;
   --leading-snug: 1.3;
   --leading-normal: 1.5;

@@ -10,7 +10,7 @@
 .sectionLabel {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-widest);
   text-transform: uppercase;
   color: var(--color-violet);
   margin-bottom: var(--space-4);
