@@ -1,0 +1,28 @@
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.metaIcon {
+  color: var(--color-brass);
+  flex-shrink: 0;
+}
+
+.metaItem[data-tone="high"] {
+  color: var(--color-emerald);
+}
+
+.metaItem[data-tone="medium"] {
+  color: var(--color-blue);
+}
+
+.metaItem[data-tone="low"] {
+  color: var(--color-text-secondary);
+}
+
+.metaItem[data-tone] .metaIcon {
+  color: inherit;
+}

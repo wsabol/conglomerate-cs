@@ -147,6 +147,7 @@ tests/      Vitest unit + integration
 - [ ] Home page content
 - [ ] Card meta tags should have brass icons, use MetaItem component.
 - [ ] Mediaframe is not clickable - needs to open up, expand the image, show annotations, and people.
+- [ ] Autodetect people by name and alias in annotations and add to annotion people xref
 
 Mobile
 - [ ] Event page - Hide Tabs, only show summary

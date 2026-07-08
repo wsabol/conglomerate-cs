@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../ui/Icon";
+import { MetaItem } from "../ui/MetaItem";
 import { eventDateLabel } from "../../lib/format";
 import type { EventListItemDTO } from "@shared/dto";
 import { MediaAvailabilityIndicators } from "./MediaAvailabilityIndicators";
@@ -37,9 +38,9 @@ export function PerformanceCard({event}: PerformanceCardProps) {
         <span className={styles.title}>{title}</span>
         <div className={styles.meta}>
           {place && (
-            <span className={styles.metaItem}>
-              <Icon name="place" size={14} /> {place.name}
-            </span>
+            <MetaItem icon="place" iconLabel="Place">
+              {place.name}
+            </MetaItem>
           )}
         </div>
       </div>

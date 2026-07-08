@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Icon, type IconName } from "../ui/Icon";
+import { type IconName } from "../ui/Icon";
+import { MetaItem } from "../ui/MetaItem";
 import {
   confidenceLabel,
   eventDateTimeMetaLabel,
@@ -64,28 +64,5 @@ export function EventHero({ event }: EventHeroProps) {
         </div>
       </header>
     </>
-  );
-}
-
-function MetaItem({
-  icon,
-  iconLabel,
-  children,
-  tone = "default",
-}: {
-  icon: IconName;
-  iconLabel: string;
-  children?: ReactNode;
-  tone?: Confidence | "default";
-}) {
-  children = children ?? iconLabel;
-  return (
-    <span
-      className={styles.metaItem}
-      data-tone={tone === "default" ? undefined : tone}
-    >
-      <Icon name={icon} size={14} label={iconLabel} className={styles.metaIcon} />
-      {children}
-    </span>
   );
 }
