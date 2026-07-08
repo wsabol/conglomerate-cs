@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Icon } from "../ui/Icon";
 import { cn } from "../../lib/cn";
 import type { MediaAvailabilityDTO } from "@shared/dto";
-import type { Confidence } from "@shared/types";
 import { MediaAvailabilityIndicators } from "./MediaAvailabilityIndicators";
 import styles from "./TimelineEventCard.module.css";
 
@@ -13,8 +12,6 @@ export interface TimelineEventCardProps {
   timeLabel?: string | null;
   place?: string | null;
   eventTypeLabel: string;
-  confidence: Confidence;
-  confidenceLabel: string;
   heroImageUrl?: string | null;
   media: MediaAvailabilityDTO;
 }
@@ -26,8 +23,6 @@ export function TimelineEventCard({
   timeLabel,
   place,
   eventTypeLabel,
-  confidence,
-  confidenceLabel,
   heroImageUrl,
   media,
 }: TimelineEventCardProps) {
@@ -69,11 +64,6 @@ export function TimelineEventCard({
         <div className={styles.aside}>
           <div className={styles.asideMeta}>
             <span className={styles.eventType}>{eventTypeLabel}</span>
-            
-            <span className={cn(styles.confidence, styles[confidence])}>
-              <span className={styles.dot} aria-hidden />
-              {confidenceLabel}
-            </span>
 
             <MediaAvailabilityIndicators
               media={media}

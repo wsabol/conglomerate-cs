@@ -1,20 +1,10 @@
-import { type IconName } from "../ui/Icon";
-import { MetaItem } from "../ui/MetaItem";
 import {
-  confidenceLabel,
   eventDateTimeMetaLabel,
   eventTypeLabel,
 } from "../../lib/format";
-import type { Confidence } from "@shared/types";
 import type { EventDetailDTO } from "@shared/dto";
 import { Tag } from "../ui/Pill";
 import styles from "./EventDetailView.module.css";
-
-const CONFIDENCE_ICONS: Record<Confidence, IconName> = {
-  high: "confidence-high",
-  medium: "confidence-medium",
-  low: "confidence-low",
-};
 
 interface EventHeroProps {
   event: EventDetailDTO;
@@ -54,13 +44,6 @@ export function EventHero({ event }: EventHeroProps) {
             </Tag>
           )}
           {event.headlined && <Tag icon="star" iconLabel="Headliner" />}
-          <MetaItem
-            icon={CONFIDENCE_ICONS[event.confidence]}
-            iconLabel="Confidence"
-            tone={event.confidence}
-          >
-            {confidenceLabel(event.confidence)}
-          </MetaItem>
         </div>
       </header>
     </>

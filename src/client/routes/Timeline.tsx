@@ -7,7 +7,6 @@ import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listEvents } from "../lib/events";
 import {
-  confidenceLabel,
   eventDateOnlyLabel,
   eventTimeLabel,
   eventTypeLabel,
@@ -96,8 +95,6 @@ export default function Timeline() {
                     }
                     place={e.place?.name}
                     eventTypeLabel={eventTypeLabel(e.eventType)}
-                    confidence={e.confidence}
-                    confidenceLabel={confidenceLabel(e.confidence)}
                     heroImageUrl={e.heroImageUrl}
                     media={e.media}
                   />

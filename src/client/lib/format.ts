@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { formatEventDate, normalizeTime } from "@shared/date";
 import type { EventActDTO, EventPersonDTO } from "@shared/dto";
 import type {
-  Confidence,
   DatePrecision,
   EventType,
   RelationshipType,
@@ -38,16 +37,6 @@ export function eventDateTimeMetaLabel(e: DateFields): string {
     if (time) return `${date} · ${time}`;
   }
   return date;
-}
-
-const CONFIDENCE_LABELS: Record<Confidence, string> = {
-  high: "High confidence",
-  medium: "Medium confidence",
-  low: "Low confidence",
-};
-
-export function confidenceLabel(confidence: Confidence): string {
-  return CONFIDENCE_LABELS[confidence];
 }
 
 export function eventTypeLabel(type: EventType): string {
