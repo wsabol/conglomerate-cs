@@ -41,11 +41,11 @@ export function EditorModalForm({
         )}
 
         <div className={styles.modalActions}>
-          <Button type="submit" loading={submitting}>
-            {submitLabel}
-          </Button>
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
+          </Button>
+          <Button type="submit" loading={submitting}>
+            {submitLabel}
           </Button>
         </div>
       </form>

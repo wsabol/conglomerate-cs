@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { SectionTitle } from "../ui/Card";
 import styles from "./event.module.css";
+import { Button } from "../ui/Button";
 
 interface EditableSidebarSectionProps<T> {
   title: string;
@@ -55,27 +56,20 @@ export function EditableSidebarSection<T>({
                 <li key={getItemKey(item)}>{renderItem(item)}</li>
               ))}
             </ul>
-            {isEditor && (
-              <button
-                type="button"
-                className={styles.sidebarLink}
-                onClick={() => setModalOpen(true)}
-              >
-                {editLabel}
-              </button>
-            )}
           </>
-        ) : (
-          <>
-            <p className={styles.sidebarEmpty}>{emptyMessage}</p>
-            <button
-              type="button"
-              className={styles.sidebarLink}
+        ) : null}
+
+        {isEditor && (
+          <div className={styles.sidebarActions}>
+            <Button
+              size="sm"
+              variant="ghost-primary"
               onClick={() => setModalOpen(true)}
+              className={styles.sidebarButton}
             >
-              {addLabel}
-            </button>
-          </>
+              {items.length > 0 ? editLabel : addLabel}
+            </Button>
+          </div>
         )}
       </div>
 
