@@ -50,11 +50,12 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
   }
 
   return (
-    <Container>
+    <>
       <EventHero event={event} />
 
-      <div className={styles.content}>
-        <SidebarLayout
+      <Container>
+        <div className={styles.content}>
+          <SidebarLayout
           aside={
             <>
               <OtherActsSection
@@ -154,7 +155,8 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
             </div>
           )}
         </SidebarLayout>
-      </div>
-    </Container>
+        </div>
+      </Container>
+    </>
   );
 }

@@ -1,9 +1,7 @@
-.hero {
+.heroBanner {
   position: relative;
+  height: 300px;
   overflow: hidden;
-  min-height: 240px;
-  display: flex;
-  align-items: flex-end;
   background: var(--color-raised);
 }
 
