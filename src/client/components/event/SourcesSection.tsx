@@ -116,23 +116,14 @@ export function SourcesSection({
   return (
     <section>
       {sources.length === 0 ? (
-        <EmptyState title="No sources recorded yet" icon="help" size="sm">
-          {isEditor ? (
-            <>
-              Add a source to help others learn more about this event.
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                style={{ marginTop: "var(--space-2)" }}
-                onClick={openAdd}
-              >
-                <Icon name="plus" size={14} /> Add source
-              </Button>
-            </>
-          ) : (
-            "No corroborating sources have been recorded for this event yet."
+        <EmptyState title="No sources recorded yet"
+          icon="help"
+          size="sm"
+          action={isEditor && (
+            <Button type="button" size="sm" variant="primary" style={{marginTop: 'var(--space-2)'}} onClick={openAdd}><Icon name="plus" size={14} /> Add source</Button>
           )}
+        >
+          {isEditor ? "Sources help others learn more about this event." : "No corroborating sources have been recorded for this event yet."}
         </EmptyState>
       ) : (
         <div className={styles.content}>

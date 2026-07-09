@@ -9,13 +9,14 @@ interface NavItem {
   to: string;
   label: string;
   editorOnly?: boolean;
+  hideOnMobile?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/timeline", label: "Timeline" },
   { to: "/performances", label: "Performances" },
   { to: "/media", label: "Media" },
-  { to: "/admin", label: "Admin", editorOnly: true },
+  { to: "/admin", label: "Admin", editorOnly: true, hideOnMobile: true },
 ];
 
 function Navbar() {

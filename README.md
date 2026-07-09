@@ -148,9 +148,6 @@ tests/      Vitest unit + integration
 - [x] Card meta tags should have brass icons, use MetaItem component.
 - [x] Mediaframe is not clickable - needs to open up and view the image full size.
 - [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
-
-Mobile
-- [ ] Event page - Hide Tabs, only show summary
-- [ ] Hide all edit buttons, only action is 'Add memory'
-- [ ] display block all the Event tags so they are stacked
-- [ ] Timeline, hide the line and marker. Remove all the padding-lieft. Just leave the cards.
+- [ ] Evaluate for mobile
+- [ ] Double check soucing and event details from seed data
+- [ ] Update migration schema and data
