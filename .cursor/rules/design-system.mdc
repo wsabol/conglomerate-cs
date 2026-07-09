@@ -17,7 +17,26 @@ brass `#C49A47` (featured/archival), orange `#C64C27` (high-energy),
 magenta `#8C4F78`, violet `#554B69` (sparingly). Radii 4-8px, minimal shadows.
 
 ## Typography
-Display: Cormorant Garamond. Body/UI: Inter. Metadata/dates/setlists: IBM Plex Mono.
+Display: Cormorant Garamond. Body/UI: Manrope. Metadata/dates/setlists: IBM Plex Mono.
+Brand wordmark: Bodoni Moda.
+
+## Breakpoints
+Documented in `tokens.css`: sm 480, md 768, lg 1024, xl 1280. Applied inline in CSS modules — no Tailwind, no shared mixin.
+- **md boundary:** mobile rules use `@media (max-width: 767px)`; desktop rules use `min-width: 768px`.
+- Prefer CSS `@media` for show/hide/layout. Use `useMediaQuery` only when JS must branch (e.g. tab routing).
+
+## Mobile (≤767px)
+Browse + add memories only on event detail. Implemented via CSS hides + `useMediaQuery` in `EventDetailView` / `EventPosterCard`.
+
+| Area | Behavior |
+|------|----------|
+| Nav | Admin link hidden (`hideOnMobile` on nav item + `.hideOnMobile` in `shell.module.css`) |
+| Timeline | Year pills, vertical line, markers, track padding hidden (`Timeline.module.css`) |
+| Event detail | Tab bar hidden; `effectiveTab` forced to `summary`; hero tags stack; media gallery horizontal scroll-snap carousel |
+| Event detail edits | Sidebar edit buttons, poster card, memory edit/delete, media upload hidden |
+| Event detail writes | Only "Add membery" (`MemoriesSection`) remains |
+
+Sidebar acts/setlist/personnel stay visible read-only. Poster card hidden entirely on mobile (`.eventPosterCard`).
 
 ## Accessibility (hard requirements)
 - No text below the design-system minimum body size; no small/low-contrast copy.

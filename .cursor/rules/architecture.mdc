@@ -13,7 +13,7 @@ Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
   - `components/event/` — event detail, form, sidebar editors, tab panels.
   - `lib/` — `api.ts` envelope helper + domain clients and hooks.
     - Domain clients: `events`, `annotations`, `media`, `people`, `places`, `acts`, `admin`
-    - Hooks: `useAsync`, `useDebouncedValue`, `useFilterOptions`
+    - Hooks: `useAsync`, `useDebouncedValue`, `useFilterOptions`, `useMediaQuery`
 - `src/server/` Worker+Hono (routes, middleware, db, media, audit, lib, auth).
   - `db/queries/` — read queries by domain; barrel at `db/queries/index.ts`.
     - `events/` — `headliner.ts`, `list.ts`, `detail.ts` (barrel `events/index.ts`)
@@ -21,12 +21,21 @@ Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
   - `db/mutations/` — writes + audit; one file per domain:
     `events`, `people`, `places`, `media`, `annotations`, `uploads`
 - `src/shared/` types + Zod schemas + DTOs reused by client and server.
-- `migrations/` Drizzle-generated SQL. `scripts/` seed + export. `tests/` Vitest.
+- `migrations/` Drizzle-generated SQL. `scripts/` seed, export, PWA icon generation. `tests/` Vitest.
+- `src/client/public/` static assets (PWA icons, favicon). Built SPA + PWA artifacts land in `dist/client/`.
 
 ## Request routing
 The Worker (`src/server/index.ts`) runs first and owns `/api/*` and `/media/*`;
 everything else is delegated to the `ASSETS` binding (SPA fallback). Never add
 CORS - client and API share an origin.
+
+## PWA (installable client)
+- `vite-plugin-pwa` in `vite.config.ts` — manifest + Workbox service worker at build.
+- `main.tsx` registers via `virtual:pwa-register` (`registerType: autoUpdate`, `injectRegister: null`).
+- Build outputs: `dist/client/manifest.webmanifest`, `sw.js`, `workbox-*.js` (served by ASSETS).
+- Precaches SPA shell (JS/CSS/fonts/icons). `/api` and `/media` are `NetworkOnly` — never cache archive data.
+- Icons: source `src/client/public/icon.svg`; PNGs via `npm run icons:generate` (`scripts/generate-pwa-icons.mjs`, uses `sharp`). `build` runs icon generation first.
+- Dev SW enabled (`devOptions.enabled`); artifacts go to `src/client/dev-dist/` (gitignored).
 
 ## Golden rules
 - Shared enums live in `src/shared/types.ts`; DTOs in `src/shared/dto.ts` — import, never re-declare.

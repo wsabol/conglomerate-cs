@@ -7,3 +7,4 @@ dist/
 coverage/
 .vitest/
 seed/*.generated.sql
+src/client/dev-dist/

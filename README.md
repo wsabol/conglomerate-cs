@@ -141,7 +141,7 @@ src/
   server/   Worker + Hono API (routes, middleware, db, media, audit, auth, lib)
   shared/   Types + Zod schemas shared by client and server
 migrations/ Drizzle SQL migrations
-scripts/    Seed + export
+scripts/    Seed, export, PWA icon generation (`generate-pwa-icons.mjs`)
 tests/      Vitest unit + integration
 ```
 
@@ -168,6 +168,6 @@ tests/      Vitest unit + integration
 - [x] Card meta tags should have brass icons, use MetaItem component.
 - [x] Mediaframe is not clickable - needs to open up and view the image full size.
 - [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
-- [ ] Evaluate for mobile
+- [x] Evaluate for mobile
 - [ ] Double check soucing and event details from seed data
 - [ ] Update migration schema and data

@@ -7,7 +7,12 @@ alwaysApply: false
 # Client Patterns
 
 ## Design
-- Mobile first
+- Mobile-first CSS modules; breakpoint `767px` / `768px` (see design-system rule).
+- `useMediaQuery('(max-width: 767px)')` when JS must override behavior (event tab hash, poster empty state).
+
+## PWA
+- Service worker registered in `main.tsx` via `virtual:pwa-register` — do not add a second registration script.
+- PWA config lives in `vite.config.ts` only. Icon source: `public/icon.svg`; regenerate PNGs with `npm run icons:generate`.
 
 ## API layer
 - All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).
@@ -26,6 +31,7 @@ alwaysApply: false
 - `useDebouncedValue(value, ms)` — search inputs.
 - `useFilterOptions({ places?, people? })` — filter dropdown data for list pages
   (uses `listPlaces` / `listPeople` internally).
+- `useMediaQuery(query)` — `matchMedia` subscription; use sparingly when CSS cannot express the rule.
 
 ## Forms
 - Server validates with Zod at the route boundary; client forms should too before submit.
@@ -45,7 +51,9 @@ alwaysApply: false
 - **Detail route** (`routes/EventDetail.tsx`) — thin loader only (fetch + error/loading).
 - **Form route** (`routes/EventForm.tsx`) — re-exports `components/event/EventForm.tsx`.
 - **Detail view** (`components/event/EventDetailView.tsx`) orchestrates sidebar + tabs.
+  On mobile (`≤767px`): tab bar hidden, summary only (`effectiveTab`), `canUpload={!!user && !isNarrow}`.
   Subcomponents: `EventHero`, `EventSummaryPanel`, `EventPromoPanel`, `EventMediaGallery`.
+- **EventMediaGallery** — desktop `Grid`-style layout; mobile horizontal scroll-snap carousel (`.mediaGallery` in `EventDetailView.module.css`).
 - **Sidebar editors** (acts, setlist, poster, personnel): `EditableSidebarSection` +
   `EditorModalForm` + `useEditorModal`.
 - **Sources tab** (`SourcesSection`): modal CRUD with `useEditorModal` + `SourceForm`
