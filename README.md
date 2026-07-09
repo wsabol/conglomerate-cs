@@ -87,6 +87,26 @@ npm run typecheck
 Tests execute against real D1/R2 bindings; migrations are applied automatically
 before each suite.
 
+## Installable PWA
+
+The client is an installable Progressive Web App (standalone home-screen icon on
+mobile and desktop).
+
+- **Manifest + service worker:** generated at build time via `vite-plugin-pwa`
+- **Offline shell:** precaches the SPA assets; `/api` and `/media` always use the
+  network (no stale archive data)
+- **Icons:** `npm run icons:generate` rebuilds PNGs from `src/client/public/icon.svg`
+
+To test locally:
+
+```bash
+npm run preview   # build + serve from the Worker on :8787
+```
+
+Then open the site in Chrome or Safari and use **Install** / **Add to Home Screen**.
+In dev, the service worker is also enabled on the Vite server (`:5173`) for
+quicker iteration.
+
 ## Deploy (production)
 
 1. **D1:** Create a production database in Cloudflare, set `database_id` under
