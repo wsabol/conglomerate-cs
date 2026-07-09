@@ -1,10 +1,8 @@
 .heroBanner {
   position: relative;
-  margin-inline: calc(-1 * var(--space-4));
-  margin-bottom: var(--space-8);
-  min-height: min(72vh, 640px);
+  margin-bottom: var(--space-6);
+  min-height: min(90vh, 850px);
   overflow: hidden;
-  border-radius: var(--radius-md);
 }
 
 .heroPhoto {
@@ -13,7 +11,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 30%;
 }
 
 .heroOverlay {
@@ -23,7 +20,7 @@
   flex-direction: column;
   justify-content: flex-end;
   min-height: inherit;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-8) var(--space-8);
   background: linear-gradient(rgba(8, 10, 9, 0.15) 0%, rgba(8, 10, 9, 0.45) 45%, rgba(8, 10, 9, 0.88) 75%, rgb(8, 10, 9) 100%);
 }
 
@@ -64,6 +61,18 @@
   margin-top: var(--space-5);
 }
 
+.section {
+  padding: 64px 16px;
+}
+
+.section:last-child {
+  padding-bottom: 0;
+}
+
+.sectionBordered {
+  border-top: 1px solid var(--color-border-light);
+}
+
 .sectionHead {
   display: flex;
   align-items: baseline;
@@ -83,44 +92,161 @@
 .sectionLink {
   color: var(--color-emerald);
   font-size: var(--text-base);
+  transition: color var(--motion-fast);
 }
 .sectionLink:hover {
-  text-decoration: underline;
-}
-
-.section {
-  margin-bottom: var(--space-8);
+  color: var(--color-text-secondary);
 }
 
 .intro {
-  max-width: 55ch;
-  margin-bottom: var(--space-8);
+  padding-top: var(--space-6);
   color: var(--color-text-secondary);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
 }
 
-.intro p {
+.introLayout {
+  display: grid;
+  gap: var(--space-7);
+}
+
+.introContent {
+  max-width: 55ch;
+}
+
+.introContent p {
   margin-bottom: var(--space-5);
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  min-width: min(100%, 18rem);
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.stat:first-child {
+  padding-top: 0;
+}
+
+.stat:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.statValue {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+.statValueRange {
+  font-size: clamp(var(--text-2xl), 3.5vw, var(--text-3xl));
+  letter-spacing: var(--letter-spacing-snug);
+}
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  /* color: var(--color-text-secondary); */
+  color: var(--color-violet);
+  line-height: var(--leading-snug);
 }
 
 .introTitle {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  color: var(--color-brass);
-  margin-bottom: var(--space-3);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  color: var(--color-text);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-5);
+  line-height: 1.2;
+  letter-spacing: var(--letter-spacing-normal);
 }
 
-.intro a {
-  color: var(--color-emerald);
+.linkIcon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  margin-left: var(--space-1);
 }
-.intro a:hover {
-  text-decoration: underline;
+
+.bjbcLayout {
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.bjbcImageWrap {
+  max-width: 20rem;
+  justify-self: center;
+  width: 100%;
+}
+
+.bjbcImageWrap .frame {
+  height: 100%;
+}
+
+.bjbcContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 42ch;
+}
+
+.bjbcEyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--letter-spacing-widest);
+  text-transform: uppercase;
+  color: var(--color-brass);
+}
+
+.bjbcQuote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(var(--text-2xl), 3.5vw, var(--text-3xl));
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+}
+
+.bjbcBody {
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 768px) {
+  .bjbcLayout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bjbcContent {
+    max-width: 48ch;
+  }
+}
+
+@media (min-width: 1024px) {
+  .introLayout {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-8);
+  }
 }
 
 @media (max-width: 640px) {
   .heroBanner {
-    margin-inline: calc(-1 * var(--space-3));
     min-height: 55vh;
   }
 

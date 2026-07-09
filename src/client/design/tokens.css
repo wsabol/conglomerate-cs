@@ -24,6 +24,7 @@
   --color-success: #078a70;
 
   /* Derived surfaces / lines */
+  --color-border-light: rgba(241, 233, 218, 0.06);
   --color-border: rgba(241, 233, 218, 0.12);
   --color-border-strong: rgba(241, 233, 218, 0.24);
   --color-overlay: rgba(8, 10, 9, 0.72);
@@ -62,7 +63,6 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-black: 800;
 
   /* ---- Spacing scale (4px base) ---- */
   --space-1: 0.25rem;

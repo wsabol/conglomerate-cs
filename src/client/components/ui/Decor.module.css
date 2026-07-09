@@ -1,0 +1,6 @@
+.decor {
+  background: var(--color-brass);
+  width: 40px;
+  height: 1px;
+  margin: var(--space-5) 0;
+}

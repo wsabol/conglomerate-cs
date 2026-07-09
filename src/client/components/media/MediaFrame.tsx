@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { MediaType } from "@shared/types";
+import { cn } from "../../lib/cn";
 import { Icon, type IconName } from "../ui/Icon";
 import { MediaLightbox } from "./MediaLightbox";
 import styles from "./MediaFrame.module.css";
@@ -9,6 +10,12 @@ export interface MediaFrameProps {
   src: string;
   title?: string | null;
   caption?: string | null;
+  /** CSS aspect-ratio for photo/video tiles (e.g. `1`, `"4 / 3"`). */
+  aspectRatio?: CSSProperties["aspectRatio"];
+  /** When false, photos render statically with no lightbox or zoom cursor. */
+  isOpenable?: boolean;
+  /** Applies a bottom fade overlay on photo/video surfaces. */
+  overlay?: boolean;
   /** Whether the file supports inline playback (audio/video). */
   playable?: boolean;
   poster?: string | null;
@@ -28,11 +35,16 @@ export function MediaFrame({
   src,
   title,
   caption,
+  aspectRatio,
+  isOpenable = true,
+  overlay = false,
   playable = true,
   poster,
   onOpen,
 }: MediaFrameProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const mediaStyle =
+    aspectRatio != null ? ({ aspectRatio } satisfies CSSProperties) : undefined;
 
   function handlePhotoOpen() {
     if (onOpen) {
@@ -42,41 +54,63 @@ export function MediaFrame({
     }
   }
 
+  function wrapVisual(visual: ReactNode) {
+    if (!overlay) return visual;
+
+    return (
+      <div className={styles.mediaSurface}>
+        {visual}
+        <div className={styles.overlay} aria-hidden="true" />
+      </div>
+    );
+  }
+
+  const photo = (
+    <img
+      className={cn(styles.image, !isOpenable && styles.imageStatic)}
+      style={mediaStyle}
+      src={src}
+      alt={title ?? "Archived photo"}
+      loading="lazy"
+    />
+  );
+
   return (
     <figure className={styles.frame}>
-      {type === "photo" && (
-        <>
-          <button
-            type="button"
-            className={styles.imageButton}
-            onClick={handlePhotoOpen}
-          >
-            <img
-              className={styles.image}
+      {type === "photo" &&
+        (isOpenable ? (
+          <>
+            <button
+              type="button"
+              className={styles.imageButton}
+              onClick={handlePhotoOpen}
+            >
+              {wrapVisual(photo)}
+            </button>
+            <MediaLightbox
+              open={lightboxOpen}
+              onClose={() => setLightboxOpen(false)}
               src={src}
-              alt={title ?? "Archived photo"}
-              loading="lazy"
+              title={title}
+              caption={caption}
             />
-          </button>
-          <MediaLightbox
-            open={lightboxOpen}
-            onClose={() => setLightboxOpen(false)}
-            src={src}
-            title={title}
-            caption={caption}
-          />
-        </>
-      )}
+          </>
+        ) : (
+          wrapVisual(photo)
+        ))}
 
       {type === "video" &&
         (playable ? (
-          <video
-            className={styles.video}
-            src={src}
-            controls
-            preload="metadata"
-            poster={poster ?? undefined}
-          />
+          wrapVisual(
+            <video
+              className={styles.video}
+              style={mediaStyle}
+              src={src}
+              controls
+              preload="metadata"
+              poster={poster ?? undefined}
+            />,
+          )
         ) : (
           <DownloadTile type={type} src={src} title={title} />
         ))}

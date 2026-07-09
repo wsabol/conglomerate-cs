@@ -22,6 +22,23 @@
   display: block;
 }
 
+.imageStatic {
+  display: block;
+  cursor: default;
+}
+
+.mediaSurface {
+  position: relative;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(8, 10, 9, 0.1) 50%, rgba(8, 10, 9, 0.65) 100%);
+}
+
 .video {
   width: 100%;
   aspect-ratio: 16 / 9;

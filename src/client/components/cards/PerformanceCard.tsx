@@ -26,6 +26,7 @@ export function PerformanceCard({event}: PerformanceCardProps) {
             <Icon name="mic" size={40} label="No image available" />
           </div>
         )}
+        <div className={styles.mediaOverlay} aria-hidden="true" />
         {headlined && (
           <span className={styles.headlined}>
             <Icon name="star" size={12} /> Headliner

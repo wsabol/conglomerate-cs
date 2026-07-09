@@ -21,6 +21,8 @@ export interface UploadLimits {
 }
 
 export interface AppConfig {
+  /** Calendar years the band was publicly active (home page stats). */
+  archiveYearsActive: { start: number; end: number };
   accessEnforced: boolean;
   accessTeamDomain: string;
   accessAud: string;
@@ -36,6 +38,7 @@ export interface AppConfig {
 
 export function getConfig(env: Env): AppConfig {
   return {
+    archiveYearsActive: { start: 2009, end: 2016 },
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",
     accessAud: env.ACCESS_AUD ?? "",

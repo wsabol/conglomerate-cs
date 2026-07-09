@@ -13,6 +13,13 @@ import type {
   SourceType,
 } from "./types";
 
+export interface ArchiveStatsDTO {
+  performanceCount: number;
+  yearsActive: { start: number; end: number };
+  venueCount: number;
+  actCount: number;
+}
+
 export interface PlaceDTO {
   id: number;
   name: string;
