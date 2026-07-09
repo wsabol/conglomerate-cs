@@ -42,7 +42,11 @@ function Navbar() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                cn(styles.link, isActive && styles.linkActive)
+                cn(
+                  styles.link,
+                  isActive && styles.linkActive,
+                  item.hideOnMobile && styles.hideOnMobile,
+                )
               }
             >
               {item.label}
@@ -76,7 +80,11 @@ function Navbar() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                cn(styles.mobileLink, isActive && styles.mobileLinkActive)
+                cn(
+                  styles.mobileLink,
+                  isActive && styles.mobileLinkActive,
+                  item.hideOnMobile && styles.hideOnMobile,
+                )
               }
             >
               {item.label}

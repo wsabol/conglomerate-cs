@@ -115,3 +115,21 @@
   font-size: var(--text-sm);
   margin: var(--space-3) 0 0;
 }
+
+.eventPosterCard {
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .sidebarActions {
+    display: none;
+  }
+
+  .posterUpload {
+    display: none;
+  }
+
+  .eventPosterCard {
+    display: none;
+  }
+}

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Grid } from "../layout";
 import { SectionTitle } from "../ui/Card";
 import { MediaFrame } from "../media/MediaFrame";
 import { MediaUpload } from "../media/MediaUpload";
@@ -34,7 +33,7 @@ export function EventMediaGallery({
     <section className={styles.mediaSection}>
       <SectionTitle>Media</SectionTitle>
       {gallery.length > 0 ? (
-        <Grid min={220}>
+        <div className={styles.mediaGallery}>
           {gallery.map((item) => (
             <MediaFrame
               key={item.id}
@@ -45,18 +44,20 @@ export function EventMediaGallery({
               poster={item.thumbUrl}
             />
           ))}
-        </Grid>
+        </div>
       ) : (
         <EmptyState title="No media yet." icon="photo" size="sm" />
       )}
       {canUpload && (
-        <MediaUpload
-          eventId={event.id}
-          onUploaded={(item) => {
-            setMediaItems((current) => [item, ...current]);
-            onReload();
-          }}
-        />
+        <div className={styles.mediaUpload}>
+          <MediaUpload
+            eventId={event.id}
+            onUploaded={(item) => {
+              setMediaItems((current) => [item, ...current]);
+              onReload();
+            }}
+          />
+        </div>
       )}
     </section>
   );

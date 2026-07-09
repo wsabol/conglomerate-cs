@@ -3,6 +3,7 @@ import { Container, SidebarLayout } from "../layout";
 import { Icon } from "../ui/Icon";
 import { Button } from "../ui/Button";
 import { useAuth } from "../../lib/auth";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { eventDateOnlyLabel } from "../../lib/format";
 import { cn } from "../../lib/cn";
 import type { EventDetailDTO } from "@shared/dto";
@@ -40,7 +41,9 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
   const { user, isEditor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const isNarrow = useMediaQuery("(max-width: 767px)");
   const tab = tabFromHash(location.hash);
+  const effectiveTab = isNarrow ? "summary" : tab;
 
   function selectTab(id: DetailTab) {
     navigate({ hash: id }, { replace: true });
@@ -109,7 +112,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
             )}
           </div>
 
-          {tab === "summary" && (
+          {effectiveTab === "summary" && (
             <div
               role="tabpanel"
               id="panel-summary"
@@ -118,13 +121,13 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
             >
               <EventSummaryPanel
                 event={event}
-                canUpload={!!user}
+                canUpload={!!user && !isNarrow}
                 onReload={onReload}
               />
             </div>
           )}
 
-          {tab === "description" && (
+          {effectiveTab === "description" && (
             <div
               role="tabpanel"
               id="panel-description"
@@ -135,7 +138,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
             </div>
           )}
 
-          {tab === "sources" && (
+          {effectiveTab === "sources" && (
             <div
               role="tabpanel"
               id="panel-sources"

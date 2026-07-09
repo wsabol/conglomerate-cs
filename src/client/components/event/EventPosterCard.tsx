@@ -3,10 +3,12 @@ import { FileInput } from "../form";
 import { SectionTitle } from "../ui/Card";
 import { MediaLightbox } from "../media/MediaLightbox";
 import { useAuth } from "../../lib/auth";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { patchEvent, performancePatch } from "../../lib/events";
 import { uploadFile } from "../../lib/media";
 import type { EventDetailDTO } from "@shared/dto";
 import styles from "./event.module.css";
+import { cn } from "@client/lib/cn";
 
 interface EventPosterCardProps {
   event: EventDetailDTO;
@@ -15,13 +17,14 @@ interface EventPosterCardProps {
 
 export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
   const { isEditor } = useAuth();
+  const isNarrow = useMediaQuery("(max-width: 767px)");
   const posterUrl = event.performance?.eventPosterUrl;
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  if (!posterUrl && !isEditor) return null;
+  if (!posterUrl && (!isEditor || isNarrow)) return null;
 
   async function handleUpload(files: FileList) {
     const file = files[0];
@@ -51,7 +54,7 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
   }
 
   return (
-    <div className={styles.sidebarCard}>
+    <div className={cn(styles.sidebarCard, styles.eventPosterCard)}>
       <SectionTitle>Event poster</SectionTitle>
       {posterUrl ? (
         <>
@@ -70,7 +73,7 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
           />
         </>
       ) : (
-        <>
+        <div className={styles.posterUpload}>
           <p className={styles.posterEmpty}>No poster yet.</p>
           <FileInput
             label={busy ? "Uploading…" : "Upload event poster"}
@@ -97,7 +100,7 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
               {error}
             </p>
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -128,6 +128,12 @@
   color: var(--color-emerald);
 }
 
+@media (max-width: 767px) {
+  .hideOnMobile {
+    display: none;
+  }
+}
+
 @media (min-width: 768px) {
   .links {
     display: flex;
