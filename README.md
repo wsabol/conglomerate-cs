@@ -169,7 +169,7 @@ tests/      Vitest unit + integration
 - [x] Mediaframe is not clickable - needs to open up and view the image full size.
 - [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
 - [x] Evaluate for mobile
-- [ ] Double check soucing and event details from seed data
-- [ ] that stuff doesn't disappear on save
+- [x] Double check soucing and event details from seed data
+- [x] that stuff doesn't disappear on save
 - [ ] Update migration schema and data
 - [ ] app icons

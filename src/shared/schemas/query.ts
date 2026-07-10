@@ -9,6 +9,10 @@ export const eventsQuerySchema = z.object({
   q: z.string().trim().min(1).optional(),
   lineup: z.enum(BILLING_ROLES).optional(),
   sort: z.enum(["modified", "date"]).default("modified"),
+  detailed: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
 });
 export type EventsQuery = z.infer<typeof eventsQuerySchema>;
 

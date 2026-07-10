@@ -53,10 +53,7 @@ function lineupActConditions(lineup: BillingRole) {
   return and(...conds);
 }
 
-export async function listEvents(
-  db: Db,
-  q: EventsQuery,
-): Promise<EventListItemDTO[]> {
+export function eventListConditions(db: Db, q: EventsQuery) {
   const conds = [eq(events.isDeleted, false)];
   if (q.event_type) conds.push(eq(events.eventType, q.event_type));
   if (q.place) conds.push(eq(events.placeId, q.place));
@@ -93,7 +90,14 @@ export async function listEvents(
       ),
     );
   }
+  return conds;
+}
 
+export async function listEvents(
+  db: Db,
+  q: EventsQuery,
+): Promise<EventListItemDTO[]> {
+  const conds = eventListConditions(db, q);
   const rows = await db
     .select({
       id: events.id,

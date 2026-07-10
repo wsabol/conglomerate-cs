@@ -151,3 +151,25 @@ export interface EventDetailDTO extends EventListItemDTO {
   mediaItems: MediaItemDTO[];
   annotations: AnnotationDTO[];
 }
+
+export interface EventSchemaDTO {
+  id: number;
+  slug: string;
+  name: string;
+  title: string; // billing_name when present, else name
+  eventType: EventType;
+  eventDate: string | null;
+  eventTime: string | null;
+  datePrecision: DatePrecision;
+  confidence: Confidence;
+  place: { id: number; name: string } | null;
+  heroImageId: number | null;
+  heroImageUrl: string | null;
+  summary: string | null;
+  performance: PerformanceDetailsDTO | null;
+  people: EventPersonDTO[];
+  acts: EventActDTO[];
+  sources: EventSourceDTO[];
+  mediaItems: MediaItemDTO[];
+  annotations: AnnotationDTO[];
+}

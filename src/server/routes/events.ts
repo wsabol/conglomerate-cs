@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { AppEnv } from "../env";
 import { getDb } from "../db/client";
 import { events } from "../db/schema";
-import { getEventDetail, listEvents } from "../db/queries";
+import { getEventDetail, listEvents, listEventsDetailed } from "../db/queries";
 import {
   createEvent,
   softDeleteEvent,
@@ -23,7 +23,12 @@ const route = new Hono<AppEnv>();
 
 route.get("/", async (c) => {
   const query = eventsQuerySchema.parse(c.req.query());
-  const results = await listEvents(getDb(c.env), query);
+  const db = getDb(c.env);
+  if (query.detailed) {
+    const results = await listEventsDetailed(db, query);
+    return okList(c, results, "Returned detailed event list");
+  }
+  const results = await listEvents(db, query);
   return okList(c, results, "Returned event list");
 });
 

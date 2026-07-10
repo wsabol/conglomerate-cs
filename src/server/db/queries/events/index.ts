@@ -1,4 +1,4 @@
-export { getEventDetail } from "./detail";
+export { getEventDetail, getEventSchema, listEventsDetailed } from "./detail";
 export { listEvents } from "./list";
 export {
   headlinedEventIds,

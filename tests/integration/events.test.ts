@@ -13,7 +13,7 @@ import {
   places,
 } from "../../src/server/db/schema";
 import type { ApiResponse, ListResult } from "../../src/shared/types";
-import type { EventDetailDTO, EventListItemDTO } from "../../src/shared/dto";
+import type { EventDetailDTO, EventListItemDTO, EventSchemaDTO } from "../../src/shared/dto";
 
 async function seed() {
   const db = getDb(env);
@@ -119,6 +119,42 @@ describe("GET /api/events", () => {
     const res = await app.request("/api/events?sort=date", {}, env);
     const body = (await res.json()) as ApiResponse<ListResult<EventListItemDTO>>;
     expect(body.data?.results[0].slug).toBe("rock-your-independence-2011-07-03");
+  });
+
+  it("returns export-shaped aggregates when detailed=true", async () => {
+    const { personId } = await seed();
+    const res = await app.request("/api/events?detailed=true", {}, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ApiResponse<ListResult<EventSchemaDTO>>;
+    expect(body.message).toBe("Returned detailed event list");
+    expect(body.data?.results.length).toBe(2);
+    expect(body.data?.results[0].slug).toBe("the-syndicate-2010-07-02");
+    expect(body.data?.results[1].slug).toBe("rock-your-independence-2011-07-03");
+
+    const syndicate = body.data?.results[0];
+    expect(syndicate).not.toHaveProperty("headlined");
+    expect(syndicate).not.toHaveProperty("media");
+    expect(syndicate).not.toHaveProperty("placeDetail");
+    expect(syndicate?.people).toEqual([
+      expect.objectContaining({
+        personId,
+        displayName: "McIan",
+        relationshipType: "performer",
+      }),
+    ]);
+    expect(syndicate?.acts).toEqual([
+      expect.objectContaining({ name: "Greg Tivis", billingRole: "opener" }),
+    ]);
+    expect(syndicate?.sources).toEqual([
+      expect.objectContaining({
+        sourceType: "url",
+        url: "https://example.com/post",
+      }),
+    ]);
+    expect(syndicate?.performance?.setlistText).toContain("The Lick");
+    expect(syndicate?.place).toEqual(
+      expect.objectContaining({ name: "Muldoon's" }),
+    );
   });
 });
 

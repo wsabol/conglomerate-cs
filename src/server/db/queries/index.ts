@@ -1,7 +1,7 @@
 export { getAnnotations, getAnnotationById, toAnnotationDTO } from "./annotations";
 export { getArchiveStats } from "./stats";
 export { listRevisions, listUsers } from "./admin";
-export { getEventDetail, listEvents } from "./events";
+export { getEventDetail, listEvents, listEventsDetailed } from "./events";
 export { getMediaItemById, findPublishedMediaByChecksum, listMedia, listMediaForEvent } from "./media";
 export {
   getPerson,
