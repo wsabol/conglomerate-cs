@@ -164,10 +164,12 @@ tests/      Vitest unit + integration
 - [x] Edit opener/headliner in the 'acts' modal
 
 - [x] Add hash to the navigation when the tab is changed on event pages
-- [ ] Home page content
+- [x] Home page content
 - [x] Card meta tags should have brass icons, use MetaItem component.
 - [x] Mediaframe is not clickable - needs to open up and view the image full size.
 - [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
 - [x] Evaluate for mobile
 - [ ] Double check soucing and event details from seed data
+- [ ] that stuff doesn't disappear on save
 - [ ] Update migration schema and data
+- [ ] app icons
