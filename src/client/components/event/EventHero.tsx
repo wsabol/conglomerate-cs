@@ -16,9 +16,14 @@ export function EventHero({ event }: EventHeroProps) {
     (person) => person.relationshipType === "performer",
   );
 
+  let customStyle = {};
+  if (!event.heroImageUrl) {
+    customStyle = { height: "200px" };
+  }
+
   return (
     <>
-      <section className={styles.heroBanner}>
+      <section className={styles.heroBanner} style={customStyle}>
         {event.heroImageUrl ? (
           <img className={styles.heroImage} src={event.heroImageUrl} alt="" />
         ) : (
