@@ -68,7 +68,6 @@ are signed in as an editor. `ACCESS_ENFORCED=false` locally disables JWT checks.
 npm run db:generate        # generate a migration from src/server/db/schema.ts
 npm run db:migrate:local   # apply migrations to the local D1
 npm run db:migrate:remote  # apply migrations to the remote D1
-npm run seed:local         # build + load seed data into local D1
 ```
 
 Regenerate binding types after editing `wrangler.toml`:
@@ -109,29 +108,52 @@ quicker iteration.
 
 ## Deploy (production)
 
+Production config lives in `wrangler.toml` under `[env.production]` (vars,
+D1, R2). Top-level `[vars]` is local dev only.
+
 1. **D1:** Create a production database in Cloudflare, set `database_id` under
-   `[env.production.d1_databases]` in `wrangler.toml`, then run
-   `npm run db:migrate:remote` and `npm run seed:remote` (first deploy only).
+   `[env.production.d1_databases]`, then run
+   `wrangler d1 migrations apply DB --remote --env production`.
 2. **R2:** Create bucket `conglomerate-media` (or update the name in
    `wrangler.toml`). For direct browser uploads, create R2 API tokens and set
-   secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
-   `R2_BUCKET_NAME` via `wrangler secret put`.
+   secrets via `wrangler secret put --env production`: `R2_ACCOUNT_ID`,
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 3. **Access:** Create a self-hosted Access application for your domain with an
-   email allowlist policy (Google + one-time PIN). Set `ACCESS_ENFORCED=true`,
-   `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` in production vars.
-4. **Deploy:** `npm run deploy -- --env production`
-5. **Promote an editor:**
-   `wrangler d1 execute DB --remote --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
-6. **Export / backup:** `npm run export` writes a JSON dump of D1 tables to
-   `export/`. Back up the R2 bucket separately via the Cloudflare dashboard or
-   `wrangler r2 object list`.
+   email allowlist policy (Google + one-time PIN). `ACCESS_ENFORCED`,
+   `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` are in `[env.production.vars]`.
+4. **Promote an editor:**
+   `wrangler d1 execute DB --remote --env production --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
+5. **Back up R2** via the Cloudflare dashboard or `wrangler r2 object list`.
 
-Quick deploy:
+### Scripts
+
+| Script | What it does |
+| --- | --- |
+| `npm run build` | Vite SPA build only |
+| `npm run build:prod` | typecheck → test → build (release gate) |
+| `npm run deploy` | `wrangler deploy` (top-level / dev vars) |
+| `npm run deploy:prod` | `wrangler deploy --env production` |
+
+Manual production deploy:
 
 ```bash
-npm run deploy   # builds the SPA and runs `wrangler deploy`
-npm run deploy -- --env production   # production environment
+npm run build:prod && npm run deploy:prod
 ```
+
+### Cloudflare Workers Builds (GitHub)
+
+Workers Builds runs **build command** then **deploy command**. A failing build
+skips deploy. Configure under **Settings → Build**:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npm run build:prod` |
+| Deploy command | `npm run deploy:prod` |
+| Non-production branch deploy command | `npx wrangler versions upload --env production` |
+
+`[env.production.vars]` is applied on each deploy via `--env production`.
+Runtime secrets are not in `wrangler.toml` — set them once in the dashboard
+(**Settings → Variables & Secrets**) or with `wrangler secret put --env production`.
 
 ## Project layout
 
@@ -141,7 +163,6 @@ src/
   server/   Worker + Hono API (routes, middleware, db, media, audit, auth, lib)
   shared/   Types + Zod schemas shared by client and server
 migrations/ Drizzle SQL migrations
-scripts/    Seed, export
 tests/      Vitest unit + integration
 ```
 

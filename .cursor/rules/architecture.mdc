@@ -21,7 +21,7 @@ Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
   - `db/mutations/` — writes + audit; one file per domain:
     `events`, `people`, `places`, `media`, `annotations`, `uploads`
 - `src/shared/` types + Zod schemas + DTOs reused by client and server.
-- `migrations/` Drizzle-generated SQL. `scripts/` seed, export, PWA icon generation. `tests/` Vitest.
+- `migrations/` Drizzle-generated SQL. `tests/` Vitest.
 - `src/client/public/` static assets (PWA icons, favicon). Built SPA + PWA artifacts land in `dist/client/`.
 
 ## Request routing
@@ -36,6 +36,21 @@ CORS - client and API share an origin.
 - Precaches SPA shell (JS/CSS/fonts/icons). `/api` and `/media` are `NetworkOnly` — never cache archive data.
 - Icons: static PNGs in `src/client/public/ico/` (favicons, PWA, apple-touch).
 - Dev SW enabled (`devOptions.enabled`); artifacts go to `src/client/dev-dist/` (gitignored).
+
+## Environments (`wrangler.toml`)
+- Top-level `[vars]` — local dev (`ACCESS_ENFORCED=false`, `DEV_USER_*` overrides).
+- `[env.production]` — production deploy target; vars, D1, R2, assets duplicated here
+  (`vars` are not inherited — must be set per environment).
+- `run_worker_first` is `["/api/*", "/media/*"]` only — do not set globally; it
+  breaks the Cloudflare Access callback at `/cdn-cgi/access/*`.
+
+## Deploy & CI
+- `build` — Vite only. `build:prod` — typecheck + test + build (release gate).
+- `deploy` / `deploy:prod` — Wrangler only; no build. Production uses `--env production`.
+- Cloudflare Workers Builds (GitHub): build command `npm run build:prod`, deploy
+  command `npm run deploy:prod`. Failing typecheck or tests blocks deploy.
+- Secrets (`R2_*`, etc.) via `wrangler secret put --env production` or dashboard;
+  plain-text runtime vars belong in `[env.production.vars]`.
 
 ## Golden rules
 - Shared enums live in `src/shared/types.ts`; DTOs in `src/shared/dto.ts` — import, never re-declare.

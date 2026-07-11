@@ -64,7 +64,7 @@ export function formatEventDate(
 /**
  * Normalize a variety of time inputs to 24h "HH:mm", or null when absent.
  * Accepts "9:00 PM", "21:00", "9 PM", etc. so it is safe both for stored
- * values and for raw seed data.
+ * values and for legacy import formats.
  */
 export function normalizeTime(
   time: string | null | undefined,
