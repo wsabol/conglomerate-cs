@@ -20,7 +20,7 @@
   flex-direction: column;
   justify-content: flex-end;
   min-height: inherit;
-  padding: var(--space-8) var(--space-8);
+  padding: var(--space-8) var(--space-5);
   background: linear-gradient(rgba(8, 10, 9, 0.15) 0%, rgba(8, 10, 9, 0.45) 45%, rgba(8, 10, 9, 0.88) 75%, rgb(8, 10, 9) 100%);
 }
 
@@ -40,7 +40,7 @@
 .title {
   font-family: var(--font-impact);
   font-weight: var(--weight-bold);
-  font-size: clamp(var(--text-5xl), 10vw, var(--text-8xl));
+  font-size: clamp(var(--text-4xl), 12vw, var(--text-8xl));
   line-height: var(--leading-tight);
   color: var(--color-text);
   margin-block: var(--space-5);
@@ -228,29 +228,25 @@
 }
 
 @media (min-width: 768px) {
+  .heroOverlay {
+    padding: var(--space-8) var(--space-7);
+  }
   .bjbcLayout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .bjbcContent {
     max-width: 48ch;
   }
 }
 
 @media (min-width: 1024px) {
+  .heroOverlay {
+    padding: var(--space-8) var(--space-8);
+  }
+
   .introLayout {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-8);
-  }
-}
-
-@media (max-width: 640px) {
-  .heroBanner {
-    min-height: 55vh;
-  }
-
-  .title {
-    font-size: var(--text-4xl);
   }
 }
