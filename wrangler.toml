@@ -16,9 +16,9 @@ enabled = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "conglomerate"
+database_name = "theconglomerate"
 # Placeholder id: local development ignores this. Replace for remote/prod.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "272b09d7-9db9-47e1-94fa-0d9a50b2e7cc"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
@@ -59,8 +59,8 @@ ACCESS_AUD = ""
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "conglomerate"
-database_id = "REPLACE_WITH_PRODUCTION_D1_ID"
+database_name = "theconglomerate"
+database_id = "272b09d7-9db9-47e1-94fa-0d9a50b2e7cc"
 migrations_dir = "migrations"
 
 [[env.production.r2_buckets]]

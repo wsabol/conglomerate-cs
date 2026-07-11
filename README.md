@@ -148,28 +148,3 @@ tests/      Vitest unit + integration
 ## Notes on Terminlogy
 
 - "Membery" and "Memberberry" are not typos. They are mashups of "member" and "memory" -- as in "a memory from a member of the group"
-
-## TODO
-
-- [x] Dedup media items. Uplaods of the same file are not rejected
-- [x] Add hero image to the timeline
-- [x] Add memory modal
-- [x] 'Edit Event' button placement
-- [x] Show personnel on the performance page
-- [x] Add/edit sources
-
-- [x] Add headlined to the events GET data
-- [x] Fix 'Headliner' not showing up on event page
-- [x] Fix headliner in search
-- [x] Edit opener/headliner in the 'acts' modal
-
-- [x] Add hash to the navigation when the tab is changed on event pages
-- [x] Home page content
-- [x] Card meta tags should have brass icons, use MetaItem component.
-- [x] Mediaframe is not clickable - needs to open up and view the image full size.
-- [x] @mentions for people in annotations (autocomplete on @, sync to annotation_people, bold display)
-- [x] Evaluate for mobile
-- [x] Double check soucing and event details from seed data
-- [x] that stuff doesn't disappear on save
-- [ ] Update migration schema and data
-- [ ] app icons

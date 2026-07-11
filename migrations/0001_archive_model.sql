@@ -148,6 +148,7 @@ CREATE TABLE `people` (
 	`display_name` text NOT NULL,
 	`aliases` text,
 	`bio` text,
+	`is_featured` integer DEFAULT false NOT NULL,
 	`is_deleted` integer DEFAULT false NOT NULL,
 	`created_on` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`modified_on` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL
