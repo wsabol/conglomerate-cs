@@ -48,3 +48,13 @@
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
 }
+
+.quiz {
+  text-align: left;
+}
+
+.quizError {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-orange);
+}
