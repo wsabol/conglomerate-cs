@@ -12,9 +12,19 @@ export interface Env {
   ACCESS_ENFORCED?: string;
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
+  ACCESS_ACCOUNT_ID?: string;
+  ACCESS_POLICY_ID?: string;
   // Local-only identity override; never set in production.
   DEV_USER_EMAIL?: string;
   DEV_USER_ROLE?: string;
+
+  // Invite tooling.
+  APP_BASE_URL?: string;
+  INVITE_FROM_EMAIL?: string;
+  INVITE_TOKEN_TTL_DAYS?: string;
+  INVITE_THROTTLE_HOURS?: string;
+  RESEND_API_KEY?: string;
+  CLOUDFLARE_API_TOKEN?: string;
 
   // R2 S3-compatible credentials for presigned uploads (Milestone 6).
   R2_ACCOUNT_ID?: string;

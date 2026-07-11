@@ -18,6 +18,7 @@ import {
   MEDIA_TYPES,
   PLACE_STATUSES,
   RELATIONSHIP_TYPES,
+  INVITE_STATUSES,
   REVISION_ACTIONS,
   REVISION_TARGET_TYPES,
   SOURCE_TYPES,
@@ -307,6 +308,29 @@ export const annotationPeople = sqliteTable(
   ],
 );
 
+// invites ---------------------------------------------------------------------
+export const invites = sqliteTable(
+  "invites",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    email: text("email").notNull(),
+    inviteeName: text("invitee_name").notNull(),
+    invitedBy: integer("invited_by")
+      .notNull()
+      .references(() => users.id),
+    tokenHash: text("token_hash").notNull(),
+    tokenExpiresAt: text("token_expires_at").notNull(),
+    status: text("status", { enum: INVITE_STATUSES }).notNull().default("pending"),
+    errorMessage: text("error_message"),
+    providerMessageId: text("provider_message_id"),
+    createdOn: createdOn(),
+  },
+  (t) => [
+    index("invites_email_created_idx").on(t.email, t.createdOn),
+    uniqueIndex("invites_token_hash_idx").on(t.tokenHash),
+  ],
+);
+
 // object_revisions ------------------------------------------------------------
 export const objectRevisions = sqliteTable(
   "object_revisions",
@@ -343,3 +367,5 @@ export type EventActRow = typeof eventActs.$inferSelect;
 export type MediaRow = typeof media.$inferSelect;
 export type AnnotationRow = typeof annotations.$inferSelect;
 export type ObjectRevisionRow = typeof objectRevisions.$inferSelect;
+export type InviteRow = typeof invites.$inferSelect;
+export type NewInviteRow = typeof invites.$inferInsert;

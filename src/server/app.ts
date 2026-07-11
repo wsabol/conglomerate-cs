@@ -12,6 +12,7 @@ import mediaApiRoute from "./routes/media";
 import uploadsRoute from "./routes/uploads";
 import annotationsRoute from "./routes/annotations";
 import adminRoute from "./routes/admin";
+import invitesRoute from "./routes/invites";
 import statsRoute from "./routes/stats";
 import mediaDeliveryRoute from "./routes/mediaDelivery";
 
@@ -37,6 +38,7 @@ export function createApp() {
   api.route("/uploads", uploadsRoute);
   api.route("/annotations", annotationsRoute);
   api.route("/admin", adminRoute);
+  api.route("/invites", invitesRoute);
   api.route("/stats", statsRoute);
 
   app.route("/api", api);

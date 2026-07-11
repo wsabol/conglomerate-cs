@@ -8,9 +8,15 @@ import {
   revisionsQuerySchema,
   userUpdateSchema,
 } from "@shared/schemas/admin";
+import {
+  inviteCreateSchema,
+  invitesListQuerySchema,
+} from "@shared/schemas/invite";
 import { requireEditor } from "../middleware/auth";
 import { ok, okList } from "../lib/response";
 import { badRequest, notFound } from "../lib/errors";
+import { listInvites } from "../db/queries/invites";
+import { processInvite } from "../services/invite";
 
 const route = new Hono<AppEnv>();
 
@@ -56,6 +62,25 @@ route.get("/revisions", requireEditor, async (c) => {
   const query = revisionsQuerySchema.parse(c.req.query());
   const results = await listRevisions(getDb(c.env), query);
   return okList(c, results, "Returned change history");
+});
+
+route.get("/invites", requireEditor, async (c) => {
+  const query = invitesListQuerySchema.parse(c.req.query());
+  const results = await listInvites(getDb(c.env), query.limit);
+  return okList(c, results, "Returned invites");
+});
+
+route.post("/invites", requireEditor, async (c) => {
+  const input = inviteCreateSchema.parse(await c.req.json());
+  const user = c.get("user")!;
+  const invite = await processInvite(
+    getDb(c.env),
+    c.env,
+    input,
+    user.id,
+    user.email,
+  );
+  return ok(c, invite, "Invite sent", 201);
 });
 
 export default route;

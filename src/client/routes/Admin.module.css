@@ -81,3 +81,21 @@
   color: var(--color-text-secondary);
   margin-top: var(--space-2);
 }
+
+.inviteForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 420px;
+  margin-bottom: var(--space-6);
+}
+
+.formError {
+  color: var(--color-danger, #c45c5c);
+  margin: 0;
+}
+
+.formSuccess {
+  color: var(--color-emerald);
+  margin: 0;
+}

@@ -26,8 +26,14 @@ export interface AppConfig {
   accessEnforced: boolean;
   accessTeamDomain: string;
   accessAud: string;
+  accessAccountId: string;
+  accessPolicyId: string;
   devUserEmail: string | null;
   devUserRole: string | null;
+  appBaseUrl: string;
+  inviteFromEmail: string;
+  inviteTokenTtlDays: number;
+  inviteThrottleHours: number;
   uploadLimits: UploadLimits;
   presignTtlSeconds: number;
   /** MIME types accepted per media category. */
@@ -42,8 +48,14 @@ export function getConfig(env: Env): AppConfig {
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",
     accessAud: env.ACCESS_AUD ?? "",
+    accessAccountId: env.ACCESS_ACCOUNT_ID ?? "",
+    accessPolicyId: env.ACCESS_POLICY_ID ?? "",
     devUserEmail: env.DEV_USER_EMAIL || null,
     devUserRole: env.DEV_USER_ROLE || null,
+    appBaseUrl: env.APP_BASE_URL ?? "http://localhost:5173",
+    inviteFromEmail: env.INVITE_FROM_EMAIL ?? "invites@theconglomerate.local",
+    inviteTokenTtlDays: num(env.INVITE_TOKEN_TTL_DAYS, 7),
+    inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),
     uploadLimits: {
       photo: num(env.UPLOAD_MAX_PHOTO_BYTES, 25 * MB),
       audio: num(env.UPLOAD_MAX_AUDIO_BYTES, 500 * MB),
