@@ -3,6 +3,7 @@ import { verifyAccessEmail } from "../../src/server/auth/access";
 import type { AppConfig } from "../../src/server/lib/config";
 
 const config: AppConfig = {
+  archiveYearsActive: { start: 2009, end: 2016 },
   accessEnforced: true,
   accessTeamDomain: "team.cloudflareaccess.com",
   accessAud: "aud-tag",

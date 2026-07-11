@@ -9,7 +9,6 @@ const TYPE_LABELS: Record<AnnotationType, string> = {
   secondhand_account: "Secondhand account",
   correction: "Correction",
   quote: "Quote",
-  context: "Context",
 };
 
 function MentionBody({ body }: { body: string }) {

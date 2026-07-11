@@ -7,6 +7,7 @@ export type ButtonVariant =
   | "brass"
   | "orange"
   | "ghost"
+  | "ghost-primary"
   | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
