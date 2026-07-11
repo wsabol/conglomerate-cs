@@ -111,3 +111,6 @@ export type RevisionTargetType = (typeof REVISION_TARGET_TYPES)[number];
 
 export const REVISION_ACTIONS = ["create", "update", "delete"] as const;
 export type RevisionAction = (typeof REVISION_ACTIONS)[number];
+
+export const INVITE_STATUSES = ["pending", "sent", "failed"] as const;
+export type InviteStatus = (typeof INVITE_STATUSES)[number];

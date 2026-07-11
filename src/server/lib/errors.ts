@@ -34,3 +34,9 @@ export const notFound = (message = "Not found.") => new ApiError(404, message);
 
 export const conflict = (message: string, details?: ApiErrorDetail[]) =>
   new ApiError(409, message, details);
+
+export const tooManyRequests = (message: string, details?: ApiErrorDetail[]) =>
+  new ApiError(429, message, details);
+
+export const badGateway = (message: string, details?: ApiErrorDetail[]) =>
+  new ApiError(502, message, details);

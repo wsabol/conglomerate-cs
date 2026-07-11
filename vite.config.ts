@@ -20,8 +20,7 @@ export default defineConfig({
       manifest: {
         name: "The Conglomerate",
         short_name: "Conglomerate",
-        description:
-          "A private chronological archive of the band's shows, parties, recordings, people, and stories.",
+        description: "A private chronological archive of the band's shows, parties, recordings, people, and stories.",
         theme_color: "#080a09",
         background_color: "#080a09",
         display: "standalone",

@@ -7,10 +7,11 @@ import { Select } from "../components/form";
 import { Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listUsers, listRevisions, setUserRole, setUserDisabled } from "../lib/admin";
+import { InviteSection } from "../components/admin/InviteSection";
 import { REVISION_TARGET_TYPES, type RevisionTargetType, type UserRole } from "@shared/types";
 import styles from "./Admin.module.css";
 
-type Tab = "users" | "history";
+type Tab = "users" | "history" | "invites";
 
 export default function Admin() {
   const [tab, setTab] = useState<Tab>("users");
@@ -42,7 +43,7 @@ export default function Admin() {
       <PageHeader
         eyebrow="Editors only"
         title="Admin"
-        subtitle="User management and change history."
+        subtitle="User management, invites, and change history."
       />
 
       <div className={styles.tabs}>
@@ -51,6 +52,9 @@ export default function Admin() {
         </Pill>
         <Pill active={tab === "history"} onClick={() => setTab("history")}>
           Change history
+        </Pill>
+        <Pill active={tab === "invites"} onClick={() => setTab("invites")}>
+          Invites
         </Pill>
       </div>
 
@@ -106,6 +110,8 @@ export default function Admin() {
           </p>
         </section>
       )}
+
+      {tab === "invites" && <InviteSection />}
 
       {tab === "history" && (
         <section className={styles.section}>

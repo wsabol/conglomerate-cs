@@ -58,6 +58,25 @@ Production configuration:
 - Promote an editor:
   `wrangler d1 execute DB --remote --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
 
+### Invites (Admin)
+
+Editors can send invites from **Admin → Invites**. Each invite:
+
+1. Adds the email to the Cloudflare Access allowlist (when configured).
+2. Sends a branded welcome email via [Resend](https://resend.com).
+3. Logs the invite in D1 (name, email, inviter, timestamp, status).
+
+Production setup for invites:
+
+- **Vars** in `[env.production.vars]`: `APP_BASE_URL` (site origin), `INVITE_FROM_EMAIL`,
+  `ACCESS_ACCOUNT_ID`, `ACCESS_POLICY_ID`, `INVITE_TOKEN_TTL_DAYS`, `INVITE_THROTTLE_HOURS`.
+- **Secrets** via `wrangler secret put --env production`:
+  - `RESEND_API_KEY` — Resend API key (from address domain must be verified in Resend).
+  - `CLOUDFLARE_API_TOKEN` — Zero Trust / Access edit permission for allowlist updates.
+
+Without Resend or Access API credentials, local dev still records invites and logs the
+would-be email to the Worker console.
+
 Local dev: Access cannot run in `wrangler dev`, so the identity middleware falls
 back to `DEV_USER_EMAIL` / `DEV_USER_ROLE` (in `wrangler.toml` `[vars]`) and you
 are signed in as an editor. `ACCESS_ENFORCED=false` locally disables JWT checks.
@@ -121,6 +140,8 @@ D1, R2). Top-level `[vars]` is local dev only.
 3. **Access:** Create a self-hosted Access application for your domain with an
    email allowlist policy (Google + one-time PIN). `ACCESS_ENFORCED`,
    `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` are in `[env.production.vars]`.
+   For in-app invites, also set `ACCESS_ACCOUNT_ID`, `ACCESS_POLICY_ID`, and
+   `APP_BASE_URL`, then add secrets `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN`.
 4. **Promote an editor:**
    `wrangler d1 execute DB --remote --env production --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
 5. **Back up R2** via the Cloudflare dashboard or `wrangler r2 object list`.

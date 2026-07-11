@@ -18,9 +18,9 @@ enabled = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "theconglomerate"
+database_name = "conglomerate"
 # Placeholder id: local development ignores this. Replace for remote/prod.
-database_id = "272b09d7-9db9-47e1-94fa-0d9a50b2e7cc"
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
@@ -36,6 +36,12 @@ DEV_USER_ROLE = "editor"
 ACCESS_ENFORCED = "false"
 ACCESS_TEAM_DOMAIN = ""
 ACCESS_AUD = ""
+ACCESS_ACCOUNT_ID = ""
+ACCESS_POLICY_ID = ""
+APP_BASE_URL = "http://localhost:5173"
+INVITE_FROM_EMAIL = "invites@conglomochat.willsabol.com"
+INVITE_TOKEN_TTL_DAYS = "7"
+INVITE_THROTTLE_HOURS = "24"
 
 # ---- Production environment ----------------------------------------------
 [env.production]
@@ -59,6 +65,12 @@ DEV_USER_ROLE = ""
 ACCESS_ENFORCED = "true"
 ACCESS_TEAM_DOMAIN = "wsabol-team.cloudflareaccess.com"
 ACCESS_AUD = "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a"
+ACCESS_ACCOUNT_ID = ""
+ACCESS_POLICY_ID = ""
+APP_BASE_URL = ""
+INVITE_FROM_EMAIL = ""
+INVITE_TOKEN_TTL_DAYS = "7"
+INVITE_THROTTLE_HOURS = "24"
 
 [[env.production.d1_databases]]
 binding = "DB"

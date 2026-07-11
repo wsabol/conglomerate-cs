@@ -10,6 +10,7 @@ import EventForm from "./routes/EventForm";
 import Media from "./routes/Media";
 import Admin from "./routes/Admin";
 import SignIn from "./routes/SignIn";
+import Welcome from "./routes/Welcome";
 import Styleguide from "./routes/Styleguide";
 import NotFound from "./routes/NotFound";
 
@@ -19,6 +20,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/welcome" element={<Welcome />} />
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />
             <Route path="/timeline" element={<Timeline />} />

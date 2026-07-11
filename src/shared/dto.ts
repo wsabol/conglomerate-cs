@@ -107,6 +107,20 @@ export interface UserDTO {
   isDeleted: boolean;
 }
 
+export interface InviteDTO {
+  id: number;
+  email: string;
+  inviteeName: string;
+  invitedByEmail: string;
+  status: "pending" | "sent" | "failed";
+  createdOn: string;
+}
+
+export interface InviteVerifyDTO {
+  valid: true;
+  inviteeName: string;
+}
+
 export interface RevisionDTO {
   id: number;
   targetId: number;
