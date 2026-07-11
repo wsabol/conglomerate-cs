@@ -148,3 +148,8 @@ tests/      Vitest unit + integration
 ## Notes on Terminlogy
 
 - "Membery" and "Memberberry" are not typos. They are mashups of "member" and "memory" -- as in "a memory from a member of the group"
+
+## TODO
+
+- [ ] Wire src/client/routes/SignIn.tsx to redirect to Access login URLs (Milestone 4 in your implementation plan).
+- [ ] 
