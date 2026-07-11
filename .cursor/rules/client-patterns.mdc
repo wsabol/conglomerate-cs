@@ -12,7 +12,7 @@ alwaysApply: false
 
 ## PWA
 - Service worker registered in `main.tsx` via `virtual:pwa-register` — do not add a second registration script.
-- PWA config lives in `vite.config.ts` only. Icon source: `public/icon.svg`; regenerate PNGs with `npm run icons:generate`.
+- PWA config lives in `vite.config.ts` only. Icons: static PNGs in `public/ico/`.
 
 ## API layer
 - All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).

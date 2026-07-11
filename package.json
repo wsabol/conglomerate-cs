@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:worker": "wrangler dev",
-    "build": "npm run icons:generate && vite build",
+    "build": "vite build",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "typecheck": "tsc -p tsconfig.client.json && tsc -p tsconfig.server.json && tsc -p tsconfig.node.json",
@@ -20,8 +20,7 @@
     "seed:build": "tsx scripts/seed.ts",
     "seed:local": "npm run seed:build && wrangler d1 execute DB --local --file=seed/seed.generated.sql",
     "seed:remote": "npm run seed:build && wrangler d1 execute DB --remote --file=seed/seed.generated.sql",
-    "export": "tsx scripts/export.ts",
-    "icons:generate": "node scripts/generate-pwa-icons.mjs"
+    "export": "tsx scripts/export.ts"
   },
   "dependencies": {
     "@fontsource/bodoni-moda": "^5.2.7",
@@ -49,7 +48,6 @@
     "@vitest/runner": "^4.1.9",
     "@vitest/snapshot": "^4.1.9",
     "drizzle-kit": "^0.31.10",
-    "sharp": "^0.35.3",
     "tsx": "^4.22.5",
     "typescript": "^6.0.3",
     "vite": "^8.1.3",

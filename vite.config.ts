@@ -12,7 +12,11 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
-      includeAssets: ["icon.svg", "apple-touch-icon.png"],
+      includeAssets: [
+        "ico/favicon-16x16.png",
+        "ico/favicon-32x32.png",
+        "ico/apple-touch-icon.png",
+      ],
       manifest: {
         name: "The Conglomerate",
         short_name: "Conglomerate",
@@ -26,17 +30,22 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "ico/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "ico/pwa-256x256.png",
+            sizes: "256x256",
+            type: "image/png",
+          },
+          {
+            src: "ico/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "ico/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",

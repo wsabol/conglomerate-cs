@@ -95,7 +95,7 @@ mobile and desktop).
 - **Manifest + service worker:** generated at build time via `vite-plugin-pwa`
 - **Offline shell:** precaches the SPA assets; `/api` and `/media` always use the
   network (no stale archive data)
-- **Icons:** `npm run icons:generate` rebuilds PNGs from `src/client/public/icon.svg`
+- **Icons:** static PNGs in `src/client/public/ico/` (favicons, PWA, apple-touch)
 
 To test locally:
 
@@ -141,7 +141,7 @@ src/
   server/   Worker + Hono API (routes, middleware, db, media, audit, auth, lib)
   shared/   Types + Zod schemas shared by client and server
 migrations/ Drizzle SQL migrations
-scripts/    Seed, export, PWA icon generation (`generate-pwa-icons.mjs`)
+scripts/    Seed, export
 tests/      Vitest unit + integration
 ```
 

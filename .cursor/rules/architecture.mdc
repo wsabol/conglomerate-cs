@@ -34,7 +34,7 @@ CORS - client and API share an origin.
 - `main.tsx` registers via `virtual:pwa-register` (`registerType: autoUpdate`, `injectRegister: null`).
 - Build outputs: `dist/client/manifest.webmanifest`, `sw.js`, `workbox-*.js` (served by ASSETS).
 - Precaches SPA shell (JS/CSS/fonts/icons). `/api` and `/media` are `NetworkOnly` — never cache archive data.
-- Icons: source `src/client/public/icon.svg`; PNGs via `npm run icons:generate` (`scripts/generate-pwa-icons.mjs`, uses `sharp`). `build` runs icon generation first.
+- Icons: static PNGs in `src/client/public/ico/` (favicons, PWA, apple-touch).
 - Dev SW enabled (`devOptions.enabled`); artifacts go to `src/client/dev-dist/` (gitignored).
 
 ## Golden rules
