@@ -58,8 +58,8 @@ DEV_USER_EMAIL = ""
 DEV_USER_ROLE = ""
 ACCESS_ENFORCED = "true"
 # Set ACCESS_TEAM_DOMAIN and ACCESS_AUD via `wrangler secret put` or vars.
-ACCESS_TEAM_DOMAIN = ""
-ACCESS_AUD = ""
+ACCESS_TEAM_DOMAIN = "wsabol-team.cloudflareaccess.com"
+ACCESS_AUD = "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a"
 
 [[env.production.d1_databases]]
 binding = "DB"
