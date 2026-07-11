@@ -45,7 +45,7 @@ name = "conglomerate-cs"
 directory = "./dist/client"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Only /api and /media hit the Worker first. Leave /cdn-cgi/access/* to
+# Only /api and /media hit the Worker first. Leave /cdn-cgi/access/*
 # Cloudflare Access — run_worker_first = true breaks the auth callback.
 run_worker_first = ["/api/*", "/media/*"]
 
