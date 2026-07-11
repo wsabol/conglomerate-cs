@@ -3,16 +3,19 @@ export interface InviteEmailContent {
   inviteeName: string;
   inviterEmail: string;
   welcomeUrl: string;
+  logoUrl: string;
 }
 
 export function renderInviteEmailHtml({
   inviteeName,
   inviterEmail,
   welcomeUrl,
+  logoUrl,
 }: InviteEmailContent): string {
   const safeName = escapeHtml(inviteeName);
-  const safeInviter = escapeHtml(inviterEmail);
+  // const safeInviter = escapeHtml(inviterEmail);
   const safeUrl = escapeHtml(welcomeUrl);
+  const safeLogoUrl = escapeHtml(logoUrl);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -28,6 +31,7 @@ export function renderInviteEmailHtml({
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:40px 32px;">
           <tr>
             <td style="text-align:center;padding-bottom:24px;">
+              <img src="${safeLogoUrl}" alt="The Conglomerate" width="96" height="96" style="display:block;margin:0 auto 16px;" />
               <p style="margin:0;font-family:Bodoni Moda,Georgia,serif;font-size:32px;font-weight:700;color:#f5f0e8;">The Conglomerate</p>
               <p style="margin:12px 0 0;font-size:16px;color:#b8b0a4;">A private archive.</p>
             </td>
@@ -36,10 +40,13 @@ export function renderInviteEmailHtml({
             <td style="font-size:16px;line-height:1.6;color:#d9d2c7;">
               <p style="margin:0 0 16px;">Hi ${safeName},</p>
               <p style="margin:0 0 16px;">
-                ${safeInviter} invited you to explore The Conglomerate — our private band archive.
+                You have been invited to access The Conglomerate Archives — a private collection of band history, photos, videos, memberberries, and more.
               </p>
               <p style="margin:0 0 28px;">
                 Use the button below to get started. You'll sign in with Google or a one-time email PIN.
+              </p>
+              <p style="margin:0 0 28px;">
+                <em>Funk is love. Funk is life.</em>
               </p>
             </td>
           </tr>

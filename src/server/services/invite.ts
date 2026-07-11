@@ -51,6 +51,7 @@ export async function processInvite(
 
   const { id, rawToken } = await createInvite(db, env, input, invitedByUserId);
   const welcomeUrl = buildWelcomeUrl(config.appBaseUrl, rawToken);
+  const logoUrl = `${config.appBaseUrl.replace(/\/$/, "")}/ico/logo-transparent.png`;
 
   try {
     const providerMessageId = await sendInviteEmail(env, {
@@ -58,6 +59,7 @@ export async function processInvite(
       inviteeName: input.name,
       inviterEmail,
       welcomeUrl,
+      logoUrl,
     });
     await markInviteSent(db, id, providerMessageId);
   } catch (err) {

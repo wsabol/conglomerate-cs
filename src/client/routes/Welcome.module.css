@@ -22,6 +22,19 @@
   box-shadow: var(--shadow-lg);
 }
 
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+}
+
 .brand {
   font-family: var(--font-display);
   font-size: var(--text-3xl);

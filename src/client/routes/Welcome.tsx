@@ -46,7 +46,16 @@ export default function Welcome() {
   return (
     <div className={styles.screen}>
       <div className={styles.card}>
-        <p className={styles.brand}>The Conglomerate</p>
+        <header className={styles.header}>
+          <img
+            className={styles.logo}
+            src="/ico/logo-transparent.png"
+            alt=""
+            width={96}
+            height={96}
+          />
+          <p className={styles.brand}>The Conglomerate</p>
+        </header>
         {loading ? (
           <Spinner label="Verifying invite" />
         ) : error ? (

@@ -18,9 +18,9 @@ enabled = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "theconglomerate"
+database_name = "conglomerate"
 # Placeholder id: local development ignores this. Replace for remote/prod.
-database_id = "272b09d7-9db9-47e1-94fa-0d9a50b2e7cc"
+database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
@@ -39,7 +39,7 @@ ACCESS_AUD = ""
 ACCESS_ACCOUNT_ID = ""
 ACCESS_POLICY_ID = ""
 APP_BASE_URL = "http://localhost:5173"
-INVITE_FROM_EMAIL = "invites@theconglomerate.local"
+INVITE_FROM_EMAIL = "invites@conglomochat.willsabol.com"
 INVITE_TOKEN_TTL_DAYS = "7"
 INVITE_THROTTLE_HOURS = "24"
 
