@@ -1,7 +1,7 @@
 .heroBanner {
   position: relative;
   margin-bottom: var(--space-6);
-  min-height: min(90vh, 850px);
+  min-height: 90vh;
   overflow: hidden;
 }
 
