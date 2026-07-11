@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
+    "build:prod": "npm run typecheck && npm run test && npm run build",
     "typecheck": "tsc -p tsconfig.client.json && tsc -p tsconfig.server.json && tsc -p tsconfig.node.json",
     "types": "wrangler types",
     "test": "vitest run",
