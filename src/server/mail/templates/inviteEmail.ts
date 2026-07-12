@@ -31,7 +31,6 @@ export function renderInviteEmailHtml({
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:40px 32px;">
           <tr>
             <td style="text-align:center;padding-bottom:24px;">
-              <img src="${safeLogoUrl}" alt="The Conglomerate" width="96" height="96" style="display:block;margin:0 auto 16px;" />
               <p style="margin:0;font-family:Bodoni Moda,Georgia,serif;font-size:32px;font-weight:700;color:#f5f0e8;">The Conglomerate</p>
               <p style="margin:12px 0 0;font-size:16px;color:#b8b0a4;">A private archive.</p>
             </td>
