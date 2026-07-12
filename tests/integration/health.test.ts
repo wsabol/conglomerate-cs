@@ -11,9 +11,26 @@ describe("GET /api/health", () => {
     const body = (await res.json()) as ApiResponse<{
       ok: boolean;
       environment: string;
+      user?: unknown;
     }>;
     expect(body.message).toBe("healthy");
     expect(body.data?.ok).toBe(true);
+    expect(body.data?.environment).toBe("test");
+    expect(body.data).not.toHaveProperty("user");
+  });
+
+  it("does not require authentication headers", async () => {
+    const res = await app.request(
+      "/api/health",
+      {
+        headers: {
+          Cookie: "",
+          "Cf-Access-Jwt-Assertion": "",
+        },
+      },
+      env,
+    );
+    expect(res.status).toBe(200);
   });
 
   it("unknown API routes return the error envelope", async () => {
