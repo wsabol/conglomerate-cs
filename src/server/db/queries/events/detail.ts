@@ -26,45 +26,45 @@ async function loadEventAggregate(db: Db, slug: string) {
     .get();
   if (!event) return null;
 
-  const place = event.placeId
-    ? ((await db
-        .select()
-        .from(places)
-        .where(eq(places.id, event.placeId))
-        .get()) ?? null)
-    : null;
-
-  const perf = await db
-    .select()
-    .from(eventPerformanceDetails)
-    .where(eq(eventPerformanceDetails.eventId, event.id))
-    .get();
-
-  const peopleRows = await db
-    .select({
-      personId: eventPeople.personId,
-      relationshipType: eventPeople.relationshipType,
-      notes: eventPeople.notes,
-      displayName: people.displayName,
-    })
-    .from(eventPeople)
-    .innerJoin(people, eq(people.id, eventPeople.personId))
-    .where(
-      and(eq(eventPeople.eventId, event.id), eq(eventPeople.isDeleted, false)),
-    );
-
-  const acts = await db
-    .select()
-    .from(eventActs)
-    .where(eq(eventActs.eventId, event.id));
-
-  const sources = await db
-    .select()
-    .from(eventSources)
-    .where(eq(eventSources.eventId, event.id));
-
-  const mediaItems = await listMediaForEvent(db, event.id);
-  const eventAnnotations = await getAnnotations(db, "event", event.id);
+  const [
+    place,
+    perf,
+    peopleRows,
+    acts,
+    sources,
+    mediaItems,
+    eventAnnotations,
+  ] = await Promise.all([
+    event.placeId
+      ? db
+          .select()
+          .from(places)
+          .where(eq(places.id, event.placeId))
+          .get()
+          .then((row) => row ?? null)
+      : Promise.resolve(null),
+    db
+      .select()
+      .from(eventPerformanceDetails)
+      .where(eq(eventPerformanceDetails.eventId, event.id))
+      .get(),
+    db
+      .select({
+        personId: eventPeople.personId,
+        relationshipType: eventPeople.relationshipType,
+        notes: eventPeople.notes,
+        displayName: people.displayName,
+      })
+      .from(eventPeople)
+      .innerJoin(people, eq(people.id, eventPeople.personId))
+      .where(
+        and(eq(eventPeople.eventId, event.id), eq(eventPeople.isDeleted, false)),
+      ),
+    db.select().from(eventActs).where(eq(eventActs.eventId, event.id)),
+    db.select().from(eventSources).where(eq(eventSources.eventId, event.id)),
+    listMediaForEvent(db, event.id),
+    getAnnotations(db, "event", event.id),
+  ]);
 
   const heroImageId = event.heroImageId ?? null;
   const posterId = perf?.eventPosterId ?? null;

@@ -9,6 +9,7 @@ export const eventsQuerySchema = z.object({
   q: z.string().trim().min(1).optional(),
   lineup: z.enum(BILLING_ROLES).optional(),
   sort: z.enum(["modified", "date"]).default("modified"),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
   detailed: z
     .string()
     .optional()

@@ -4,17 +4,8 @@ import { ok } from "../lib/response";
 
 const route = new Hono<AppEnv>();
 
-route.get("/", (c) => {
-  const user = c.get("user");
-  return ok(
-    c,
-    {
-      ok: true,
-      environment: c.env.ENVIRONMENT,
-      user: user ? { email: user.email, role: user.role } : null,
-    },
-    "healthy",
-  );
-});
+route.get("/", (c) =>
+  ok(c, { ok: true, environment: c.env.ENVIRONMENT }, "healthy"),
+);
 
 export default route;

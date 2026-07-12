@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Container, Grid } from "../components/layout";
 import { Button, buttonClass } from "../components/ui/Button";
 import { PerformanceCard } from "../components/cards/PerformanceCard";
-import { Spinner } from "../components/state";
+import { ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listEvents } from "../lib/events";
 import { getArchiveStats } from "../lib/stats";
@@ -15,13 +15,13 @@ import { Decor } from "@client/components/ui/Decor";
 import { MediaFrame } from "@client/components/media/MediaFrame";
 
 export default function Home() {
-  const { data, loading } = useAsync(
-    () => listEvents({ sort: "modified" }),
+  const { data, loading, error, reload } = useAsync(
+    () => listEvents({ sort: "modified", limit: 4 }),
     [],
   );
   const { data: stats } = useAsync(() => getArchiveStats(), []);
 
-  const recent = (data?.results ?? []).slice(0, 4);
+  const recent = data?.results ?? [];
 
   return (
     <>
@@ -108,6 +108,8 @@ export default function Home() {
           </div>
           {loading ? (
             <Spinner label="Loading recent additions" />
+          ) : error ? (
+            <ErrorState message={error.message} onRetry={reload} />
           ) : (
             <Grid min={240}>
               {recent.map((event) => (
