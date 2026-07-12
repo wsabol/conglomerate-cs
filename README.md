@@ -136,7 +136,10 @@ D1, R2). Top-level `[vars]` is local dev only.
 2. **R2:** Create bucket `conglomerate-media` (or update the name in
    `wrangler.toml`). For direct browser uploads, create R2 API tokens and set
    secrets via `wrangler secret put --env production`: `R2_ACCOUNT_ID`,
-   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`. Then allow
+   browser PUTs from your app origin:
+   `npx wrangler r2 bucket cors set conglomerate-media --file r2-cors.json`
+   (edit `r2-cors.json` origins if your production URL changes).
 3. **Access:** Create a self-hosted Access application for your domain with an
    email allowlist policy (Google + one-time PIN). `ACCESS_ENFORCED`,
    `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` are in `[env.production.vars]`.
