@@ -121,6 +121,20 @@ describe("GET /api/events", () => {
     expect(body.data?.results[0].slug).toBe("rock-your-independence-2011-07-03");
   });
 
+  it("limits the number of results when requested", async () => {
+    await seed();
+    const res = await app.request("/api/events?limit=1", {}, env);
+    const body = (await res.json()) as ApiResponse<ListResult<EventListItemDTO>>;
+    expect(body.data?.results.length).toBe(1);
+    expect(body.data?.results[0].slug).toBe("rock-your-independence-2011-07-03");
+  });
+
+  it("rejects invalid limits", async () => {
+    await seed();
+    const res = await app.request("/api/events?limit=0", {}, env);
+    expect(res.status).toBe(400);
+  });
+
   it("returns export-shaped aggregates when detailed=true", async () => {
     const { personId } = await seed();
     const res = await app.request("/api/events?detailed=true", {}, env);

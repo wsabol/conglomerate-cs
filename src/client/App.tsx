@@ -19,7 +19,7 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/signin" element={<SignIn />} />
+          {/* <Route path="/signin" element={<SignIn />} /> */}
           <Route path="/welcome" element={<Welcome />} />
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />

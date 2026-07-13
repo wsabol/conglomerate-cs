@@ -75,7 +75,7 @@ export default function Welcome() {
         ) : error ? (
           <>
             <p className={styles.tagline}>{error}</p>
-            <Link className={buttonClass("primary", "md", true)} to="/signin">
+            <Link className={buttonClass("primary", "md", true)} to="/signin" style={{ display: "none" }}>
               Go to sign in
             </Link>
           </>

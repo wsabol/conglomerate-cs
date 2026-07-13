@@ -12,6 +12,7 @@ export type EventUpdateBody = z.input<typeof eventUpdateSchema>;
 
 export interface ListEventsParams {
   sort?: "date" | "modified";
+  limit?: number;
   event_type?: EventType;
   q?: string;
   place?: string | number;

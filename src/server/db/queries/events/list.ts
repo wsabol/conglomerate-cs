@@ -98,7 +98,7 @@ export async function listEvents(
   q: EventsQuery,
 ): Promise<EventListItemDTO[]> {
   const conds = eventListConditions(db, q);
-  const rows = await db
+  const baseQuery = db
     .select({
       id: events.id,
       slug: events.slug,
@@ -122,6 +122,10 @@ export async function listEvents(
     )
     .where(and(...conds))
     .orderBy(q.sort === "date" ? desc(events.eventDate) : desc(events.modifiedOn));
+
+  const rows = q.limit
+    ? await baseQuery.limit(q.limit)
+    : await baseQuery;
 
   const availability = await mediaAvailability(
     db,

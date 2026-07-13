@@ -27,19 +27,23 @@ export function createApp() {
   app.notFound(notFoundHandler);
 
   const api = new Hono<AppEnv>();
-  api.use("*", identity);
+  // Health is unauthenticated so uptime probes skip JWT verification and D1.
   api.route("/health", healthRoute);
-  api.route("/me", meRoute);
-  api.route("/events", eventsRoute);
-  api.route("/people", peopleRoute);
-  api.route("/acts", actsRoute);
-  api.route("/places", placesRoute);
-  api.route("/media", mediaApiRoute);
-  api.route("/uploads", uploadsRoute);
-  api.route("/annotations", annotationsRoute);
-  api.route("/admin", adminRoute);
-  api.route("/invites", invitesRoute);
-  api.route("/stats", statsRoute);
+
+  const authed = new Hono<AppEnv>();
+  authed.use("*", identity);
+  authed.route("/me", meRoute);
+  authed.route("/events", eventsRoute);
+  authed.route("/people", peopleRoute);
+  authed.route("/acts", actsRoute);
+  authed.route("/places", placesRoute);
+  authed.route("/media", mediaApiRoute);
+  authed.route("/uploads", uploadsRoute);
+  authed.route("/annotations", annotationsRoute);
+  authed.route("/admin", adminRoute);
+  authed.route("/invites", invitesRoute);
+  authed.route("/stats", statsRoute);
+  api.route("/", authed);
 
   app.route("/api", api);
   app.route("/media", mediaDeliveryRoute);

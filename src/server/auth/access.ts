@@ -21,7 +21,7 @@ interface AccessClaims {
   nbf?: number;
 }
 
-const JWKS_TTL_MS = 60 * 60 * 1000;
+const JWKS_TTL_SECONDS = 60 * 60;
 const keyCache = new Map<string, { keys: Jwk[]; fetchedAt: number }>();
 
 export async function verifyAccessEmail(
@@ -98,20 +98,51 @@ async function verifyToken(
   return claims;
 }
 
-async function findKey(teamDomain: string, kid: string): Promise<Jwk | null> {
-  const cached = keyCache.get(teamDomain);
-  if (cached && Date.now() - cached.fetchedAt < JWKS_TTL_MS) {
-    const hit = cached.keys.find((k) => k.kid === kid);
-    if (hit) return hit;
+function jwksCacheKey(teamDomain: string): string {
+  return `https://access-jwks.internal/${teamDomain}`;
+}
+
+async function loadJwks(teamDomain: string): Promise<Jwk[]> {
+  const mem = keyCache.get(teamDomain);
+  if (mem && Date.now() - mem.fetchedAt < JWKS_TTL_SECONDS * 1000) {
+    return mem.keys;
+  }
+
+  const cacheReq = new Request(jwksCacheKey(teamDomain));
+  const cached = await caches.default.match(cacheReq);
+  if (cached) {
+    try {
+      const keys = (await cached.json()) as Jwk[];
+      keyCache.set(teamDomain, { keys, fetchedAt: Date.now() });
+      return keys;
+    } catch {
+      // Fall through to network fetch.
+    }
   }
 
   const url = `https://${teamDomain}/cdn-cgi/access/certs`;
   const res = await fetch(url);
-  if (!res.ok) return cached?.keys.find((k) => k.kid === kid) ?? null;
+  if (!res.ok) return mem?.keys ?? [];
 
   const data = (await res.json()) as { keys?: Jwk[] };
   const keys = data.keys ?? [];
   keyCache.set(teamDomain, { keys, fetchedAt: Date.now() });
+
+  await caches.default.put(
+    cacheReq,
+    new Response(JSON.stringify(keys), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": `public, max-age=${JWKS_TTL_SECONDS}`,
+      },
+    }),
+  );
+
+  return keys;
+}
+
+async function findKey(teamDomain: string, kid: string): Promise<Jwk | null> {
+  const keys = await loadJwks(teamDomain);
   return keys.find((k) => k.kid === kid) ?? null;
 }
 
