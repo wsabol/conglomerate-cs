@@ -102,7 +102,8 @@ function baseEventFields(
     datePrecision: event.datePrecision,
     confidence: event.confidence,
     place: place ? { id: place.id, name: place.name } : null,
-    heroImageId: resolvedHeroId,
+    // Raw FK — display URL still resolves hero ?? poster below.
+    heroImageId: event.heroImageId ?? null,
     heroImageUrl: resolvedHeroId ? mediaDeliveryUrl(resolvedHeroId) : null,
     summary: event.summary,
     performance: perf

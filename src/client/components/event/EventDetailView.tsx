@@ -123,6 +123,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               <EventSummaryPanel
                 event={event}
                 canUpload={!!user && !isNarrow}
+                isEditor={isEditor}
                 onReload={onReload}
               />
             </div>

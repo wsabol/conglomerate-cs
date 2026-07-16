@@ -116,6 +116,40 @@
   margin: var(--space-3) 0 0;
 }
 
+.posterActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.actionButton:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.danger:hover:not(:disabled) {
+  color: var(--color-orange);
+}
+
 .eventPosterCard {
   display: block;
 }
@@ -126,6 +160,10 @@
   }
 
   .posterUpload {
+    display: none;
+  }
+
+  .posterActions {
     display: none;
   }
 

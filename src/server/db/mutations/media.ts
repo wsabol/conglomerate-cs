@@ -1,6 +1,12 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../client";
-import { events, media, mediaPeople, people } from "../schema";
+import {
+  eventPerformanceDetails,
+  events,
+  media,
+  mediaPeople,
+  people,
+} from "../schema";
 import type { MediaUpdateInput } from "@shared/schemas/media";
 import type { AppUser } from "../../env";
 import { recordRevision } from "../../audit/revision";
@@ -104,6 +110,21 @@ export async function softDeleteMedia(
   const isOwner = existing.createdBy === user.id;
   const isEditor = user.role === "editor";
   if (!isOwner && !isEditor) throw forbidden("Not allowed to delete this media.");
+
+  // Clear role FKs that still point at this media so soft-deleted rows
+  // do not keep driving hero/poster display.
+  await db
+    .update(events)
+    .set({
+      heroImageId: null,
+      modifiedOn: sql`(CURRENT_TIMESTAMP)`,
+    })
+    .where(eq(events.heroImageId, id));
+
+  await db
+    .update(eventPerformanceDetails)
+    .set({ eventPosterId: null })
+    .where(eq(eventPerformanceDetails.eventPosterId, id));
 
   await db
     .update(media)

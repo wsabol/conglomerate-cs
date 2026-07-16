@@ -8,12 +8,14 @@ import styles from "./EventDetailView.module.css";
 interface EventSummaryPanelProps {
   event: EventDetailDTO;
   canUpload: boolean;
+  isEditor: boolean;
   onReload: () => void;
 }
 
 export function EventSummaryPanel({
   event,
   canUpload,
+  isEditor,
   onReload,
 }: EventSummaryPanelProps) {
   return (
@@ -36,6 +38,7 @@ export function EventSummaryPanel({
       <EventMediaGallery
         event={event}
         canUpload={canUpload}
+        isEditor={isEditor}
         onReload={onReload}
       />
     </>
