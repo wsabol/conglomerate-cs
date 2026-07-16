@@ -187,10 +187,20 @@
   min-width: 0;
 }
 
+.mediaVisual {
+  position: relative;
+  min-width: 0;
+}
+
 .mediaBadges {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  pointer-events: none;
 }
 
 .mediaBadge {

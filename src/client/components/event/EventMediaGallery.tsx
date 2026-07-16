@@ -104,21 +104,25 @@ export function EventMediaGallery({
 
             return (
               <div key={item.id} className={styles.mediaItem}>
-                <MediaFrame
-                  type={item.mediaType}
-                  src={item.url ?? ""}
-                  title={item.title}
-                  caption={item.description}
-                  poster={item.thumbUrl}
-                />
-                {(isHero || isPoster) && (
-                  <div className={styles.mediaBadges}>
-                    {isHero && <span className={styles.mediaBadge}>Hero</span>}
-                    {isPoster && (
-                      <span className={styles.mediaBadge}>Poster</span>
-                    )}
-                  </div>
-                )}
+                <div className={styles.mediaVisual}>
+                  <MediaFrame
+                    type={item.mediaType}
+                    src={item.url ?? ""}
+                    title={item.title}
+                    caption={item.description}
+                    poster={item.thumbUrl}
+                  />
+                  {(isHero || isPoster) && (
+                    <div className={styles.mediaBadges}>
+                      {isHero && (
+                        <span className={styles.mediaBadge}>Hero</span>
+                      )}
+                      {isPoster && (
+                        <span className={styles.mediaBadge}>Poster</span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {canManage && (
                   <div className={styles.mediaActions}>
                     {isPhoto && !isHero && (
