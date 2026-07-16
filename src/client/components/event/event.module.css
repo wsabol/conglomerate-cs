@@ -125,6 +125,10 @@
   padding-top: var(--space-3);
 }
 
+.replacing {
+  margin-bottom: var(--space-3);
+}
+
 .actionButton {
   display: inline-flex;
   align-items: center;

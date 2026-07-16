@@ -126,24 +126,27 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
             title="Event poster"
           />
           {canManage && (
-            <div className={styles.posterActions}>
+            <div className={cn(styles.posterActions, replacing && styles.replacing)}>
               <button
                 type="button"
                 className={styles.actionButton}
                 disabled={busy}
                 onClick={() => setReplacing((open) => !open)}
               >
-                <Icon name="edit" size={15} />
-                {replacing ? "Cancel" : "Replace"}
+                {replacing ? (
+                  <><Icon name="chevron-left" size={15} /> Cancel</>
+                ) : (
+                  <><Icon name="edit" size={15} /> Replace</>
+                )}
               </button>
-              <button
-                type="button"
-                className={cn(styles.actionButton, styles.danger)}
-                disabled={busy}
-                onClick={handleClear}
-              >
-                <Icon name="trash" size={15} /> Clear
-              </button>
+              {!replacing && <button
+                  type="button"
+                  className={cn(styles.actionButton, styles.danger)}
+                  disabled={busy}
+                  onClick={handleClear}
+                >
+                  <Icon name="trash" size={15} /> Clear
+                </button>}
             </div>
           )}
           {canManage && replacing && uploadControls}
