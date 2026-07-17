@@ -89,7 +89,12 @@ export async function claimAndIngestVideo(
   db: Db,
   row: MediaRow,
   creatorId: number,
-  options?: { force?: boolean; videoBuffer?: ArrayBuffer },
+  options?: {
+    force?: boolean;
+    videoBuffer?: ArrayBuffer;
+    executionCtx?: Pick<ExecutionContext, "waitUntil">;
+    deferIngestOverBytes?: number;
+  },
 ): Promise<MediaRow> {
   const config = getConfig(env);
   const started = Date.now();
@@ -132,90 +137,102 @@ export async function claimAndIngestVideo(
 
   const stream = createStreamVideoService(env);
   const ingestMethod = resolveStreamIngestMethod(row.size ?? 0);
+  const deferIngest =
+    Boolean(options?.executionCtx) &&
+    (row.size ?? 0) >= (options?.deferIngestOverBytes ?? Number.POSITIVE_INFINITY);
 
-  try {
-    const result = await stream.ingestFromR2({
-      mediaId: row.id,
-      r2Key: row.r2Key!,
-      filename: row.originalFilename ?? `media-${row.id}`,
-      creatorId,
-      videoBuffer: options?.videoBuffer,
-    });
-
+  const runIngest = async (): Promise<MediaRow> => {
     try {
-      const updated = await saveStreamIngestResult(
+      const result = await stream.ingestFromR2({
+        mediaId: row.id,
+        r2Key: row.r2Key!,
+        filename: row.originalFilename ?? `media-${row.id}`,
+        creatorId,
+        videoBuffer: options?.videoBuffer,
+      });
+
+      try {
+        const updated = await saveStreamIngestResult(
+          db,
+          row.id,
+          result.uid,
+          result.state,
+        );
+        logProcessing({
+          mediaId: row.id,
+          streamUid: result.uid,
+          r2Key: row.r2Key,
+          operation: "stream_ingest",
+          processingAttempt: updated.processingAttempts,
+          statusBefore: row.status,
+          statusAfter: "processing",
+          durationMs: Date.now() - started,
+          ingestMethod,
+        });
+        return updated;
+      } catch (dbErr) {
+        logProcessing({
+          mediaId: row.id,
+          streamUid: result.uid,
+          r2Key: row.r2Key,
+          operation: "stream_ingest_orphan",
+          processingAttempt: claimed.processingAttempts,
+          statusBefore: row.status,
+          statusAfter: "processing",
+          durationMs: Date.now() - started,
+          errorCode: "STREAM_INGEST_FAILED",
+        });
+        console.error("Orphaned Stream UID after D1 update failure", {
+          mediaId: row.id,
+          streamUid: result.uid,
+          error: dbErr instanceof Error ? dbErr.message : "unknown",
+        });
+        throw dbErr;
+      }
+    } catch (err) {
+      const classified = classifyStreamIngestError(err, {
+        method: ingestMethod,
+        sizeBytes: row.size ?? undefined,
+      });
+      await markIngestFailed(
         db,
         row.id,
-        result.uid,
-        result.state,
+        classified.code,
+        classified.message,
       );
       logProcessing({
         mediaId: row.id,
-        streamUid: result.uid,
         r2Key: row.r2Key,
-        operation: "stream_ingest",
-        processingAttempt: updated.processingAttempts,
-        statusBefore: row.status,
-        statusAfter: "processing",
-        durationMs: Date.now() - started,
-        ingestMethod,
-      });
-      return updated;
-    } catch (dbErr) {
-      logProcessing({
-        mediaId: row.id,
-        streamUid: result.uid,
-        r2Key: row.r2Key,
-        operation: "stream_ingest_orphan",
+        operation: "stream_ingest_failed",
         processingAttempt: claimed.processingAttempts,
         statusBefore: row.status,
-        statusAfter: "processing",
+        statusAfter: "failed",
         durationMs: Date.now() - started,
-        errorCode: "STREAM_INGEST_FAILED",
+        errorCode: classified.code,
+        errorMessage: classified.message,
+        ingestMethod,
       });
-      console.error("Orphaned Stream UID after D1 update failure", {
+      console.error("Stream ingest failed", {
         mediaId: row.id,
-        streamUid: result.uid,
-        error: dbErr instanceof Error ? dbErr.message : "unknown",
+        ingestMethod,
+        errorCode: classified.code,
+        error: classified.message,
       });
-      throw dbErr;
+      const failed = await db
+        .select()
+        .from(media)
+        .where(eq(media.id, row.id))
+        .get();
+      return failed ?? claimed;
     }
-  } catch (err) {
-    const classified = classifyStreamIngestError(err, {
-      method: ingestMethod,
-      sizeBytes: row.size ?? undefined,
-    });
-    await markIngestFailed(
-      db,
-      row.id,
-      classified.code,
-      classified.message,
-    );
-    logProcessing({
-      mediaId: row.id,
-      r2Key: row.r2Key,
-      operation: "stream_ingest_failed",
-      processingAttempt: claimed.processingAttempts,
-      statusBefore: row.status,
-      statusAfter: "failed",
-      durationMs: Date.now() - started,
-      errorCode: classified.code,
-      errorMessage: classified.message,
-      ingestMethod,
-    });
-    console.error("Stream ingest failed", {
-      mediaId: row.id,
-      ingestMethod,
-      errorCode: classified.code,
-      error: classified.message,
-    });
-    const failed = await db
-      .select()
-      .from(media)
-      .where(eq(media.id, row.id))
-      .get();
-    return failed ?? claimed;
+  };
+
+  if (deferIngest) {
+    options!.executionCtx!.waitUntil(runIngest());
+    return claimed;
   }
+
+  return runIngest();
 }
 
 export async function transitionVideoToUploaded(

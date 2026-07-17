@@ -8,9 +8,9 @@ import { getConfig, mediaTypeForMime } from "../../lib/config";
 import { badRequest, conflict, notFound } from "../../lib/errors";
 import { mediaObjectKey } from "../../media/keys";
 import { createUploadTarget } from "../../media/presign";
-import { sha256Hex } from "../../media/checksum";
+import { sha256Hex, sha256HexFromStream } from "../../media/checksum";
 import { finalizeImageVariants, isImageMime } from "../../media/process";
-import { sniffVideoCodec } from "../../media/codec";
+import { sniffVideoCodec, sniffVideoCodecFromR2 } from "../../media/codec";
 import { claimAndIngestVideo, transitionVideoToUploaded } from "../../media/ingest";
 import { findPublishedMediaByChecksum, getMediaItemById } from "../queries";
 
@@ -153,11 +153,15 @@ export async function receiveUploadBody(
   return { id };
 }
 
+/** Defer Stream ingest when completing very large uploads in-request. */
+const LARGE_VIDEO_COMPLETE_BYTES = 200 * 1024 * 1024;
+
 export async function completeUpload(
   env: Env,
   db: Db,
   id: number,
   user: AppUser,
+  options?: { executionCtx?: Pick<ExecutionContext, "waitUntil"> },
 ) {
   const existing = await db
     .select()
@@ -190,22 +194,20 @@ export async function completeUpload(
     throw badRequest("Upload not found in storage.");
   }
 
-  const buffer = await object.arrayBuffer();
-  const checksum = await sha256Hex(buffer);
   const size = object.size;
+  const isVideo = existing.mediaType === "video";
 
-  const duplicate = await findPublishedMediaByChecksum(db, checksum);
-  if (duplicate && duplicate.id !== id) {
-    await abortDuplicateUpload(env, db, existing);
-    throw duplicateConflict(duplicate);
-  }
-
+  let checksum: string;
   let displayKey: string | null = null;
   let thumbKey: string | null = null;
   let videoCodec: string | null = null;
-  const isVideo = existing.mediaType === "video";
 
-  if (existing.mimeType && isImageMime(existing.mimeType)) {
+  if (isVideo) {
+    checksum = await sha256HexFromStream(object.body);
+    videoCodec = await sniffVideoCodecFromR2(env.MEDIA, existing.r2Key, size);
+  } else if (existing.mimeType && isImageMime(existing.mimeType)) {
+    const buffer = await object.arrayBuffer();
+    checksum = await sha256Hex(buffer);
     const variants = await finalizeImageVariants(
       env.MEDIA,
       id,
@@ -214,8 +216,14 @@ export async function completeUpload(
     );
     displayKey = variants.displayKey;
     thumbKey = variants.thumbKey;
-  } else if (isVideo) {
-    videoCodec = sniffVideoCodec(buffer);
+  } else {
+    checksum = await sha256HexFromStream(object.body);
+  }
+
+  const duplicate = await findPublishedMediaByChecksum(db, checksum);
+  if (duplicate && duplicate.id !== id) {
+    await abortDuplicateUpload(env, db, existing);
+    throw duplicateConflict(duplicate);
   }
 
   if (isVideo) {
@@ -239,7 +247,10 @@ export async function completeUpload(
       db,
       uploaded,
       user.id,
-      { videoBuffer: buffer },
+      {
+        executionCtx: options?.executionCtx,
+        deferIngestOverBytes: LARGE_VIDEO_COMPLETE_BYTES,
+      },
     );
 
     await recordRevision(db, {

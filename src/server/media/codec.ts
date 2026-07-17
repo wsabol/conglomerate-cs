@@ -2,6 +2,8 @@ import { isBrowserPlayableVideoCodec } from "@shared/videoCodec";
 
 const TAIL_BYTES = 5_000_000;
 
+export const VIDEO_CODEC_SNIFF_BYTES = TAIL_BYTES;
+
 const VIDEO_FOURCC_PRIORITY = [
   "avc1",
   "avc3",
@@ -26,6 +28,20 @@ export function sniffVideoCodec(buffer: ArrayBuffer): string | null {
   }
 
   return null;
+}
+
+/** Read only the tail of a large R2 object to sniff the video codec. */
+export async function sniffVideoCodecFromR2(
+  bucket: R2Bucket,
+  key: string,
+  size: number,
+): Promise<string | null> {
+  const length = Math.min(TAIL_BYTES, size);
+  if (length <= 0) return null;
+  const offset = Math.max(0, size - length);
+  const object = await bucket.get(key, { range: { offset, length } });
+  if (!object) return null;
+  return sniffVideoCodec(await object.arrayBuffer());
 }
 
 export function isUploadedVideoPlayable(
