@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "cloudflare:test";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
@@ -7,11 +7,40 @@ import { hashInviteToken } from "../../src/server/lib/inviteToken";
 import type { ApiResponse } from "../../src/shared/types";
 import type { InviteDTO, InviteVerifyDTO } from "../../src/shared/dto";
 
+function mockInviteOutboundFetch(): void {
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url,
+      );
+
+      if (url === "https://api.resend.com/emails" && init?.method === "POST") {
+        return new Response(JSON.stringify({ id: "test-resend-message-id" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      throw new Error(`Unexpected fetch in invites test: ${url}`);
+    },
+  );
+}
+
 describe("admin invites", () => {
   beforeEach(async () => {
+    mockInviteOutboundFetch();
     const db = getDb(env);
     await db.delete(invites);
     await db.delete(users);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("sends an invite as the dev editor", async () => {
