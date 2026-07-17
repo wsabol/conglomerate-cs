@@ -231,6 +231,7 @@ export const media = sqliteTable(
     externalUrl: text("external_url"), // for media_type = link
     displayKey: text("display_key"), // derived display variant (images)
     thumbKey: text("thumb_key"), // derived thumbnail (images)
+    videoCodec: text("video_codec"), // sniffed fourcc for video (e.g. avc1, mp4v)
     createdBy: integer("created_by").references(() => users.id),
     isDeleted: isDeleted(),
     createdOn: createdOn(),

@@ -33,7 +33,7 @@ route.get("/", async (c) => {
 });
 
 route.get("/:slug", async (c) => {
-  const detail = await getEventDetail(getDb(c.env), c.req.param("slug"));
+  const detail = await getEventDetail(getDb(c.env), c.req.param("slug"), c.env.MEDIA);
   if (!detail) throw notFound("Event not found.");
   return ok(c, detail, "Returned event");
 });

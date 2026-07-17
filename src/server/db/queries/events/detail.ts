@@ -18,7 +18,11 @@ import { listMediaForEvent } from "../media";
 import { eventListConditions } from "./list";
 import { isEventHeadlined } from "./headliner";
 
-async function loadEventAggregate(db: Db, slug: string) {
+async function loadEventAggregate(
+  db: Db,
+  slug: string,
+  bucket?: import("../../env").Env["MEDIA"],
+) {
   const event = await db
     .select()
     .from(events)
@@ -62,7 +66,7 @@ async function loadEventAggregate(db: Db, slug: string) {
       ),
     db.select().from(eventActs).where(eq(eventActs.eventId, event.id)),
     db.select().from(eventSources).where(eq(eventSources.eventId, event.id)),
-    listMediaForEvent(db, event.id),
+    listMediaForEvent(db, event.id, bucket),
     getAnnotations(db, "event", event.id),
   ]);
 
@@ -144,8 +148,9 @@ function baseEventFields(
 export async function getEventDetail(
   db: Db,
   slug: string,
+  bucket?: import("../../env").Env["MEDIA"],
 ): Promise<EventDetailDTO | null> {
-  const data = await loadEventAggregate(db, slug);
+  const data = await loadEventAggregate(db, slug, bucket);
   if (!data) return null;
 
   const { acts, mediaItems, perf, placeDTO } = data;

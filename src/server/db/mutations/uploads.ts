@@ -10,6 +10,7 @@ import { mediaObjectKey } from "../../media/keys";
 import { createUploadTarget } from "../../media/presign";
 import { sha256Hex } from "../../media/checksum";
 import { finalizeImageVariants, isImageMime } from "../../media/process";
+import { sniffVideoCodec } from "../../media/codec";
 import { findPublishedMediaByChecksum, getMediaItemById } from "../queries";
 
 type DuplicateMedia = NonNullable<
@@ -163,7 +164,7 @@ export async function completeUpload(
     .get();
   if (!existing) throw notFound("Media not found.");
   if (existing.status === "published") {
-    return getMediaItemById(db, id);
+    return getMediaItemById(db, id, env.MEDIA);
   }
   if (existing.createdBy !== user.id && user.role !== "editor") {
     throw badRequest("Not your upload.");
@@ -191,6 +192,7 @@ export async function completeUpload(
 
   let displayKey: string | null = null;
   let thumbKey: string | null = null;
+  let videoCodec: string | null = null;
   if (existing.mimeType && isImageMime(existing.mimeType)) {
     const variants = await finalizeImageVariants(
       env.MEDIA,
@@ -200,6 +202,8 @@ export async function completeUpload(
     );
     displayKey = variants.displayKey;
     thumbKey = variants.thumbKey;
+  } else if (existing.mediaType === "video") {
+    videoCodec = sniffVideoCodec(buffer);
   }
 
   let updated: typeof media.$inferSelect;
@@ -212,6 +216,7 @@ export async function completeUpload(
         checksum,
         displayKey,
         thumbKey,
+        videoCodec,
         modifiedOn: sql`(CURRENT_TIMESTAMP)`,
       })
       .where(eq(media.id, id))
@@ -281,5 +286,5 @@ export async function completeUpload(
     }
   }
 
-  return getMediaItemById(db, id);
+  return getMediaItemById(db, id, env.MEDIA);
 }

@@ -111,6 +111,7 @@ export function EventMediaGallery({
                     title={item.title}
                     caption={item.description}
                     poster={item.thumbUrl}
+                    playable={item.playable}
                   />
                   {(isHero || isPoster) && (
                     <div className={styles.mediaBadges}>

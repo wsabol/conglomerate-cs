@@ -111,6 +111,7 @@ export default function Media() {
                 title={m.title}
                 caption={m.description}
                 poster={m.thumbUrl}
+                playable={m.playable}
               />
               {m.eventSlug && (
                 <Link className={styles.eventLink} to={`/events/${m.eventSlug}`}>

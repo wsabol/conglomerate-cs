@@ -204,6 +204,13 @@ export default function Styleguide() {
             caption="Click to view full size"
           />
           <MediaFrame
+            type="video"
+            src=""
+            title="Reunion show recording"
+            caption="Click to play"
+            playable
+          />
+          <MediaFrame
             type="audio"
             src=""
             title="Live set - 2010-04-25"

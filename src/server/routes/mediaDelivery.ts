@@ -5,7 +5,7 @@ import { getDb } from "../db/client";
 import { media } from "../db/schema";
 import { identity } from "../middleware/identity";
 import { unauthorized, notFound } from "../lib/errors";
-import { getConfig } from "../lib/config";
+import { isInlinePlayable } from "@shared/mediaPlayback";
 import { resolveMediaKey } from "../media/presign";
 import {
   contentRange,
@@ -45,12 +45,8 @@ route.get("/:id", async (c) => {
   const object = await c.env.MEDIA.get(key);
   if (!object) throw notFound("Media file not found.");
 
-  const config = getConfig(c.env);
   const mime = object.httpMetadata?.contentType ?? row.mimeType ?? "application/octet-stream";
-  const inline =
-    row.mediaType === "photo" ||
-    config.inlinePlayback.audio.includes(mime) ||
-    config.inlinePlayback.video.includes(mime);
+  const inline = isInlinePlayable(row.mediaType, mime, row.videoCodec);
 
   const cacheControl = "private, max-age=86400";
   const baseHeaders: Record<string, string> = {

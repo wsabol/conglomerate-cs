@@ -1,5 +1,6 @@
 import type { Env } from "../env";
 import type { MediaType } from "@shared/types";
+import { INLINE_PLAYBACK_MIMES } from "@shared/mediaPlayback";
 
 // Central, env-overridable configuration. Nothing here should be hard-coded
 // inline elsewhere in the application (PRD Sec: Upload limits / Media).
@@ -85,8 +86,8 @@ export function getConfig(env: Env): AppConfig {
       document: ["application/pdf"],
     },
     inlinePlayback: {
-      audio: ["audio/mpeg", "audio/mp4", "audio/aac", "audio/x-m4a", "audio/wav"],
-      video: ["video/mp4", "video/webm"],
+      audio: [...INLINE_PLAYBACK_MIMES.audio],
+      video: [...INLINE_PLAYBACK_MIMES.video],
     },
   };
 }

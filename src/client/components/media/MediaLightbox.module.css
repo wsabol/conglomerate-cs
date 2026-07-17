@@ -54,6 +54,50 @@
   border-radius: var(--radius-sm);
 }
 
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.videoShell {
+  width: min(92vw, 960px);
+  aspect-ratio: 16 / 9;
+  max-height: min(85vh, calc(100vh - var(--space-5) * 2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.playbackError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+.playbackError svg {
+  color: var(--color-brass);
+}
+
+.downloadLink {
+  color: var(--color-emerald);
+  text-decoration: underline;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
 .caption {
   margin: var(--space-4) 0 0;
   max-width: min(100%, 48rem);

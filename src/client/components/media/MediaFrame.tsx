@@ -3,6 +3,7 @@ import type { MediaType } from "@shared/types";
 import { cn } from "../../lib/cn";
 import { Icon, type IconName } from "../ui/Icon";
 import { MediaLightbox } from "./MediaLightbox";
+import { VideoPlayer } from "./VideoPlayer";
 import styles from "./MediaFrame.module.css";
 
 export interface MediaFrameProps {
@@ -101,16 +102,15 @@ export function MediaFrame({
 
       {type === "video" &&
         (playable ? (
-          wrapVisual(
-            <video
-              className={styles.video}
-              style={mediaStyle}
-              src={src}
-              controls
-              preload="metadata"
-              poster={poster ?? undefined}
-            />,
-          )
+          <VideoPlayer
+            src={src}
+            title={title}
+            caption={caption}
+            poster={poster}
+            aspectRatio={aspectRatio}
+            overlay={overlay}
+            onOpen={onOpen}
+          />
         ) : (
           <DownloadTile type={type} src={src} title={title} />
         ))}
@@ -150,10 +150,18 @@ function DownloadTile({
   src,
   title,
 }: Pick<MediaFrameProps, "type" | "src" | "title">) {
+  const hint =
+    type === "video"
+      ? "This video format cannot play in the browser. Download to view in QuickTime or VLC."
+      : null;
+
   return (
     <div className={styles.doc}>
       <Icon name={TYPE_ICON[type]} size={22} label={type} />
-      <span>{title ?? "Archived file"}</span>
+      <div className={styles.docText}>
+        <span>{title ?? "Archived file"}</span>
+        {hint && <span className={styles.downloadHint}>{hint}</span>}
+      </div>
       <a className={styles.download} href={src} download>
         Download
       </a>

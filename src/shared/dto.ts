@@ -94,6 +94,8 @@ export interface MediaItemDTO {
   provenance: string | null;
   url: string | null; // authenticated delivery URL (/media/:id)
   thumbUrl: string | null;
+  /** Whether the file supports inline browser playback. */
+  playable: boolean;
   people: { id: number; displayName: string }[];
 }
 

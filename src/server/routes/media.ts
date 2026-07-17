@@ -13,14 +13,14 @@ const route = new Hono<AppEnv>();
 
 route.get("/", async (c) => {
   const query = mediaQuerySchema.parse(c.req.query());
-  const results = await listMedia(getDb(c.env), query);
+  const results = await listMedia(getDb(c.env), query, c.env.MEDIA);
   return okList(c, results, "Returned media");
 });
 
 route.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id)) throw badRequest("Invalid media id.");
-  const item = await getMediaItemById(getDb(c.env), id);
+  const item = await getMediaItemById(getDb(c.env), id, c.env.MEDIA);
   if (!item) throw notFound("Media not found.");
   return ok(c, item, "Returned media");
 });
