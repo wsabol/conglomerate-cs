@@ -7,8 +7,6 @@ import { logProcessing } from "../media/logging";
 
 const route = new Hono<AppEnv>();
 
-route.all("/", (c) => c.text("Method Not Allowed", 405));
-
 route.post("/", async (c) => {
   const rawBody = await c.req.text();
   const signature = c.req.header("Webhook-Signature");
@@ -31,5 +29,7 @@ route.post("/", async (c) => {
   await applyStreamWebhookEvent(db, event);
   return c.text("ok", 200);
 });
+
+route.all("/", (c) => c.text("Method Not Allowed", 405));
 
 export default route;
