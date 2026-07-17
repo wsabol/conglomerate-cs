@@ -153,8 +153,72 @@ export async function receiveUploadBody(
   return { id };
 }
 
-/** Defer Stream ingest when completing very large uploads in-request. */
+/** Defer checksum + Stream ingest when completing very large uploads. */
 const LARGE_VIDEO_COMPLETE_BYTES = 200 * 1024 * 1024;
+
+async function finalizeLargeVideoUpload(
+  env: Env,
+  db: Db,
+  row: typeof media.$inferSelect,
+  userId: number,
+): Promise<void> {
+  if (!row.r2Key) return;
+
+  try {
+    const object = await env.MEDIA.get(row.r2Key);
+    if (!object) {
+      await db
+        .update(media)
+        .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+        .where(eq(media.id, row.id));
+      return;
+    }
+
+    const size = object.size;
+    const checksum = await sha256HexFromStream(object.body);
+    const videoCodec = await sniffVideoCodecFromR2(env.MEDIA, row.r2Key, size);
+
+    const duplicate = await findPublishedMediaByChecksum(db, checksum);
+    if (duplicate && duplicate.id !== row.id) {
+      await abortDuplicateUpload(env, db, row);
+      return;
+    }
+
+    let uploaded = await transitionVideoToUploaded(db, row.id, {
+      size,
+      checksum,
+      videoCodec,
+    });
+    if (!uploaded) {
+      const fallback = await db
+        .select()
+        .from(media)
+        .where(eq(media.id, row.id))
+        .get();
+      if (!fallback) return;
+      uploaded = fallback;
+    }
+
+    const afterIngest = await claimAndIngestVideo(env, db, uploaded, userId);
+
+    await recordRevision(db, {
+      targetType: "media",
+      targetId: row.id,
+      action: "create",
+      after: afterIngest,
+      changedBy: userId,
+    });
+  } catch (err) {
+    console.error("Large video finalize failed", {
+      mediaId: row.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    await db
+      .update(media)
+      .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+      .where(eq(media.id, row.id));
+  }
+}
 
 export async function completeUpload(
   env: Env,
@@ -185,6 +249,29 @@ export async function completeUpload(
   }
   if (!existing.r2Key) throw badRequest("Missing storage key.");
 
+  const head = await env.MEDIA.head(existing.r2Key);
+  if (!head) {
+    await db
+      .update(media)
+      .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+      .where(eq(media.id, id));
+    throw badRequest("Upload not found in storage.");
+  }
+
+  const size = head.size;
+  const isVideo = existing.mediaType === "video";
+
+  if (
+    isVideo &&
+    size >= LARGE_VIDEO_COMPLETE_BYTES &&
+    options?.executionCtx
+  ) {
+    options.executionCtx.waitUntil(
+      finalizeLargeVideoUpload(env, db, existing, user.id),
+    );
+    return getMediaItemById(db, id, env.MEDIA);
+  }
+
   const object = await env.MEDIA.get(existing.r2Key);
   if (!object) {
     await db
@@ -193,9 +280,6 @@ export async function completeUpload(
       .where(eq(media.id, id));
     throw badRequest("Upload not found in storage.");
   }
-
-  const size = object.size;
-  const isVideo = existing.mediaType === "video";
 
   let checksum: string;
   let displayKey: string | null = null;
@@ -247,10 +331,6 @@ export async function completeUpload(
       db,
       uploaded,
       user.id,
-      {
-        executionCtx: options?.executionCtx,
-        deferIngestOverBytes: LARGE_VIDEO_COMPLETE_BYTES,
-      },
     );
 
     await recordRevision(db, {
