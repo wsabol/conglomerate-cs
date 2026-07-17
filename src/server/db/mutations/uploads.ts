@@ -11,6 +11,7 @@ import { createUploadTarget } from "../../media/presign";
 import { sha256Hex } from "../../media/checksum";
 import { finalizeImageVariants, isImageMime } from "../../media/process";
 import { sniffVideoCodec } from "../../media/codec";
+import { claimAndIngestVideo, transitionVideoToUploaded } from "../../media/ingest";
 import { findPublishedMediaByChecksum, getMediaItemById } from "../queries";
 
 type DuplicateMedia = NonNullable<
@@ -106,6 +107,7 @@ export async function beginUpload(
       mimeType: input.mimeType,
       size: input.size,
       status: "uploading",
+      processingProvider: category === "video" ? "stream" : null,
       createdBy: userId,
     })
     .returning()
@@ -166,6 +168,14 @@ export async function completeUpload(
   if (existing.status === "published") {
     return getMediaItemById(db, id, env.MEDIA);
   }
+  if (
+    existing.mediaType === "video" &&
+    (existing.status === "processing" ||
+      existing.status === "uploaded" ||
+      existing.streamUid)
+  ) {
+    return getMediaItemById(db, id, env.MEDIA);
+  }
   if (existing.createdBy !== user.id && user.role !== "editor") {
     throw badRequest("Not your upload.");
   }
@@ -193,6 +203,8 @@ export async function completeUpload(
   let displayKey: string | null = null;
   let thumbKey: string | null = null;
   let videoCodec: string | null = null;
+  const isVideo = existing.mediaType === "video";
+
   if (existing.mimeType && isImageMime(existing.mimeType)) {
     const variants = await finalizeImageVariants(
       env.MEDIA,
@@ -202,8 +214,42 @@ export async function completeUpload(
     );
     displayKey = variants.displayKey;
     thumbKey = variants.thumbKey;
-  } else if (existing.mediaType === "video") {
+  } else if (isVideo) {
     videoCodec = sniffVideoCodec(buffer);
+  }
+
+  if (isVideo) {
+    let uploaded = await transitionVideoToUploaded(db, id, {
+      size,
+      checksum,
+      videoCodec,
+    });
+    if (!uploaded) {
+      const fallback = await db
+        .select()
+        .from(media)
+        .where(eq(media.id, id))
+        .get();
+      if (!fallback) throw notFound("Media not found.");
+      uploaded = fallback;
+    }
+
+    const afterIngest = await claimAndIngestVideo(
+      env,
+      db,
+      uploaded,
+      user.id,
+    );
+
+    await recordRevision(db, {
+      targetType: "media",
+      targetId: id,
+      action: "create",
+      after: afterIngest,
+      changedBy: user.id,
+    });
+
+    return getMediaItemById(db, id, env.MEDIA);
   }
 
   let updated: typeof media.$inferSelect;

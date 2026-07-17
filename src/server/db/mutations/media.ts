@@ -12,6 +12,8 @@ import type { AppUser } from "../../env";
 import { recordRevision } from "../../audit/revision";
 import { getMediaItemById } from "../queries";
 import { badRequest, forbidden } from "../../lib/errors";
+import type { Env } from "../../env";
+import { deleteStreamAndR2Assets } from "../../media/retry";
 
 export async function updateMedia(
   db: Db,
@@ -99,6 +101,7 @@ export async function softDeleteMedia(
   db: Db,
   id: number,
   user: AppUser,
+  env?: Env,
 ): Promise<boolean> {
   const existing = await db
     .select()
@@ -110,6 +113,10 @@ export async function softDeleteMedia(
   const isOwner = existing.createdBy === user.id;
   const isEditor = user.role === "editor";
   if (!isOwner && !isEditor) throw forbidden("Not allowed to delete this media.");
+
+  if (env) {
+    await deleteStreamAndR2Assets(env, existing);
+  }
 
   // Clear role FKs that still point at this media so soft-deleted rows
   // do not keep driving hero/poster display.

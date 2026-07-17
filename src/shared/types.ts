@@ -79,11 +79,26 @@ export type MediaType = (typeof MEDIA_TYPES)[number];
 
 export const MEDIA_STATUSES = [
   "uploading",
+  "uploaded",
   "processing",
   "published",
   "failed",
 ] as const;
 export type MediaStatus = (typeof MEDIA_STATUSES)[number];
+
+export const PROCESSING_PROVIDERS = ["stream", "manual"] as const;
+export type ProcessingProvider = (typeof PROCESSING_PROVIDERS)[number];
+
+export const MEDIA_PROCESSING_ERROR_CODES = [
+  "STREAM_INGEST_FAILED",
+  "STREAM_PROCESSING_FAILED",
+  "STREAM_ASSET_MISSING",
+  "ORIGINAL_ASSET_MISSING",
+  "PLAYBACK_TOKEN_FAILED",
+  "UNKNOWN_PROCESSING_ERROR",
+] as const;
+export type MediaProcessingErrorCode =
+  (typeof MEDIA_PROCESSING_ERROR_CODES)[number];
 
 export const ANNOTATION_TARGET_TYPES = ["event", "media"] as const;
 export type AnnotationTargetType = (typeof ANNOTATION_TARGET_TYPES)[number];

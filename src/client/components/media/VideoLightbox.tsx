@@ -1,12 +1,17 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../ui/Icon";
+import { fetchPlayback, streamIframeSrc } from "../../lib/playback";
 import styles from "./MediaLightbox.module.css";
 
 export interface VideoLightboxProps {
   open: boolean;
   onClose: () => void;
-  src: string;
+  /** Legacy direct URL for non-Stream videos. */
+  src?: string;
+  /** Stream-backed video id. */
+  mediaId?: number;
+  playbackUrl?: string | null;
   title?: string | null;
   caption?: string | null;
   poster?: string | null;
@@ -16,6 +21,8 @@ export function VideoLightbox({
   open,
   onClose,
   src,
+  mediaId,
+  playbackUrl,
   title,
   caption,
   poster,
@@ -25,11 +32,16 @@ export function VideoLightbox({
   const titleId = useId();
   const label = title ?? "Video playback";
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const useStream = Boolean(playbackUrl && mediaId);
 
   useEffect(() => {
     if (!open) {
       videoRef.current?.pause();
       setPlaybackError(null);
+      setIframeSrc(null);
+      setLoading(false);
       return;
     }
 
@@ -52,6 +64,34 @@ export function VideoLightbox({
     };
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open || !useStream || !mediaId) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setPlaybackError(null);
+    setIframeSrc(null);
+
+    fetchPlayback(mediaId)
+      .then((playback) => {
+        if (cancelled) return;
+        setIframeSrc(streamIframeSrc(playback.token));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPlaybackError(
+          "Playback authorization failed. Try again or download the original file.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, useStream, mediaId]);
+
   function handleLoadedData() {
     const video = videoRef.current;
     if (!video || video.videoWidth > 0) return;
@@ -67,6 +107,8 @@ export function VideoLightbox({
   }
 
   if (!open) return null;
+
+  const downloadHref = src ?? (mediaId ? `/media/${mediaId}?variant=original` : "#");
 
   return createPortal(
     <div
@@ -99,10 +141,24 @@ export function VideoLightbox({
             <div className={styles.playbackError}>
               <Icon name="video" size={28} label="Video" />
               <p>{playbackError}</p>
-              <a className={styles.downloadLink} href={src} download>
+              <a className={styles.downloadLink} href={downloadHref} download>
                 Download video
               </a>
             </div>
+          ) : useStream ? (
+            loading || !iframeSrc ? (
+              <div className={styles.playbackError}>
+                <p>Loading playback…</p>
+              </div>
+            ) : (
+              <iframe
+                className={styles.video}
+                src={iframeSrc}
+                title={label}
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            )
           ) : (
             <video
               ref={videoRef}

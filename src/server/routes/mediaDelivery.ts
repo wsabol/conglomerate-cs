@@ -4,9 +4,10 @@ import type { AppEnv } from "../env";
 import { getDb } from "../db/client";
 import { media } from "../db/schema";
 import { identity } from "../middleware/identity";
-import { unauthorized, notFound } from "../lib/errors";
+import { unauthorized, notFound, badRequest } from "../lib/errors";
 import { isInlinePlayable } from "@shared/mediaPlayback";
 import { resolveMediaKey } from "../media/presign";
+import { getMediaForOriginalDownload } from "../media/access";
 import {
   contentRange,
   parseRangeHeader,
@@ -24,38 +25,59 @@ route.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id)) throw notFound("Media not found.");
 
-  const db = getDb(c.env);
-  const row = await db
-    .select()
-    .from(media)
-    .where(
-      and(
-        eq(media.id, id),
-        eq(media.status, "published"),
-        eq(media.isDeleted, false),
-      ),
-    )
-    .get();
-  if (!row) throw notFound("Media not found.");
-
   const variant = c.req.query("variant") ?? null;
+  const db = getDb(c.env);
+
+  let row: typeof media.$inferSelect;
+  if (variant === "original") {
+    row = await getMediaForOriginalDownload(db, id, user);
+  } else {
+    const published = await db
+      .select()
+      .from(media)
+      .where(
+        and(
+          eq(media.id, id),
+          eq(media.status, "published"),
+          eq(media.isDeleted, false),
+        ),
+      )
+      .get();
+    if (!published) throw notFound("Media not found.");
+    row = published;
+  }
+
   const key = resolveMediaKey(row, variant);
-  if (!key) throw notFound("Media file not found.");
+  if (!key) {
+    if (row.mediaType === "video" && row.processingProvider === "stream") {
+      throw badRequest(
+        "Use /api/media/:id/playback for Stream video playback.",
+      );
+    }
+    throw notFound("Media file not found.");
+  }
 
   const object = await c.env.MEDIA.get(key);
   if (!object) throw notFound("Media file not found.");
 
   const mime = object.httpMetadata?.contentType ?? row.mimeType ?? "application/octet-stream";
-  const inline = isInlinePlayable(row.mediaType, mime, row.videoCodec);
+  const inline =
+    variant !== "original" &&
+    isInlinePlayable(row.mediaType, mime, row.videoCodec);
 
   const cacheControl = "private, max-age=86400";
+  const disposition =
+    variant === "original"
+      ? `attachment; filename="${row.originalFilename ?? "file"}"`
+      : inline
+        ? "inline"
+        : `attachment; filename="${row.originalFilename ?? "file"}"`;
+
   const baseHeaders: Record<string, string> = {
     "Content-Type": mime,
     "Cache-Control": cacheControl,
     "Accept-Ranges": "bytes",
-    ...(inline
-      ? { "Content-Disposition": "inline" }
-      : { "Content-Disposition": `attachment; filename="${row.originalFilename ?? "file"}"` }),
+    "Content-Disposition": disposition,
   };
 
   const range = c.req.header("Range") ?? null;

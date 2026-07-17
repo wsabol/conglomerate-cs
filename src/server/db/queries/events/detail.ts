@@ -21,7 +21,7 @@ import { isEventHeadlined } from "./headliner";
 async function loadEventAggregate(
   db: Db,
   slug: string,
-  bucket?: import("../../env").Env["MEDIA"],
+  bucket?: import("../../../env").Env["MEDIA"],
 ) {
   const event = await db
     .select()
@@ -148,7 +148,7 @@ function baseEventFields(
 export async function getEventDetail(
   db: Db,
   slug: string,
-  bucket?: import("../../env").Env["MEDIA"],
+  bucket?: import("../../../env").Env["MEDIA"],
 ): Promise<EventDetailDTO | null> {
   const data = await loadEventAggregate(db, slug, bucket);
   if (!data) return null;
@@ -158,10 +158,8 @@ export async function getEventDetail(
   return {
     ...baseEventFields(data),
     media: {
-      photo: mediaItems.some((item) => item.mediaType === "photo"),
       video: mediaItems.some((item) => item.mediaType === "video"),
       audio: mediaItems.some((item) => item.mediaType === "audio"),
-      setlist: Boolean(perf?.setlistText),
     },
     headlined: isEventHeadlined(acts),
     placeDetail: placeDTO,

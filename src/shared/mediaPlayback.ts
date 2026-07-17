@@ -32,3 +32,18 @@ export function isInlinePlayable(
   }
   return false;
 }
+
+/** Whether a Stream-backed video is ready for adaptive playback. */
+export function isStreamPlayable(
+  mediaType: MediaType,
+  status: string,
+  processingProvider: string | null | undefined,
+  streamUid: string | null | undefined,
+): boolean {
+  return (
+    mediaType === "video" &&
+    processingProvider === "stream" &&
+    status === "published" &&
+    streamUid != null
+  );
+}

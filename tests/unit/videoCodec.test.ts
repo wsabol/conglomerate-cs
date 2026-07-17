@@ -11,7 +11,7 @@ describe("sniffVideoCodec", () => {
 
   it("prefers avc1 over mp4v when both are present", () => {
     const text = "moovtrakvideHandleravc1extra mp4v";
-    const buffer = new TextEncoder().encode(text).buffer;
+    const buffer = new TextEncoder().encode(text).buffer as ArrayBuffer;
     expect(sniffVideoCodec(buffer)).toBe("avc1");
   });
 });

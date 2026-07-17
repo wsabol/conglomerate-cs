@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SectionTitle } from "../ui/Card";
 import { Icon } from "../ui/Icon";
 import { MediaFrame } from "../media/MediaFrame";
 import { MediaUpload } from "../media/MediaUpload";
 import { EmptyState } from "../state";
 import { useMediaQuery } from "../../lib/useMediaQuery";
+import { useProcessingMediaPoll } from "../../lib/useProcessingMediaPoll";
 import { patchEvent, performancePatch } from "../../lib/events";
-import { deleteMedia } from "../../lib/media";
+import { deleteMedia, retryProcessing } from "../../lib/media";
 import { cn } from "../../lib/cn";
 import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
 import styles from "./EventDetailView.module.css";
@@ -32,12 +33,24 @@ export function EventMediaGallery({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const handleMediaUpdate = useCallback((items: MediaItemDTO[]) => {
+    setMediaItems(items);
+  }, []);
+
+  useProcessingMediaPoll(mediaItems, handleMediaUpdate);
+
   useEffect(() => {
     setMediaItems(event.mediaItems);
   }, [event.mediaItems]);
 
   const gallery = mediaItems.filter(
-    (item) => item.url && item.status === "published",
+    (item) =>
+      item.url &&
+      (item.status === "published" ||
+        (item.mediaType === "video" &&
+          ["uploading", "uploaded", "processing", "failed"].includes(
+            item.status,
+          ))),
   );
 
   async function handleSetHero(item: MediaItemDTO) {
@@ -65,6 +78,23 @@ export function EventMediaGallery({
       onReload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to set poster.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleRetryProcessing(item: MediaItemDTO) {
+    setBusyId(item.id);
+    setError(null);
+    try {
+      const updated = await retryProcessing(item.id);
+      setMediaItems((current) =>
+        current.map((m) => (m.id === updated.id ? updated : m)),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to retry processing.",
+      );
     } finally {
       setBusyId(null);
     }
@@ -100,6 +130,7 @@ export function EventMediaGallery({
             const isHero = item.id === event.heroImageId;
             const isPoster = item.id === event.performance?.eventPosterId;
             const isPhoto = item.mediaType === "photo";
+            const isPublished = item.status === "published";
             const busy = busyId === item.id;
 
             return (
@@ -108,10 +139,13 @@ export function EventMediaGallery({
                   <MediaFrame
                     type={item.mediaType}
                     src={item.url ?? ""}
+                    item={item}
                     title={item.title}
                     caption={item.description}
                     poster={item.thumbUrl}
                     playable={item.playable}
+                    onRetryProcessing={handleRetryProcessing}
+                    retryingProcessing={busy}
                   />
                   {(isHero || isPoster) && (
                     <div className={styles.mediaBadges}>
@@ -124,7 +158,7 @@ export function EventMediaGallery({
                     </div>
                   )}
                 </div>
-                {canManage && (
+                {canManage && isPublished && (
                   <div className={styles.mediaActions}>
                     {isPhoto && !isHero && (
                       <button

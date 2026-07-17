@@ -4,6 +4,7 @@ import type { UserRole } from "@shared/types";
 export interface Env {
   DB: D1Database;
   MEDIA: R2Bucket;
+  STREAM: StreamBinding;
   ASSETS: Fetcher;
 
   ENVIRONMENT: string;
@@ -20,6 +21,7 @@ export interface Env {
 
   // Invite tooling.
   APP_BASE_URL?: string;
+  APP_ALLOWED_ORIGIN?: string;
   INVITE_FROM_EMAIL?: string;
   INVITE_TOKEN_TTL_DAYS?: string;
   INVITE_THROTTLE_HOURS?: string;
@@ -39,6 +41,14 @@ export interface Env {
   UPLOAD_MAX_VIDEO_BYTES?: string;
   UPLOAD_MAX_DOCUMENT_BYTES?: string;
   PRESIGN_TTL_SECONDS?: string;
+
+  // Cloudflare Stream (video processing and playback).
+  STREAM_WEBHOOK_SECRET?: string;
+  STREAM_CUSTOMER_CODE?: string;
+  STREAM_INGEST_PRESIGN_TTL_SECONDS?: string;
+  STREAM_PLAYBACK_TOKEN_TTL_SECONDS?: string;
+  STREAM_PROCESSING_MAX_ATTEMPTS?: string;
+  STREAM_PROCESSING_TIMEOUT_HOURS?: string;
 }
 
 /** The resolved application user attached to each request. */

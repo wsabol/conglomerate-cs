@@ -56,16 +56,60 @@ export async function createUploadTarget(
   };
 }
 
+/** Return a short-lived presigned GET URL for a single R2 object. */
+export async function createPresignedGetUrl(
+  env: Env,
+  key: string,
+  ttlSeconds: number,
+): Promise<string> {
+  if (
+    !env.R2_ACCESS_KEY_ID ||
+    !env.R2_SECRET_ACCESS_KEY ||
+    !env.R2_ACCOUNT_ID ||
+    !env.R2_BUCKET_NAME
+  ) {
+    // Tests and local dev without S3 credentials use a placeholder URL.
+    // Stream ingestion in production requires real presigned GET URLs.
+    return `https://stream-ingest.local/${key}`;
+  }
+
+  const endpoint =
+    env.R2_ENDPOINT ??
+    `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const url = new URL(
+    `${endpoint.replace(/\/$/, "")}/${env.R2_BUCKET_NAME}/${key}`,
+  );
+  url.searchParams.set("X-Amz-Expires", String(ttlSeconds));
+
+  const client = new AwsClient({
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+  });
+
+  const signed = await client.sign(url.toString(), {
+    method: "GET",
+    aws: { signQuery: true },
+  });
+
+  return signed.url;
+}
+
 /** Resolve which R2 key to serve for a variant query param. */
 export function resolveMediaKey(
   row: {
     r2Key: string | null;
     displayKey: string | null;
     thumbKey: string | null;
+    mediaType?: string;
+    processingProvider?: string | null;
   },
   variant: string | null,
 ): string | null {
+  if (variant === "original") return row.r2Key;
   if (variant === "thumb") return row.thumbKey ?? row.displayKey ?? row.r2Key;
   if (variant === "display") return row.displayKey ?? row.r2Key;
+  if (row.mediaType === "video" && row.processingProvider === "stream") {
+    return null;
+  }
   return row.r2Key;
 }

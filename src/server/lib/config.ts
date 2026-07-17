@@ -37,6 +37,11 @@ export interface AppConfig {
   inviteThrottleHours: number;
   uploadLimits: UploadLimits;
   presignTtlSeconds: number;
+  appAllowedOrigin: string;
+  streamIngestPresignTtlSeconds: number;
+  streamPlaybackTokenTtlSeconds: number;
+  streamProcessingMaxAttempts: number;
+  streamProcessingTimeoutHours: number;
   /** MIME types accepted per media category. */
   allowedMimeTypes: Record<Exclude<MediaType, "link">, string[]>;
   /** MIME types that support inline browser playback. */
@@ -54,6 +59,8 @@ export function getConfig(env: Env): AppConfig {
     devUserEmail: env.DEV_USER_EMAIL || null,
     devUserRole: env.DEV_USER_ROLE || null,
     appBaseUrl: env.APP_BASE_URL ?? "http://localhost:5173",
+    appAllowedOrigin:
+      env.APP_ALLOWED_ORIGIN ?? env.APP_BASE_URL ?? "http://localhost:5173",
     inviteFromEmail: env.INVITE_FROM_EMAIL ?? "invites@theconglomerate.local",
     inviteTokenTtlDays: num(env.INVITE_TOKEN_TTL_DAYS, 7),
     inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),
@@ -64,6 +71,16 @@ export function getConfig(env: Env): AppConfig {
       document: num(env.UPLOAD_MAX_DOCUMENT_BYTES, 100 * MB),
     },
     presignTtlSeconds: num(env.PRESIGN_TTL_SECONDS, 15 * 60),
+    streamIngestPresignTtlSeconds: num(
+      env.STREAM_INGEST_PRESIGN_TTL_SECONDS,
+      60 * 60,
+    ),
+    streamPlaybackTokenTtlSeconds: num(
+      env.STREAM_PLAYBACK_TOKEN_TTL_SECONDS,
+      30 * 60,
+    ),
+    streamProcessingMaxAttempts: num(env.STREAM_PROCESSING_MAX_ATTEMPTS, 3),
+    streamProcessingTimeoutHours: num(env.STREAM_PROCESSING_TIMEOUT_HOURS, 24),
     allowedMimeTypes: {
       photo: [
         "image/jpeg",

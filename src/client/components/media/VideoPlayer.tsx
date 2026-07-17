@@ -5,6 +5,8 @@ import styles from "./VideoPlayer.module.css";
 
 export interface VideoPlayerProps {
   src: string;
+  mediaId?: number;
+  playbackUrl?: string | null;
   title?: string | null;
   caption?: string | null;
   poster?: string | null;
@@ -23,6 +25,8 @@ function formatDuration(seconds: number): string {
 
 export function VideoPlayer({
   src,
+  mediaId,
+  playbackUrl,
   title,
   caption,
   poster,
@@ -33,8 +37,11 @@ export function VideoPlayer({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [duration, setDuration] = useState<string | null>(null);
   const label = title ?? "Play video";
+  const useStream = Boolean(playbackUrl && mediaId);
 
   useEffect(() => {
+    if (useStream) return;
+
     const video = document.createElement("video");
     video.preload = "metadata";
     video.src = src;
@@ -48,7 +55,7 @@ export function VideoPlayer({
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       video.src = "";
     };
-  }, [src]);
+  }, [src, useStream]);
 
   function handleOpen() {
     if (onOpen) {
@@ -100,6 +107,8 @@ export function VideoPlayer({
         open={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         src={src}
+        mediaId={mediaId}
+        playbackUrl={playbackUrl}
         title={title}
         caption={caption}
         poster={poster}

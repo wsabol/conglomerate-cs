@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isInlinePlayable } from "../../src/shared/mediaPlayback";
+import { isInlinePlayable, isStreamPlayable } from "../../src/shared/mediaPlayback";
 
 describe("isInlinePlayable", () => {
   it("allows photos regardless of mime", () => {
@@ -35,5 +35,11 @@ describe("isInlinePlayable", () => {
 
   it("allows H.264 video when mime matches", () => {
     expect(isInlinePlayable("video", "video/mp4", "avc1")).toBe(true);
+  });
+
+  it("treats published Stream-backed videos as playable", () => {
+    expect(isStreamPlayable("video", "published", "stream", "uid-1")).toBe(true);
+    expect(isStreamPlayable("video", "processing", "stream", null)).toBe(false);
+    expect(isStreamPlayable("video", "published", null, null)).toBe(false);
   });
 });

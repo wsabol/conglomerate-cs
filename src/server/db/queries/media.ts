@@ -9,10 +9,9 @@ import {
 } from "../schema";
 import type { MediaQuery } from "@shared/schemas/query";
 import type { MediaItemDTO } from "@shared/dto";
-import { isInlinePlayable } from "@shared/mediaPlayback";
 import type { Env } from "../../env";
 import { sniffVideoCodec } from "../../media/codec";
-import { mediaDeliveryUrl, mediaThumbUrl } from "../../media/url";
+import { toMediaItemDTO } from "../../media/dto";
 
 const CODEC_TAIL_BYTES = 5_000_000;
 
@@ -83,23 +82,7 @@ async function attachMediaPeople(
 
   return resolvedRows.map((row) => {
     const event = eventByMediaId.get(row.id);
-    return {
-      id: row.id,
-      title: row.title,
-      mediaType: row.mediaType,
-      status: row.status,
-      capturedDate: row.capturedDate,
-      datePrecision: row.datePrecision,
-      description: row.description,
-      eventId: row.eventId,
-      eventSlug: event?.slug ?? null,
-      eventTitle: event?.title ?? null,
-      provenance: row.provenance,
-      url: row.mediaType === "link" ? row.externalUrl : mediaDeliveryUrl(row.id),
-      thumbUrl: row.thumbKey ? mediaThumbUrl(row.id) : null,
-      playable: isInlinePlayable(row.mediaType, row.mimeType, row.videoCodec),
-      people: byMedia.get(row.id) ?? [],
-    };
+    return toMediaItemDTO(row, event, byMedia.get(row.id) ?? []);
   });
 }
 
@@ -114,8 +97,14 @@ export async function listMediaForEvent(
     .where(
       and(
         eq(media.eventId, eventId),
-        eq(media.status, "published"),
         eq(media.isDeleted, false),
+        sql`(
+          ${media.status} = 'published'
+          OR (
+            ${media.mediaType} = 'video'
+            AND ${media.status} IN ('uploading', 'uploaded', 'processing', 'failed')
+          )
+        )`,
       ),
     )
     .orderBy(desc(media.createdOn));

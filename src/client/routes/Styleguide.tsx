@@ -33,7 +33,7 @@ const DEMO_EVENTS: EventListItemDTO[] = [
     place: { id: 1, name: "Downtown Uncorked" },
     heroImageId: null,
     heroImageUrl: null,
-    media: { photo: true, video: false, audio: true, setlist: true },
+    media: { video: false, audio: true },
     headlined: true,
   },
   {
@@ -49,7 +49,7 @@ const DEMO_EVENTS: EventListItemDTO[] = [
     place: { id: 2, name: "Schotzi's" },
     heroImageId: null,
     heroImageUrl: null,
-    media: { photo: false, video: true, audio: false, setlist: false },
+    media: { video: true, audio: false },
     headlined: false,
   },
 ];

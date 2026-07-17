@@ -17,6 +17,21 @@ import { ok, okList } from "../lib/response";
 import { badRequest, notFound } from "../lib/errors";
 import { listInvites } from "../db/queries/invites";
 import { processInvite } from "../services/invite";
+import { runStreamBackfill } from "../media/backfill";
+import { z } from "zod";
+
+const streamBackfillQuerySchema = z.object({
+  dry_run: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+  media_id: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  retry_failed: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
 
 const route = new Hono<AppEnv>();
 
@@ -81,6 +96,17 @@ route.post("/invites", requireEditor, async (c) => {
     user.email,
   );
   return ok(c, invite, "Invite sent", 201);
+});
+
+route.post("/media/stream-backfill", requireEditor, async (c) => {
+  const query = streamBackfillQuerySchema.parse(c.req.query());
+  const result = await runStreamBackfill(c.env, getDb(c.env), {
+    dryRun: query.dry_run,
+    mediaId: query.media_id,
+    limit: query.limit,
+    retryFailed: query.retry_failed,
+  });
+  return ok(c, result, "Stream backfill completed");
 });
 
 export default route;
