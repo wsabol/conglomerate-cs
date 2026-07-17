@@ -1,2 +1,14 @@
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
+
+interface DocumentPictureInPicture {
+  requestWindow(options?: {
+    width?: number;
+    height?: number;
+  }): Promise<Window>;
+  readonly window: Window | null;
+}
+
+interface Window {
+  documentPictureInPicture?: DocumentPictureInPicture;
+}

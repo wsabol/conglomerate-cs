@@ -26,6 +26,7 @@ export type IconName =
   | "edit"
   | "trash"
   | "external"
+  | "pip"
   | "check"
   | "upload"
   | "star"
@@ -64,6 +65,7 @@ const PATHS: Record<IconName, string> = {
   edit: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
   trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
   external: "M14 5h5v5M19 5l-8 8M12 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6",
+  pip: "M15 3h6v6M21 3l-7 7M4 9h7a2 2 0 0 1 2 2v9H6a2 2 0 0 1-2-2V9z",
   check: "M5 13l4 4L19 7",
   upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
   star: "M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.1 21.9l1.1-6.5L2.5 9.8l6.5-.9z",

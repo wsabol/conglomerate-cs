@@ -17,6 +17,10 @@ export interface VideoLightboxProps {
   poster?: string | null;
 }
 
+function supportsDocumentPictureInPicture(): boolean {
+  return "documentPictureInPicture" in window;
+}
+
 export function VideoLightbox({
   open,
   onClose,
@@ -29,14 +33,21 @@ export function VideoLightbox({
 }: VideoLightboxProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const videoShellRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const label = title ?? "Video playback";
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pipDismissed, setPipDismissed] = useState(false);
+  const [nativePipReady, setNativePipReady] = useState(false);
   const useStream = Boolean(playbackUrl && mediaId);
+  const useDocumentPip = useStream && supportsDocumentPictureInPicture();
+  const canUsePictureInPicture =
+    useDocumentPip ||
+    (!useStream &&
+      typeof document !== "undefined" &&
+      document.pictureInPictureEnabled);
 
   useEffect(() => {
     if (!open) {
@@ -45,6 +56,7 @@ export function VideoLightbox({
       setIframeSrc(null);
       setLoading(false);
       setPipDismissed(false);
+      setNativePipReady(false);
       return;
     }
 
@@ -70,24 +82,20 @@ export function VideoLightbox({
   }, [open, pipDismissed, onClose]);
 
   useEffect(() => {
-    if (!open || !useStream || !iframeSrc) return;
+    if (!open || useStream) return;
 
-    function onMessage(e: MessageEvent) {
-      const frame = iframeRef.current;
-      if (!frame || e.source !== frame.contentWindow) return;
-      const data = e.data;
-      if (!data || typeof data !== "object") return;
-      if (data.__privateUnstableMessageType !== "event") return;
-      if (data.eventName === "enterpictureinpicture") {
+    function onPipChange() {
+      if (document.pictureInPictureElement) {
         setPipDismissed(true);
-      } else if (data.eventName === "leavepictureinpicture") {
+      } else if (pipDismissed) {
         onClose();
       }
     }
 
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [open, useStream, iframeSrc, onClose]);
+    document.addEventListener("pictureinpicturechange", onPipChange);
+    return () =>
+      document.removeEventListener("pictureinpicturechange", onPipChange);
+  }, [open, useStream, pipDismissed, onClose]);
 
   useEffect(() => {
     if (!open || useStream) return;
@@ -109,7 +117,7 @@ export function VideoLightbox({
       video.removeEventListener("enterpictureinpicture", onEnterPip);
       video.removeEventListener("leavepictureinpicture", onLeavePip);
     };
-  }, [open, useStream, onClose]);
+  }, [open, useStream, onClose, src, nativePipReady]);
 
   useEffect(() => {
     if (!open || !useStream || !mediaId) return;
@@ -139,12 +147,61 @@ export function VideoLightbox({
     };
   }, [open, useStream, mediaId]);
 
+  async function popOutToDocumentPip() {
+    const shell = videoShellRef.current;
+    const docPip = window.documentPictureInPicture;
+    if (!shell || !docPip) return;
+
+    try {
+      const pipWindow = await docPip.requestWindow({
+        width: Math.max(shell.clientWidth, 320),
+        height: Math.max(shell.clientHeight, 180),
+      });
+
+      pipWindow.document.body.style.margin = "0";
+      pipWindow.document.body.style.background = "#000";
+      pipWindow.document.body.append(shell);
+      setPipDismissed(true);
+
+      pipWindow.addEventListener(
+        "pagehide",
+        () => {
+          onClose();
+        },
+        { once: true },
+      );
+    } catch {
+      // Browser blocked or rejected the pop-out request.
+    }
+  }
+
+  async function handlePictureInPicture() {
+    if (useDocumentPip) {
+      await popOutToDocumentPip();
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
+
+    try {
+      await video.requestPictureInPicture();
+      setPipDismissed(true);
+    } catch {
+      // Metadata not ready or PiP blocked.
+    }
+  }
+
   function handleLoadedData() {
     const video = videoRef.current;
     if (!video || video.videoWidth > 0) return;
     setPlaybackError(
       "This video uses a format your browser cannot play. Download the file to watch in QuickTime or VLC.",
     );
+  }
+
+  function handleLoadedMetadata() {
+    setNativePipReady(true);
   }
 
   function handleError() {
@@ -156,6 +213,9 @@ export function VideoLightbox({
   if (!open) return null;
 
   const downloadHref = src ?? (mediaId ? `/media/${mediaId}?variant=original` : "#");
+  const streamIframeAllow = useDocumentPip
+    ? "accelerometer; gyroscope; autoplay; encrypted-media"
+    : "accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture";
 
   const player = playbackError ? (
     <div className={styles.playbackError}>
@@ -172,11 +232,10 @@ export function VideoLightbox({
       </div>
     ) : (
       <iframe
-        ref={iframeRef}
         className={styles.video}
         src={iframeSrc}
         title={label}
-        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+        allow={streamIframeAllow}
         allowFullScreen
       />
     )
@@ -190,6 +249,8 @@ export function VideoLightbox({
       autoPlay
       playsInline
       preload="auto"
+      disablePictureInPicture={!nativePipReady}
+      onLoadedMetadata={handleLoadedMetadata}
       onLoadedData={handleLoadedData}
       onError={handleError}
     />
@@ -219,6 +280,16 @@ export function VideoLightbox({
             <h2 id={titleId} className={styles.srOnly}>
               {label}
             </h2>
+            {canUsePictureInPicture && !playbackError && (
+              <button
+                type="button"
+                className={styles.pip}
+                onClick={() => void handlePictureInPicture()}
+                aria-label="Open picture-in-picture"
+              >
+                <Icon name="pip" />
+              </button>
+            )}
             <button
               type="button"
               className={styles.close}
@@ -230,7 +301,10 @@ export function VideoLightbox({
           </>
         )}
 
-        <div className={pipDismissed ? undefined : styles.videoShell}>
+        <div
+          ref={videoShellRef}
+          className={pipDismissed ? undefined : styles.videoShell}
+        >
           {player}
         </div>
 
