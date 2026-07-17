@@ -40,15 +40,20 @@ function mapVideoStatus(video: StreamVideo): StreamVideoStatus {
   };
 }
 
+/** Stream expects hostnames only — no `https://` scheme or path. */
+export function normalizeStreamAllowedOrigin(allowedOrigin: string): string {
+  return new URL(allowedOrigin).host;
+}
+
 function streamUploadParams(
   config: ReturnType<typeof getConfig>,
-  origin: string,
+  allowedOrigin: string,
   input: { mediaId: number; r2Key: string; filename: string; creatorId: number },
 ) {
   return {
     maxDurationSeconds: config.streamMaxDurationSeconds,
     requireSignedURLs: true as const,
-    allowedOrigins: [origin],
+    allowedOrigins: [allowedOrigin],
     creator: String(input.creatorId),
     meta: {
       mediaId: String(input.mediaId),
@@ -93,7 +98,7 @@ async function ingestViaDirectUpload(
 async function ingestViaCopyUrl(
   env: Env,
   config: ReturnType<typeof getConfig>,
-  origin: string,
+  allowedOrigin: string,
   input: { mediaId: number; r2Key: string; filename: string; creatorId: number },
 ): Promise<{ uid: string; state: string | null }> {
   const ingestUrl = await createStreamIngestSourceUrl(
@@ -105,7 +110,7 @@ async function ingestViaCopyUrl(
 
   const video = await env.STREAM.upload(ingestUrl, {
     requireSignedURLs: true,
-    allowedOrigins: [origin],
+    allowedOrigins: [allowedOrigin],
     creator: String(input.creatorId),
     meta: {
       mediaId: String(input.mediaId),
@@ -123,7 +128,7 @@ async function ingestViaCopyUrl(
 
 export function createStreamVideoService(env: Env): StreamVideoService {
   const config = getConfig(env);
-  const origin = new URL(config.appAllowedOrigin).origin;
+  const allowedOrigin = normalizeStreamAllowedOrigin(config.appAllowedOrigin);
 
   return {
     async ingestFromR2(input) {
@@ -132,14 +137,14 @@ export function createStreamVideoService(env: Env): StreamVideoService {
         throw new Error("Original file not found in storage.");
       }
 
-      const uploadParams = streamUploadParams(config, origin, input);
+      const uploadParams = streamUploadParams(config, allowedOrigin, input);
       const filename = input.filename || `media-${input.mediaId}.mp4`;
 
       if (object.size < STREAM_DIRECT_UPLOAD_MAX_BYTES) {
         return ingestViaDirectUpload(env, object, filename, uploadParams);
       }
 
-      return ingestViaCopyUrl(env, config, origin, input);
+      return ingestViaCopyUrl(env, config, allowedOrigin, input);
     },
 
     async getVideo(uid) {

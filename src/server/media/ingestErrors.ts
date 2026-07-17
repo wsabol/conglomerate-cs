@@ -53,6 +53,15 @@ export function classifyStreamIngestError(
   const raw = streamIngestErrorMessage(err);
   const lower = raw.toLowerCase();
 
+  if (lower.includes("allowed origin must not specify protocol")) {
+    return {
+      code: "STREAM_INGEST_FAILED",
+      message:
+        "Stream allowedOrigins misconfigured: use hostname only (no https://). Deploy the latest Worker fix.",
+      method: context?.method,
+    };
+  }
+
   if (lower.includes("stream_webhook_secret is required")) {
     return {
       code: "STREAM_INGEST_FAILED",
