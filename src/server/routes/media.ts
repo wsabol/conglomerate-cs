@@ -60,7 +60,7 @@ route.get("/:id/thumbnail", requireUser, async (c) => {
 
   const stream = createStreamVideoService(c.env);
   const token = await stream.createPlaybackToken(row.streamUid);
-  const thumbnailUrl = streamThumbnailUrl(customerCode, row.streamUid, token);
+  const thumbnailUrl = streamThumbnailUrl(customerCode, token);
 
   c.header("Cache-Control", "private, max-age=300");
   return c.redirect(thumbnailUrl, 302);

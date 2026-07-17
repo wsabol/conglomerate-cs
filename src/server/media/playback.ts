@@ -47,8 +47,8 @@ export function streamIframeUrl(token: string): string {
 
 export function streamThumbnailUrl(
   customerCode: string,
-  streamUid: string,
   token: string,
 ): string {
-  return `https://customer-${customerCode}.cloudflarestream.com/${streamUid}/thumbnails/thumbnail.jpg?token=${token}`;
+  // With requireSignedURLs, the token replaces the video UID in the path.
+  return `https://customer-${customerCode}.cloudflarestream.com/${token}/thumbnails/thumbnail.jpg`;
 }
