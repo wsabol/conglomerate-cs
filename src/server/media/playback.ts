@@ -45,6 +45,10 @@ export function streamIframeUrl(token: string): string {
   return `https://iframe.cloudflarestream.com/${token}`;
 }
 
+export function streamHlsUrl(customerCode: string, token: string): string {
+  return `https://customer-${customerCode}.cloudflarestream.com/${token}/manifest/video.m3u8`;
+}
+
 export function streamThumbnailUrl(
   customerCode: string,
   token: string,

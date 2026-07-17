@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../ui/Icon";
-import { fetchPlayback, streamIframeSrc } from "../../lib/playback";
+import { fetchPlayback, streamHlsSrc } from "../../lib/playback";
+import { attachStreamHls } from "../../lib/streamHls";
 import styles from "./MediaLightbox.module.css";
 
 export interface VideoLightboxProps {
@@ -32,18 +33,24 @@ export function VideoLightbox({
   const titleId = useId();
   const label = title ?? "Video playback";
   const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [streamManifest, setStreamManifest] = useState<string | null>(null);
+  const [streamPoster, setStreamPoster] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pipDismissed, setPipDismissed] = useState(false);
   const useStream = Boolean(playbackUrl && mediaId);
 
   useEffect(() => {
     if (!open) {
       videoRef.current?.pause();
       setPlaybackError(null);
-      setIframeSrc(null);
+      setStreamManifest(null);
+      setStreamPoster(null);
       setLoading(false);
+      setPipDismissed(false);
       return;
     }
+
+    if (pipDismissed) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const { body } = document;
@@ -62,7 +69,7 @@ export function VideoLightbox({
       body.style.overflow = prevOverflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open, pipDismissed, onClose]);
 
   useEffect(() => {
     if (!open || !useStream || !mediaId) return;
@@ -70,12 +77,16 @@ export function VideoLightbox({
     let cancelled = false;
     setLoading(true);
     setPlaybackError(null);
-    setIframeSrc(null);
+    setStreamManifest(null);
+    setStreamPoster(null);
 
     fetchPlayback(mediaId)
       .then((playback) => {
         if (cancelled) return;
-        setIframeSrc(streamIframeSrc(playback.token));
+        setStreamManifest(
+          streamHlsSrc(playback.customerCode, playback.token),
+        );
+        setStreamPoster(playback.posterUrl);
       })
       .catch(() => {
         if (cancelled) return;
@@ -91,6 +102,63 @@ export function VideoLightbox({
       cancelled = true;
     };
   }, [open, useStream, mediaId]);
+
+  useEffect(() => {
+    if (!open || !useStream || !streamManifest) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    let detach: (() => void) | undefined;
+
+    attachStreamHls(video, streamManifest)
+      .then((cleanup) => {
+        if (cancelled) {
+          cleanup();
+          return;
+        }
+        detach = cleanup;
+        void video.play().catch(() => {
+          // Autoplay may be blocked until the user presses play.
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlaybackError(
+            "Playback failed. Try again or download the original file.",
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      detach?.();
+      video.pause();
+    };
+  }, [open, useStream, streamManifest]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    function onEnterPip() {
+      setPipDismissed(true);
+    }
+
+    function onLeavePip() {
+      onClose();
+    }
+
+    video.addEventListener("enterpictureinpicture", onEnterPip);
+    video.addEventListener("leavepictureinpicture", onLeavePip);
+    return () => {
+      video.removeEventListener("enterpictureinpicture", onEnterPip);
+      video.removeEventListener("leavepictureinpicture", onLeavePip);
+    };
+  }, [open, onClose, useStream, streamManifest, src]);
 
   function handleLoadedData() {
     const video = videoRef.current;
@@ -109,34 +177,46 @@ export function VideoLightbox({
   if (!open) return null;
 
   const downloadHref = src ?? (mediaId ? `/media/${mediaId}?variant=original` : "#");
+  const videoPoster = (useStream ? streamPoster : poster) ?? undefined;
+  const showVideo = !playbackError && (!useStream || Boolean(streamManifest));
+  const showLoading = useStream && loading && !playbackError;
 
   return createPortal(
     <div
-      className={styles.overlay}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className={pipDismissed ? styles.pipKeeper : styles.overlay}
+      aria-hidden={pipDismissed || undefined}
+      onMouseDown={
+        pipDismissed
+          ? undefined
+          : (e) => {
+              if (e.target === e.currentTarget) onClose();
+            }
+      }
     >
       <div
         ref={dialogRef}
-        className={styles.dialog}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
+        className={pipDismissed ? undefined : styles.dialog}
+        role={pipDismissed ? undefined : "dialog"}
+        aria-modal={pipDismissed ? undefined : true}
+        aria-labelledby={pipDismissed ? undefined : titleId}
       >
-        <h2 id={titleId} className={styles.srOnly}>
-          {label}
-        </h2>
-        <button
-          type="button"
-          className={styles.close}
-          onClick={onClose}
-          aria-label="Close video player"
-        >
-          <Icon name="close" />
-        </button>
+        {!pipDismissed && (
+          <>
+            <h2 id={titleId} className={styles.srOnly}>
+              {label}
+            </h2>
+            <button
+              type="button"
+              className={styles.close}
+              onClick={onClose}
+              aria-label="Close video player"
+            >
+              <Icon name="close" />
+            </button>
+          </>
+        )}
 
-        <div className={styles.videoShell}>
+        <div className={pipDismissed ? undefined : styles.videoShell}>
           {playbackError ? (
             <div className={styles.playbackError}>
               <Icon name="video" size={28} label="Video" />
@@ -145,26 +225,16 @@ export function VideoLightbox({
                 Download video
               </a>
             </div>
-          ) : useStream ? (
-            loading || !iframeSrc ? (
-              <div className={styles.playbackError}>
-                <p>Loading playback…</p>
-              </div>
-            ) : (
-              <iframe
-                className={styles.video}
-                src={iframeSrc}
-                title={label}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            )
-          ) : (
+          ) : showLoading ? (
+            <div className={styles.playbackError}>
+              <p>Loading playback…</p>
+            </div>
+          ) : showVideo ? (
             <video
               ref={videoRef}
               className={styles.video}
-              src={src}
-              poster={poster ?? undefined}
+              src={useStream ? undefined : src}
+              poster={videoPoster}
               controls
               autoPlay
               playsInline
@@ -172,10 +242,12 @@ export function VideoLightbox({
               onLoadedData={handleLoadedData}
               onError={handleError}
             />
-          )}
+          ) : null}
         </div>
 
-        {caption && <p className={styles.caption}>{caption}</p>}
+        {!pipDismissed && caption && (
+          <p className={styles.caption}>{caption}</p>
+        )}
       </div>
     </div>,
     document.body,
