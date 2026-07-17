@@ -42,7 +42,7 @@ alwaysApply: false
 
 ## List pages
 - `PerformanceCard` takes `event: EventListItemDTO` (not individual props).
-- `MediaAvailabilityIndicators` — shared photo/video/audio/setlist badges (`overlay` | `inline`).
+- `MediaAvailabilityIndicators` — shared video/audio badges (`overlay` | `inline`).
 - Filter bars: use layout classes from `components/layout/layout.module.css`:
   - `filterBar` + `filterBarDropdowns` (Performances)
   - `filterBarInline` (Media)

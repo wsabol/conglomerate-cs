@@ -68,7 +68,6 @@ export function TimelineEventCard({
             <MediaAvailabilityIndicators
               media={media}
               variant="inline"
-              types={["video", "audio"]}
             />
           </div>
           <Icon name="chevron-right" size={18} className={styles.chevron} />

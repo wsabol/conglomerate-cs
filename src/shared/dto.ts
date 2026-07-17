@@ -36,10 +36,8 @@ export interface PersonDTO {
 }
 
 export interface MediaAvailabilityDTO {
-  photo: boolean;
   video: boolean;
   audio: boolean;
-  setlist: boolean;
 }
 
 export interface EventListItemDTO {
