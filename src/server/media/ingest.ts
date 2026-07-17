@@ -89,7 +89,7 @@ export async function claimAndIngestVideo(
   db: Db,
   row: MediaRow,
   creatorId: number,
-  options?: { force?: boolean },
+  options?: { force?: boolean; videoBuffer?: ArrayBuffer },
 ): Promise<MediaRow> {
   const config = getConfig(env);
   const started = Date.now();
@@ -139,6 +139,7 @@ export async function claimAndIngestVideo(
       r2Key: row.r2Key!,
       filename: row.originalFilename ?? `media-${row.id}`,
       creatorId,
+      videoBuffer: options?.videoBuffer,
     });
 
     try {

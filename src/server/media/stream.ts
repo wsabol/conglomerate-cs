@@ -18,6 +18,8 @@ export interface StreamVideoService {
     r2Key: string;
     filename: string;
     creatorId: number;
+    /** When already in memory (e.g. upload complete checksum pass). */
+    videoBuffer?: ArrayBuffer;
   }): Promise<{ uid: string; state: string | null }>;
 
   getVideo(uid: string): Promise<StreamVideoStatus>;
@@ -69,12 +71,14 @@ async function ingestViaDirectUpload(
   object: R2ObjectBody,
   filename: string,
   uploadParams: ReturnType<typeof streamUploadParams>,
+  videoBuffer?: ArrayBuffer,
 ): Promise<{ uid: string; state: string | null }> {
   const directUpload = await env.STREAM.createDirectUpload(uploadParams);
 
+  const mime = object.httpMetadata?.contentType ?? "video/mp4";
+  const bytes = videoBuffer ?? (await object.arrayBuffer());
   const formData = new FormData();
-  // Workers FormData accepts an R2 ReadableStream as a Blob-like file part.
-  formData.append("file", object.body as unknown as Blob, filename);
+  formData.append("file", new File([bytes], filename, { type: mime }));
 
   const uploadResponse = await fetch(directUpload.uploadURL, {
     method: "POST",
@@ -141,7 +145,13 @@ export function createStreamVideoService(env: Env): StreamVideoService {
       const filename = input.filename || `media-${input.mediaId}.mp4`;
 
       if (object.size < STREAM_DIRECT_UPLOAD_MAX_BYTES) {
-        return ingestViaDirectUpload(env, object, filename, uploadParams);
+        return ingestViaDirectUpload(
+          env,
+          object,
+          filename,
+          uploadParams,
+          input.videoBuffer,
+        );
       }
 
       return ingestViaCopyUrl(env, config, allowedOrigin, input);

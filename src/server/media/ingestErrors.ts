@@ -53,6 +53,15 @@ export function classifyStreamIngestError(
   const raw = streamIngestErrorMessage(err);
   const lower = raw.toLowerCase();
 
+  if (lower.includes("decoding error")) {
+    return {
+      code: "STREAM_INGEST_FAILED",
+      message:
+        "Stream could not decode the uploaded video. The file may be incomplete or the upload body was corrupted during transfer.",
+      method: context?.method,
+    };
+  }
+
   if (lower.includes("allowed origin must not specify protocol")) {
     return {
       code: "STREAM_INGEST_FAILED",

@@ -239,6 +239,7 @@ export async function completeUpload(
       db,
       uploaded,
       user.id,
+      { videoBuffer: buffer },
     );
 
     await recordRevision(db, {
