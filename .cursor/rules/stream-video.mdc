@@ -46,9 +46,8 @@ Migration: `migrations/0004_video_codec.sql` (video_codec + Stream columns).
 1. Verify R2 object, checksum, dedup.
 2. `transitionVideoToUploaded()` — save codec/size/checksum.
 3. Conditional update claims row (`stream_uid IS NULL`, status `uploaded`|`failed`).
-4. `env.STREAM.upload(ingestSourceUrl, { requireSignedURLs: true, allowedOrigins, meta, thumbnailTimestampPct: 0.1 })`.
-   Production uses a short-lived Worker URL (`GET /api/stream-ingest/:id?token=…`) streaming from the R2 binding.
-   Local dev may use presigned R2 GET when `R2_*` secrets are set.
+4. Files under 200 MB: `createDirectUpload()` then POST R2 body to Stream's one-time `uploadURL`.
+   Files 200 MB+: `env.STREAM.upload(ingestSourceUrl, …)` via Worker ingest proxy or presigned R2 GET.
 5. Save `stream_uid`; return DTO with `status: processing`.
 
 Idempotent: if `stream_uid` exists or already `processing`/`published`, skip re-ingest.
@@ -84,12 +83,13 @@ Do not expose `stream_uid` in API responses. Legacy videos without Stream UID st
 ## Config (`src/server/lib/config.ts`)
 - `appAllowedOrigin` — from `APP_ALLOWED_ORIGIN` / `APP_BASE_URL`
 - `streamIngestPresignTtlSeconds` (default 3600)
+- `streamMaxDurationSeconds` (default 14400)
 - `streamPlaybackTokenTtlSeconds` (default 1800)
 - `streamProcessingMaxAttempts` (default 3)
 - `streamProcessingTimeoutHours` (default 24)
 
-Env overrides: `STREAM_INGEST_PRESIGN_TTL_SECONDS`, `STREAM_PLAYBACK_TOKEN_TTL_SECONDS`,
-`STREAM_PROCESSING_MAX_ATTEMPTS`, `STREAM_PROCESSING_TIMEOUT_HOURS`.
+Env overrides: `STREAM_INGEST_PRESIGN_TTL_SECONDS`, `STREAM_MAX_DURATION_SECONDS`,
+`STREAM_PLAYBACK_TOKEN_TTL_SECONDS`, `STREAM_PROCESSING_MAX_ATTEMPTS`, `STREAM_PROCESSING_TIMEOUT_HOURS`.
 
 ## Secrets
 | Secret | Purpose |

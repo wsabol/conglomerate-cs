@@ -80,8 +80,20 @@ export function createMockStreamBinding(): StreamBinding {
       videos.set(id, video);
       return video as never;
     },
-    async createDirectUpload() {
-      throw new Error("not implemented in mock");
+    async createDirectUpload(params?: Record<string, unknown>) {
+      const id = `stream-${crypto.randomUUID()}`;
+      const video = {
+        ...makeVideo(id),
+        creator: params?.creator ?? null,
+        meta: params?.meta ?? {},
+      };
+      videos.set(id, video);
+      return {
+        uploadURL: `https://stream-mock.test/direct/${id}`,
+        id,
+        watermark: null,
+        scheduledDeletion: null,
+      } as never;
     },
     videos: {},
     watermarks: {},

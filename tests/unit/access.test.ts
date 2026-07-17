@@ -38,6 +38,7 @@ const config: AppConfig = {
   streamPlaybackTokenTtlSeconds: 1800,
   streamProcessingMaxAttempts: 3,
   streamProcessingTimeoutHours: 24,
+  streamMaxDurationSeconds: 14_400,
   allowedMimeTypes: { photo: [], video: [], audio: [], document: [] },
   inlinePlayback: { audio: [], video: [] },
 };

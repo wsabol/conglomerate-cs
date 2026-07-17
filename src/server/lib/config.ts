@@ -42,6 +42,7 @@ export interface AppConfig {
   streamPlaybackTokenTtlSeconds: number;
   streamProcessingMaxAttempts: number;
   streamProcessingTimeoutHours: number;
+  streamMaxDurationSeconds: number;
   /** MIME types accepted per media category. */
   allowedMimeTypes: Record<Exclude<MediaType, "link">, string[]>;
   /** MIME types that support inline browser playback. */
@@ -81,6 +82,7 @@ export function getConfig(env: Env): AppConfig {
     ),
     streamProcessingMaxAttempts: num(env.STREAM_PROCESSING_MAX_ATTEMPTS, 3),
     streamProcessingTimeoutHours: num(env.STREAM_PROCESSING_TIMEOUT_HOURS, 24),
+    streamMaxDurationSeconds: num(env.STREAM_MAX_DURATION_SECONDS, 4 * 60 * 60),
     allowedMimeTypes: {
       photo: [
         "image/jpeg",

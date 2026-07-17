@@ -1,5 +1,5 @@
 import { env } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
 import { events, media, users } from "../../src/server/db/schema";
@@ -34,6 +34,23 @@ describe("video stream upload", () => {
     });
 
     env.STREAM = createMockStreamBinding() as typeof env.STREAM;
+
+    const originalFetch = globalThis.fetch.bind(globalThis);
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+        if (url.includes("stream-mock.test/direct/")) {
+          return new Response(null, { status: 200 });
+        }
+        return originalFetch(input, init);
+      },
+    );
   });
 
   it("returns processing status after completing a video upload", async () => {

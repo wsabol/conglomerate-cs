@@ -49,6 +49,7 @@ export interface Env {
   STREAM_PLAYBACK_TOKEN_TTL_SECONDS?: string;
   STREAM_PROCESSING_MAX_ATTEMPTS?: string;
   STREAM_PROCESSING_TIMEOUT_HOURS?: string;
+  STREAM_MAX_DURATION_SECONDS?: string;
 }
 
 /** The resolved application user attached to each request. */
