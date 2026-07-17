@@ -1,6 +1,6 @@
 import type { Env } from "../env";
 import { getConfig } from "../lib/config";
-import { createPresignedGetUrl } from "./presign";
+import { createStreamIngestSourceUrl } from "./ingestUrl";
 
 export interface StreamVideoStatus {
   uid: string;
@@ -43,8 +43,9 @@ export function createStreamVideoService(env: Env): StreamVideoService {
 
   return {
     async ingestFromR2({ mediaId, r2Key, filename, creatorId }) {
-      const presignedUrl = await createPresignedGetUrl(
+      const presignedUrl = await createStreamIngestSourceUrl(
         env,
+        mediaId,
         r2Key,
         config.streamIngestPresignTtlSeconds,
       );

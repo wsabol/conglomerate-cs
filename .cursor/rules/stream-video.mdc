@@ -31,7 +31,8 @@ Migration: `migrations/0004_video_codec.sql` (video_codec + Stream columns).
 |------|------|
 | `stream.ts` | `StreamVideoService` — ingest from R2 URL, get status, token, delete |
 | `ingest.ts` | `claimAndIngestVideo()` — conditional D1 claim, then `env.STREAM.upload()` |
-| `presign.ts` | `createPresignedGetUrl()` for Stream ingestion (never log URL) |
+| `ingestUrl.ts` | Worker ingest URL + token; `createStreamIngestSourceUrl()` |
+| `presign.ts` | `createPresignedGetUrl()` for local Stream ingestion (never log URL) |
 | `webhook.ts` | HMAC verify `Webhook-Signature`; 5-min replay window |
 | `reconcile.ts` | Cron recovery; `applyStreamWebhookEvent()` shared state transitions |
 | `playback.ts` | `buildVideoPlayback()`, thumbnail URL builder |
@@ -45,7 +46,9 @@ Migration: `migrations/0004_video_codec.sql` (video_codec + Stream columns).
 1. Verify R2 object, checksum, dedup.
 2. `transitionVideoToUploaded()` — save codec/size/checksum.
 3. Conditional update claims row (`stream_uid IS NULL`, status `uploaded`|`failed`).
-4. `env.STREAM.upload(presignedGetUrl, { requireSignedURLs: true, allowedOrigins, meta, thumbnailTimestampPct: 0.1 })`.
+4. `env.STREAM.upload(ingestSourceUrl, { requireSignedURLs: true, allowedOrigins, meta, thumbnailTimestampPct: 0.1 })`.
+   Production uses a short-lived Worker URL (`GET /api/stream-ingest/:id?token=…`) streaming from the R2 binding.
+   Local dev may use presigned R2 GET when `R2_*` secrets are set.
 5. Save `stream_uid`; return DTO with `status: processing`.
 
 Idempotent: if `stream_uid` exists or already `processing`/`published`, skip re-ingest.
@@ -55,6 +58,7 @@ Idempotent: if `stream_uid` exists or already `processing`/`published`, skip re-
 | Route | Auth | Notes |
 |-------|------|-------|
 | `POST /api/webhooks/cloudflare-stream` | Webhook HMAC only | Outside `identity`; Access bypass required in prod |
+| `GET /api/stream-ingest/:id` | HMAC query token | Outside `identity`; Access bypass required in prod |
 | `GET /api/media/:id/playback` | `requireUser` | `VideoPlaybackDTO`; `Cache-Control: private, no-store` |
 | `GET /api/media/:id/thumbnail` | `requireUser` | 302 to signed Stream poster |
 | `POST /api/media/:id/retry-processing` | uploader or editor | Clears failed UID, re-ingests |
@@ -90,15 +94,15 @@ Env overrides: `STREAM_INGEST_PRESIGN_TTL_SECONDS`, `STREAM_PLAYBACK_TOKEN_TTL_S
 ## Secrets
 | Secret | Purpose |
 |--------|---------|
-| `STREAM_WEBHOOK_SECRET` | Webhook HMAC (from Stream API on webhook registration) |
+| `STREAM_WEBHOOK_SECRET` | Webhook HMAC + Worker ingest URL tokens |
 | `STREAM_CUSTOMER_CODE` | `customer-{CODE}.cloudflarestream.com` subdomain |
-| `R2_*` | Presigned GET for Stream ingestion |
+| `R2_*` | Optional presigned GET for local Stream ingestion |
 
 Local: `.dev.vars`. Production: `wrangler secret put --env production`.
 
 ## Ops checklist
 1. Register webhook: `PUT /accounts/{id}/stream/webhook` → save `secret`.
-2. Access bypass for `POST /api/webhooks/cloudflare-stream`.
+2. Access bypass for `POST /api/webhooks/cloudflare-stream` and `GET /api/stream-ingest/*`.
 3. `npm run db:migrate:remote` (if not applied).
 4. `npm run media:stream-backfill -- --dry-run` then batched `--limit 10`.
 

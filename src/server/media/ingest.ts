@@ -4,6 +4,7 @@ import { media } from "../db/schema";
 import type { Env } from "../env";
 import { getConfig } from "../lib/config";
 import { logProcessing } from "./logging";
+import { streamIngestErrorMessage } from "./ingestUrl";
 import { createStreamVideoService } from "./stream";
 
 type MediaRow = typeof media.$inferSelect;
@@ -174,6 +175,7 @@ export async function claimAndIngestVideo(
       throw dbErr;
     }
   } catch (err) {
+    const detail = streamIngestErrorMessage(err);
     await markIngestFailed(
       db,
       row.id,
@@ -189,6 +191,10 @@ export async function claimAndIngestVideo(
       statusAfter: "failed",
       durationMs: Date.now() - started,
       errorCode: "STREAM_INGEST_FAILED",
+    });
+    console.error("Stream ingest failed", {
+      mediaId: row.id,
+      error: detail,
     });
     const failed = await db
       .select()

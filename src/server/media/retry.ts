@@ -56,7 +56,7 @@ export async function retryVideoProcessing(
       .where(eq(media.id, id));
   }
 
-  if (row.status !== "uploaded" && row.status !== "failed") {
+  if (row.status !== "uploaded") {
     await db
       .update(media)
       .set({
