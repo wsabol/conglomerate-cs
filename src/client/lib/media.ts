@@ -3,6 +3,7 @@ import type { MediaItemDTO } from "@shared/dto";
 import type { ListResult, MediaType, ApiErrorDetail } from "@shared/types";
 import type { UploadCreateInput } from "@shared/schemas/media";
 import { sha256Hex } from "@shared/checksum";
+import { validateUploadFileSize } from "@shared/uploadLimits";
 
 export interface ListMediaParams {
   media_type?: MediaType;
@@ -42,6 +43,11 @@ export async function uploadFile(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<MediaItemDTO> {
+  const sizeError = validateUploadFileSize(file);
+  if (sizeError) {
+    throw new Error(sizeError);
+  }
+
   const checksum = await sha256Hex(await file.arrayBuffer());
 
   let init: UploadTarget;
@@ -61,6 +67,9 @@ export async function uploadFile(
     if (err instanceof ApiClientError && err.status === 409) {
       throw new ApiClientError(duplicateMessage(err), err.status, err.details);
     }
+    if (err instanceof ApiClientError) {
+      throw new Error(err.message);
+    }
     throw err;
   }
 
@@ -73,6 +82,9 @@ export async function uploadFile(
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 409) {
       throw new ApiClientError(duplicateMessage(err), err.status, err.details);
+    }
+    if (err instanceof ApiClientError) {
+      throw new Error(err.message);
     }
     throw err;
   }

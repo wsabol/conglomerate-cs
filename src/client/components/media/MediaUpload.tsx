@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FileInput } from "../form";
 import { uploadFile } from "../../lib/media";
 import type { MediaItemDTO } from "@shared/dto";
+import { UPLOAD_LIMIT_HINT } from "@shared/uploadLimits";
 import styles from "./MediaUpload.module.css";
 
 interface MediaUploadProps {
@@ -33,6 +34,7 @@ export function MediaUpload({ eventId, onUploaded }: MediaUploadProps) {
 
   return (
     <div className={styles.wrap}>
+      <p className={styles.hint}>{UPLOAD_LIMIT_HINT}</p>
       <FileInput
         label={busy ? "Uploading…" : "Choose files or drag them here"}
         accept="image/*,video/*,audio/*,application/pdf"

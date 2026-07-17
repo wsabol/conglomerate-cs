@@ -13,6 +13,13 @@
   display: none;
 }
 
+.hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
 .progress {
   position: relative;
   height: 8px;

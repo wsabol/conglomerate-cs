@@ -13,16 +13,6 @@ import { badRequest } from "../lib/errors";
 
 const route = new Hono<AppEnv>();
 
-function optionalExecutionContext(
-  c: { executionCtx: Pick<ExecutionContext, "waitUntil"> },
-): Pick<ExecutionContext, "waitUntil"> | undefined {
-  try {
-    return c.executionCtx;
-  } catch {
-    return undefined;
-  }
-}
-
 route.post("/", requireUser, async (c) => {
   const user = c.get("user")!;
   const input = uploadCreateSchema.parse(await c.req.json());
@@ -47,9 +37,7 @@ route.post("/:id/complete", requireUser, async (c) => {
   if (!Number.isInteger(id)) throw badRequest("Invalid upload id.");
   const user = c.get("user")!;
 
-  const dto = await completeUpload(c.env, getDb(c.env), id, user, {
-    executionCtx: optionalExecutionContext(c),
-  });
+  const dto = await completeUpload(c.env, getDb(c.env), id, user);
   return ok(c, dto, "Media published");
 });
 

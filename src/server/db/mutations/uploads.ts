@@ -6,6 +6,10 @@ import type { AppUser, Env } from "../../env";
 import { recordRevision } from "../../audit/revision";
 import { getConfig, mediaTypeForMime } from "../../lib/config";
 import { badRequest, conflict, notFound } from "../../lib/errors";
+import {
+  uploadSizeExceededMessage,
+  unsupportedUploadTypeMessage,
+} from "@shared/uploadLimits";
 import { mediaObjectKey } from "../../media/keys";
 import { createUploadTarget } from "../../media/presign";
 import { sha256Hex, sha256HexFromStream } from "../../media/checksum";
@@ -89,12 +93,14 @@ export async function beginUpload(
 
   const category = mediaTypeForMime(env, input.mimeType);
   if (!category) {
-    throw badRequest(`Unsupported file type: ${input.mimeType}`);
+    throw badRequest(unsupportedUploadTypeMessage(input.filename));
   }
 
   const limit = config.uploadLimits[category];
   if (input.size > limit) {
-    throw badRequest(`File exceeds the ${category} size limit.`);
+    throw badRequest(
+      uploadSizeExceededMessage(category, limit, input.size, input.filename),
+    );
   }
 
   const row = await db
@@ -106,6 +112,7 @@ export async function beginUpload(
       originalFilename: input.filename,
       mimeType: input.mimeType,
       size: input.size,
+      checksum: input.checksum ?? null,
       status: "uploading",
       processingProvider: category === "video" ? "stream" : null,
       createdBy: userId,
@@ -153,71 +160,10 @@ export async function receiveUploadBody(
   return { id };
 }
 
-/** Defer checksum + Stream ingest when completing very large uploads. */
-const LARGE_VIDEO_COMPLETE_BYTES = 200 * 1024 * 1024;
+const CLIENT_CHECKSUM_RE = /^[a-f0-9]{64}$/;
 
-async function finalizeLargeVideoUpload(
-  env: Env,
-  db: Db,
-  row: typeof media.$inferSelect,
-  userId: number,
-): Promise<void> {
-  if (!row.r2Key) return;
-
-  try {
-    const object = await env.MEDIA.get(row.r2Key);
-    if (!object) {
-      await db
-        .update(media)
-        .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-        .where(eq(media.id, row.id));
-      return;
-    }
-
-    const size = object.size;
-    const checksum = await sha256HexFromStream(object.body);
-    const videoCodec = await sniffVideoCodecFromR2(env.MEDIA, row.r2Key, size);
-
-    const duplicate = await findPublishedMediaByChecksum(db, checksum);
-    if (duplicate && duplicate.id !== row.id) {
-      await abortDuplicateUpload(env, db, row);
-      return;
-    }
-
-    let uploaded = await transitionVideoToUploaded(db, row.id, {
-      size,
-      checksum,
-      videoCodec,
-    });
-    if (!uploaded) {
-      const fallback = await db
-        .select()
-        .from(media)
-        .where(eq(media.id, row.id))
-        .get();
-      if (!fallback) return;
-      uploaded = fallback;
-    }
-
-    const afterIngest = await claimAndIngestVideo(env, db, uploaded, userId);
-
-    await recordRevision(db, {
-      targetType: "media",
-      targetId: row.id,
-      action: "create",
-      after: afterIngest,
-      changedBy: userId,
-    });
-  } catch (err) {
-    console.error("Large video finalize failed", {
-      mediaId: row.id,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    await db
-      .update(media)
-      .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-      .where(eq(media.id, row.id));
-  }
+function isClientChecksum(value: string | null | undefined): value is string {
+  return typeof value === "string" && CLIENT_CHECKSUM_RE.test(value);
 }
 
 export async function completeUpload(
@@ -225,7 +171,6 @@ export async function completeUpload(
   db: Db,
   id: number,
   user: AppUser,
-  options?: { executionCtx?: Pick<ExecutionContext, "waitUntil"> },
 ) {
   const existing = await db
     .select()
@@ -261,15 +206,24 @@ export async function completeUpload(
   const size = head.size;
   const isVideo = existing.mediaType === "video";
 
-  if (
-    isVideo &&
-    size >= LARGE_VIDEO_COMPLETE_BYTES &&
-    options?.executionCtx
-  ) {
-    options.executionCtx.waitUntil(
-      finalizeLargeVideoUpload(env, db, existing, user.id),
-    );
-    return getMediaItemById(db, id, env.MEDIA);
+  const config = getConfig(env);
+  const category = existing.mediaType;
+  if (category && category !== "link") {
+    const limit = config.uploadLimits[category];
+    if (size > limit) {
+      await db
+        .update(media)
+        .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+        .where(eq(media.id, id));
+      throw badRequest(
+        uploadSizeExceededMessage(
+          category,
+          limit,
+          size,
+          existing.originalFilename ?? undefined,
+        ),
+      );
+    }
   }
 
   const object = await env.MEDIA.get(existing.r2Key);
@@ -287,7 +241,9 @@ export async function completeUpload(
   let videoCodec: string | null = null;
 
   if (isVideo) {
-    checksum = await sha256HexFromStream(object.body);
+    checksum = isClientChecksum(existing.checksum)
+      ? existing.checksum
+      : await sha256HexFromStream(object.body);
     videoCodec = await sniffVideoCodecFromR2(env.MEDIA, existing.r2Key, size);
   } else if (existing.mimeType && isImageMime(existing.mimeType)) {
     const buffer = await object.arrayBuffer();

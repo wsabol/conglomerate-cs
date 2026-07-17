@@ -1,12 +1,13 @@
 import type { Env } from "../env";
 import type { MediaType } from "@shared/types";
 import { INLINE_PLAYBACK_MIMES } from "@shared/mediaPlayback";
+import {
+  DEFAULT_UPLOAD_LIMIT_BYTES,
+  UPLOAD_MIME_CATEGORIES,
+} from "@shared/uploadLimits";
 
 // Central, env-overridable configuration. Nothing here should be hard-coded
 // inline elsewhere in the application (PRD Sec: Upload limits / Media).
-
-const MB = 1024 * 1024;
-const GB = 1024 * MB;
 
 function num(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
@@ -66,10 +67,13 @@ export function getConfig(env: Env): AppConfig {
     inviteTokenTtlDays: num(env.INVITE_TOKEN_TTL_DAYS, 7),
     inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),
     uploadLimits: {
-      photo: num(env.UPLOAD_MAX_PHOTO_BYTES, 25 * MB),
-      audio: num(env.UPLOAD_MAX_AUDIO_BYTES, 500 * MB),
-      video: num(env.UPLOAD_MAX_VIDEO_BYTES, 2 * GB),
-      document: num(env.UPLOAD_MAX_DOCUMENT_BYTES, 100 * MB),
+      photo: num(env.UPLOAD_MAX_PHOTO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.photo),
+      audio: num(env.UPLOAD_MAX_AUDIO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.audio),
+      video: num(env.UPLOAD_MAX_VIDEO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.video),
+      document: num(
+        env.UPLOAD_MAX_DOCUMENT_BYTES,
+        DEFAULT_UPLOAD_LIMIT_BYTES.document,
+      ),
     },
     presignTtlSeconds: num(env.PRESIGN_TTL_SECONDS, 15 * 60),
     streamIngestPresignTtlSeconds: num(
@@ -84,25 +88,10 @@ export function getConfig(env: Env): AppConfig {
     streamProcessingTimeoutHours: num(env.STREAM_PROCESSING_TIMEOUT_HOURS, 24),
     streamMaxDurationSeconds: num(env.STREAM_MAX_DURATION_SECONDS, 4 * 60 * 60),
     allowedMimeTypes: {
-      photo: [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/heic",
-        "image/heif",
-        "image/gif",
-      ],
-      video: ["video/mp4", "video/webm", "video/quicktime"],
-      audio: [
-        "audio/mpeg",
-        "audio/mp4",
-        "audio/aac",
-        "audio/x-m4a",
-        "audio/wav",
-        "audio/x-wav",
-        "audio/ogg",
-      ],
-      document: ["application/pdf"],
+      photo: [...UPLOAD_MIME_CATEGORIES.photo],
+      video: [...UPLOAD_MIME_CATEGORIES.video],
+      audio: [...UPLOAD_MIME_CATEGORIES.audio],
+      document: [...UPLOAD_MIME_CATEGORIES.document],
     },
     inlinePlayback: {
       audio: [...INLINE_PLAYBACK_MIMES.audio],
