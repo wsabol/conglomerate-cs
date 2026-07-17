@@ -1,0 +1,108 @@
+---
+description: Cloudflare Stream video processing, playback, webhooks, and ops
+globs: src/server/media/**,src/server/routes/media*.ts,src/server/routes/streamWebhook.ts,src/server/db/mutations/uploads.ts,src/client/components/media/**,src/client/lib/media.ts,src/client/lib/playback.ts,src/client/lib/useProcessingMediaPoll.ts
+alwaysApply: false
+---
+
+# Stream Video
+
+R2 stores originals; Stream handles transcoding + adaptive playback. D1 owns lifecycle state.
+
+## Lifecycle (`MEDIA_STATUSES` in `src/shared/types.ts`)
+
+```
+uploading → uploaded → processing → published
+         ↘ failed ↗
+```
+
+- **Images/audio/docs** skip `uploaded`/`processing` — go straight to `published`.
+- **Videos** with `processingProvider: "stream"` use the full path.
+- Never mark `published` until Stream reports ready (`readyToStream` / `state: ready`).
+- `stream_uid` is unique when non-null (`media_stream_uid_uidx`).
+
+## D1 columns (`media` table)
+`processing_provider`, `stream_uid`, `stream_state`, `processing_started_on`, `processed_on`,
+`processing_attempts`, `processing_error_code`, `processing_error_message`, `stream_last_checked_on`.
+Migration: `migrations/0004_video_codec.sql` (video_codec + Stream columns).
+
+## Server modules (`src/server/media/`)
+
+| File | Role |
+|------|------|
+| `stream.ts` | `StreamVideoService` — ingest from R2 URL, get status, token, delete |
+| `ingest.ts` | `claimAndIngestVideo()` — conditional D1 claim, then `env.STREAM.upload()` |
+| `presign.ts` | `createPresignedGetUrl()` for Stream ingestion (never log URL) |
+| `webhook.ts` | HMAC verify `Webhook-Signature`; 5-min replay window |
+| `reconcile.ts` | Cron recovery; `applyStreamWebhookEvent()` shared state transitions |
+| `playback.ts` | `buildVideoPlayback()`, thumbnail URL builder |
+| `access.ts` | `getPublishedStreamVideo()`, original download auth |
+| `dto.ts` | `toMediaItemDTO()` — maps `url`, `thumbUrl`, `playbackUrl`, `playable` |
+| `retry.ts` | `retryVideoProcessing()`, `deleteStreamAndR2Assets()` |
+| `backfill.ts` | `runStreamBackfill()` for existing videos |
+| `logging.ts` | Structured `media_processing` logs — never log tokens/URLs/secrets |
+
+## Ingest flow (`completeUpload` → `claimAndIngestVideo`)
+1. Verify R2 object, checksum, dedup.
+2. `transitionVideoToUploaded()` — save codec/size/checksum.
+3. Conditional update claims row (`stream_uid IS NULL`, status `uploaded`|`failed`).
+4. `env.STREAM.upload(presignedGetUrl, { requireSignedURLs: true, allowedOrigins, meta, thumbnailTimestampPct: 0.1 })`.
+5. Save `stream_uid`; return DTO with `status: processing`.
+
+Idempotent: if `stream_uid` exists or already `processing`/`published`, skip re-ingest.
+
+## API endpoints
+
+| Route | Auth | Notes |
+|-------|------|-------|
+| `POST /api/webhooks/cloudflare-stream` | Webhook HMAC only | Outside `identity`; Access bypass required in prod |
+| `GET /api/media/:id/playback` | `requireUser` | `VideoPlaybackDTO`; `Cache-Control: private, no-store` |
+| `GET /api/media/:id/thumbnail` | `requireUser` | 302 to signed Stream poster |
+| `POST /api/media/:id/retry-processing` | uploader or editor | Clears failed UID, re-ingests |
+| `POST /api/admin/media/stream-backfill` | editor | `dry_run`, `media_id`, `limit`, `retry_failed` query params |
+| `GET /media/:id?variant=original` | identity | R2 original download |
+| `GET /media/:id` (Stream video, no variant) | identity | 400 — use playback API |
+
+## MediaItemDTO (Stream-backed published video)
+```ts
+url: "/media/:id?variant=original"      // archival download
+thumbUrl: "/api/media/:id/thumbnail"     // stable app URL
+playbackUrl: "/api/media/:id/playback"   // token exchange
+playable: true
+```
+Do not expose `stream_uid` in API responses. Legacy videos without Stream UID still use
+`isInlinePlayable()` codec gating until backfilled.
+
+## Client
+- `ProcessingMediaCard` — spinner / failed state / retry CTA.
+- `VideoLightbox` — Stream iframe via `https://iframe.cloudflarestream.com/{token}`.
+- `useProcessingMediaPoll` — refreshes in-flight items on event gallery.
+
+## Config (`src/server/lib/config.ts`)
+- `appAllowedOrigin` — from `APP_ALLOWED_ORIGIN` / `APP_BASE_URL`
+- `streamIngestPresignTtlSeconds` (default 3600)
+- `streamPlaybackTokenTtlSeconds` (default 1800)
+- `streamProcessingMaxAttempts` (default 3)
+- `streamProcessingTimeoutHours` (default 24)
+
+Env overrides: `STREAM_INGEST_PRESIGN_TTL_SECONDS`, `STREAM_PLAYBACK_TOKEN_TTL_SECONDS`,
+`STREAM_PROCESSING_MAX_ATTEMPTS`, `STREAM_PROCESSING_TIMEOUT_HOURS`.
+
+## Secrets
+| Secret | Purpose |
+|--------|---------|
+| `STREAM_WEBHOOK_SECRET` | Webhook HMAC (from Stream API on webhook registration) |
+| `STREAM_CUSTOMER_CODE` | `customer-{CODE}.cloudflarestream.com` subdomain |
+| `R2_*` | Presigned GET for Stream ingestion |
+
+Local: `.dev.vars`. Production: `wrangler secret put --env production`.
+
+## Ops checklist
+1. Register webhook: `PUT /accounts/{id}/stream/webhook` → save `secret`.
+2. Access bypass for `POST /api/webhooks/cloudflare-stream`.
+3. `npm run db:migrate:remote` (if not applied).
+4. `npm run media:stream-backfill -- --dry-run` then batched `--limit 10`.
+
+## Security rules
+- Every ingested video: `requireSignedURLs: true`.
+- Never persist or log presigned R2 URLs, playback tokens, or webhook secrets.
+- Playback-token responses: `private, no-store`.

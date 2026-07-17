@@ -5,29 +5,46 @@ alwaysApply: true
 
 # The Conglomerate - Architecture
 
-Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2, one deploy.
+Single Cloudflare Worker app. React+Vite SPA + Hono API + D1 + R2 + Stream, one deploy.
 
 ## Layout
 - `src/client/` React app (routes, components, design tokens, lib).
   - `routes/` — thin page loaders; heavy UI belongs in `components/`.
   - `components/event/` — event detail, form, sidebar editors, tab panels.
+  - `components/media/` — upload, gallery tiles, `ProcessingMediaCard`, `VideoLightbox` (Stream iframe).
   - `lib/` — `api.ts` envelope helper + domain clients and hooks.
     - Domain clients: `events`, `annotations`, `media`, `people`, `places`, `acts`, `admin`
-    - Hooks: `useAsync`, `useDebouncedValue`, `useFilterOptions`, `useMediaQuery`
+    - Hooks: `useAsync`, `useDebouncedValue`, `useFilterOptions`, `useMediaQuery`, `useProcessingMediaPoll`
 - `src/server/` Worker+Hono (routes, middleware, db, media, audit, lib, auth).
   - `db/queries/` — read queries by domain; barrel at `db/queries/index.ts`.
     - `events/` — `headliner.ts`, `list.ts`, `detail.ts` (barrel `events/index.ts`)
     - Also: `media`, `annotations`, `people` (includes places + act names), `admin`, `helpers`
   - `db/mutations/` — writes + audit; one file per domain:
     `events`, `people`, `places`, `media`, `annotations`, `uploads`
+  - `media/` — delivery URLs, presign, Stream ingest/playback/webhook/reconcile/backfill; DTO mapping in `dto.ts`
 - `src/shared/` types + Zod schemas + DTOs reused by client and server.
 - `migrations/` Drizzle-generated SQL. `tests/` Vitest.
+- `scripts/` — ops CLIs (`stream-backfill.mjs`).
 - `src/client/public/` static assets (PWA icons, favicon). Built SPA + PWA artifacts land in `dist/client/`.
+
+## Media storage split
+| System | Role |
+|--------|------|
+| **R2** (`MEDIA` binding) | Original upload; archival system of record |
+| **Stream** (`STREAM` binding) | Transcoded playback, adaptive streaming, posters |
+| **D1** | Metadata, lifecycle status, `stream_uid`, processing errors |
+
+Videos: R2 original preserved → short-lived presigned GET → Stream ingest → webhook/cron → `published`.
+Images/audio/docs: unchanged R2-direct path (no Stream).
+
+See `.cursor/rules/stream-video.mdc` for lifecycle, endpoints, and ops.
 
 ## Request routing
 The Worker (`src/server/index.ts`) runs first and owns `/api/*` and `/media/*`;
 everything else is delegated to the `ASSETS` binding (SPA fallback). Never add
 CORS - client and API share an origin.
+
+`index.ts` also exports `scheduled` — cron `*/15 * * * *` runs Stream reconciliation.
 
 ## PWA (installable client)
 - `vite-plugin-pwa` in `vite.config.ts` — manifest + Workbox service worker at build.
@@ -39,8 +56,11 @@ CORS - client and API share an origin.
 
 ## Environments (`wrangler.toml`)
 - Top-level `[vars]` — local dev (`ACCESS_ENFORCED=false`, `DEV_USER_*` overrides).
-- `[env.production]` — production deploy target; vars, D1, R2, assets duplicated here
+- `[env.production]` — production deploy target; vars, D1, R2, Stream, assets duplicated here
   (`vars` are not inherited — must be set per environment).
+- Bindings: `DB`, `MEDIA` (R2), `STREAM`, `ASSETS`.
+- `[triggers] crons = ["*/15 * * * *"]` — Stream processing reconciliation (local + production).
+- `APP_ALLOWED_ORIGIN` — Stream `allowedOrigins` on ingest (defaults from `APP_BASE_URL`).
 - `run_worker_first` is `["/api/*", "/media/*"]` only — do not set globally; it
   breaks the Cloudflare Access callback at `/cdn-cgi/access/*`.
 
@@ -49,8 +69,10 @@ CORS - client and API share an origin.
 - `deploy` / `deploy:prod` — Wrangler only; no build. Production uses `--env production`.
 - Cloudflare Workers Builds (GitHub): build command `npm run build:prod`, deploy
   command `npm run deploy:prod`. Failing typecheck or tests blocks deploy.
-- Secrets (`R2_*`, etc.) via `wrangler secret put --env production` or dashboard;
-  plain-text runtime vars belong in `[env.production.vars]`.
+- Secrets via `wrangler secret put --env production` or dashboard; plain-text runtime
+  vars belong in `[env.production.vars]`.
+- Stream/R2 secrets: `STREAM_WEBHOOK_SECRET`, `STREAM_CUSTOMER_CODE`, `R2_*` (presign).
+- Ops: `npm run media:stream-backfill` — POSTs to `/api/admin/media/stream-backfill`.
 
 ## Golden rules
 - Shared enums live in `src/shared/types.ts`; DTOs in `src/shared/dto.ts` — import, never re-declare.
