@@ -8,6 +8,8 @@ export interface ProcessingLogFields {
   statusAfter?: string | null;
   durationMs?: number;
   errorCode?: string | null;
+  errorMessage?: string | null;
+  ingestMethod?: string | null;
 }
 
 export function logProcessing(fields: ProcessingLogFields): void {

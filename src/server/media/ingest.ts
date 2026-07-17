@@ -4,7 +4,10 @@ import { media } from "../db/schema";
 import type { Env } from "../env";
 import { getConfig } from "../lib/config";
 import { logProcessing } from "./logging";
-import { streamIngestErrorMessage } from "./ingestUrl";
+import {
+  classifyStreamIngestError,
+  resolveStreamIngestMethod,
+} from "./ingestErrors";
 import { createStreamVideoService } from "./stream";
 
 type MediaRow = typeof media.$inferSelect;
@@ -128,6 +131,7 @@ export async function claimAndIngestVideo(
   }
 
   const stream = createStreamVideoService(env);
+  const ingestMethod = resolveStreamIngestMethod(row.size ?? 0);
 
   try {
     const result = await stream.ingestFromR2({
@@ -153,6 +157,7 @@ export async function claimAndIngestVideo(
         statusBefore: row.status,
         statusAfter: "processing",
         durationMs: Date.now() - started,
+        ingestMethod,
       });
       return updated;
     } catch (dbErr) {
@@ -175,12 +180,15 @@ export async function claimAndIngestVideo(
       throw dbErr;
     }
   } catch (err) {
-    const detail = streamIngestErrorMessage(err);
+    const classified = classifyStreamIngestError(err, {
+      method: ingestMethod,
+      sizeBytes: row.size ?? undefined,
+    });
     await markIngestFailed(
       db,
       row.id,
-      "STREAM_INGEST_FAILED",
-      "Video ingestion failed. The original file is still safely stored.",
+      classified.code,
+      classified.message,
     );
     logProcessing({
       mediaId: row.id,
@@ -190,11 +198,15 @@ export async function claimAndIngestVideo(
       statusBefore: row.status,
       statusAfter: "failed",
       durationMs: Date.now() - started,
-      errorCode: "STREAM_INGEST_FAILED",
+      errorCode: classified.code,
+      errorMessage: classified.message,
+      ingestMethod,
     });
     console.error("Stream ingest failed", {
       mediaId: row.id,
-      error: detail,
+      ingestMethod,
+      errorCode: classified.code,
+      error: classified.message,
     });
     const failed = await db
       .select()

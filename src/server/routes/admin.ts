@@ -18,6 +18,7 @@ import { badRequest, notFound } from "../lib/errors";
 import { listInvites } from "../db/queries/invites";
 import { processInvite } from "../services/invite";
 import { runStreamBackfill } from "../media/backfill";
+import { getMediaProcessingDiagnostics } from "../media/diagnostics";
 import { z } from "zod";
 
 const streamBackfillQuerySchema = z.object({
@@ -107,6 +108,17 @@ route.post("/media/stream-backfill", requireEditor, async (c) => {
     retryFailed: query.retry_failed,
   });
   return ok(c, result, "Stream backfill completed");
+});
+
+route.get("/media/:id/processing-diagnostics", requireEditor, async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id)) throw badRequest("Invalid media id.");
+  const diagnostics = await getMediaProcessingDiagnostics(
+    c.env,
+    getDb(c.env),
+    id,
+  );
+  return ok(c, diagnostics, "Media processing diagnostics");
 });
 
 export default route;

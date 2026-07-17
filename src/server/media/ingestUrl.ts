@@ -99,8 +99,3 @@ export async function createStreamIngestSourceUrl(
   // Tests without secrets.
   return createPresignedGetUrl(env, r2Key, ttlSeconds);
 }
-
-export function streamIngestErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
