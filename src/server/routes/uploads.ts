@@ -14,7 +14,7 @@ import { badRequest } from "../lib/errors";
 const route = new Hono<AppEnv>();
 
 function optionalExecutionContext(
-  c: { executionCtx: ExecutionContext },
+  c: { executionCtx: Pick<ExecutionContext, "waitUntil"> },
 ): Pick<ExecutionContext, "waitUntil"> | undefined {
   try {
     return c.executionCtx;
