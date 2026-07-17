@@ -6,6 +6,7 @@ import type {
   DatePrecision,
   EventType,
   IncorporatePref,
+  MediaProcessingErrorCode,
   MediaStatus,
   MediaType,
   PlaceStatus,
@@ -36,10 +37,8 @@ export interface PersonDTO {
 }
 
 export interface MediaAvailabilityDTO {
-  photo: boolean;
   video: boolean;
   audio: boolean;
-  setlist: boolean;
 }
 
 export interface EventListItemDTO {
@@ -94,9 +93,34 @@ export interface MediaItemDTO {
   eventSlug: string | null;
   eventTitle: string | null;
   provenance: string | null;
-  url: string | null; // authenticated delivery URL (/media/:id)
+  /**
+   * Authenticated delivery URL for the stored media asset.
+   * Stream-backed videos point at the archival R2 original.
+   */
+  url: string | null;
+  /** Authenticated thumbnail or poster URL. */
   thumbUrl: string | null;
+  /**
+   * Authenticated endpoint for temporary Stream playback details.
+   * Present only for published Stream-backed videos.
+   */
+  playbackUrl: string | null;
+  /** Whether the media currently supports inline browser playback. */
+  playable: boolean;
+  /** Sanitized processing failure information. */
+  processingError: {
+    code: MediaProcessingErrorCode;
+    message: string;
+  } | null;
   people: { id: number; displayName: string }[];
+}
+
+export interface VideoPlaybackDTO {
+  provider: "cloudflare-stream";
+  token: string;
+  customerCode: string;
+  expiresOn: string;
+  posterUrl: string;
 }
 
 export interface UserDTO {

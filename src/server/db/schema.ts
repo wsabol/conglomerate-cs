@@ -231,6 +231,16 @@ export const media = sqliteTable(
     externalUrl: text("external_url"), // for media_type = link
     displayKey: text("display_key"), // derived display variant (images)
     thumbKey: text("thumb_key"), // derived thumbnail (images)
+    videoCodec: text("video_codec"), // sniffed fourcc for video (e.g. avc1, mp4v)
+    processingProvider: text("processing_provider"),
+    streamUid: text("stream_uid"),
+    streamState: text("stream_state"),
+    processingStartedOn: text("processing_started_on"),
+    processedOn: text("processed_on"),
+    processingAttempts: integer("processing_attempts").notNull().default(0),
+    processingErrorCode: text("processing_error_code"),
+    processingErrorMessage: text("processing_error_message"),
+    streamLastCheckedOn: text("stream_last_checked_on"),
     createdBy: integer("created_by").references(() => users.id),
     isDeleted: isDeleted(),
     createdOn: createdOn(),
@@ -245,6 +255,9 @@ export const media = sqliteTable(
       .where(
         sql`${t.checksum} IS NOT NULL AND ${t.isDeleted} = 0 AND ${t.status} = 'published'`,
       ),
+    uniqueIndex("media_stream_uid_uidx")
+      .on(t.streamUid)
+      .where(sql`${t.streamUid} IS NOT NULL`),
   ],
 );
 

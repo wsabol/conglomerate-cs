@@ -3,24 +3,20 @@ import { cn } from "../../lib/cn";
 import type { MediaAvailabilityDTO } from "@shared/dto";
 import styles from "./MediaAvailabilityIndicators.module.css";
 
-export type MediaIndicatorType = "photo" | "video" | "audio" | "setlist";
+export type MediaIndicatorType = "video" | "audio";
 
 const INDICATORS: {
   type: MediaIndicatorType;
   icon: IconName;
   label: string;
 }[] = [
-  { type: "photo", icon: "photo", label: "Has photos" },
   { type: "video", icon: "video", label: "Has video" },
   { type: "audio", icon: "audio", label: "Has audio" },
-  { type: "setlist", icon: "document", label: "Has setlist" },
 ];
 
 const DEFAULT_TYPES: MediaIndicatorType[] = [
-  "photo",
   "video",
   "audio",
-  "setlist",
 ];
 
 interface MediaAvailabilityIndicatorsProps {

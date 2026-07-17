@@ -36,7 +36,6 @@ async function mediaAvailability(
   for (const row of rows) {
     if (row.eventId == null) continue;
     const avail = map.get(row.eventId) ?? emptyAvailability();
-    if (row.mediaType === "photo") avail.photo = true;
     if (row.mediaType === "video") avail.video = true;
     if (row.mediaType === "audio") avail.audio = true;
     map.set(row.eventId, avail);
@@ -138,7 +137,6 @@ export async function listEvents(
 
   return rows.map((row) => {
     const avail = availability.get(row.id) ?? emptyAvailability();
-    avail.setlist = avail.setlist || Boolean(row.setlistText);
     return {
       id: row.id,
       slug: row.slug,

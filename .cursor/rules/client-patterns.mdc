@@ -19,7 +19,8 @@ alwaysApply: false
 - Domain modules wrap endpoints — do not scatter raw URL strings in routes/components:
   - `lib/events.ts` — `listEvents`, `getEvent`, `createEvent`, `patchEvent`, `performancePatch`, `sourcesInput`
   - `lib/annotations.ts` — annotation CRUD (`AnnotationCreateBody` / `AnnotationUpdateBody` from schemas)
-  - `lib/media.ts` — `listMedia`, `uploadFile`, `deleteMedia`
+  - `lib/media.ts` — `listMedia`, `uploadFile`, `deleteMedia`, `retryProcessing`
+  - `lib/playback.ts` — `fetchPlayback`, `streamIframeSrc` (Stream iframe player)
   - `lib/people.ts` — `listPeople`, `createPerson`
   - `lib/places.ts` — `listPlaces`
   - `lib/acts.ts` — `listActNames`
@@ -32,6 +33,8 @@ alwaysApply: false
 - `useFilterOptions({ places?, people? })` — filter dropdown data for list pages
   (uses `listPlaces` / `listPeople` internally).
 - `useMediaQuery(query)` — `matchMedia` subscription; use sparingly when CSS cannot express the rule.
+- `useProcessingMediaPoll(items, onUpdate)` — polls `/api/media/:id` while visible videos are
+  `uploading`/`uploaded`/`processing`; 5s then 15s; stops when tab hidden or none processing.
 
 ## Forms
 - Server validates with Zod at the route boundary; client forms should too before submit.
@@ -42,7 +45,7 @@ alwaysApply: false
 
 ## List pages
 - `PerformanceCard` takes `event: EventListItemDTO` (not individual props).
-- `MediaAvailabilityIndicators` — shared photo/video/audio/setlist badges (`overlay` | `inline`).
+- `MediaAvailabilityIndicators` — shared video/audio badges (`overlay` | `inline`).
 - Filter bars: use layout classes from `components/layout/layout.module.css`:
   - `filterBar` + `filterBarDropdowns` (Performances)
   - `filterBarInline` (Media)
@@ -53,7 +56,10 @@ alwaysApply: false
 - **Detail view** (`components/event/EventDetailView.tsx`) orchestrates sidebar + tabs.
   On mobile (`≤767px`): tab bar hidden, summary only (`effectiveTab`), `canUpload={!!user && !isNarrow}`.
   Subcomponents: `EventHero`, `EventSummaryPanel`, `EventPromoPanel`, `EventMediaGallery`.
-- **EventMediaGallery** — desktop `Grid`-style layout; mobile horizontal scroll-snap carousel (`.mediaGallery` in `EventDetailView.module.css`).
+- **EventMediaGallery** — desktop `Grid`-style layout; mobile horizontal scroll-snap carousel (`.mediaGallery` in `EventDetailView.module.css`). Shows in-flight videos (`uploading`/`uploaded`/`processing`/`failed`) via `ProcessingMediaCard`; polls with `useProcessingMediaPoll`.
+- **Video playback** — published Stream videos: `MediaFrame` → `VideoPlayer` passes `mediaId` +
+  `playbackUrl`; `VideoLightbox` fetches `/api/media/:id/playback` and renders Stream iframe.
+  Processing/failed videos render `ProcessingMediaCard` (not native `<video>`).
 - **Sidebar editors** (acts, setlist, poster, personnel): `EditableSidebarSection` +
   `EditorModalForm` + `useEditorModal`.
 - **Sources tab** (`SourcesSection`): modal CRUD with `useEditorModal` + `SourceForm`

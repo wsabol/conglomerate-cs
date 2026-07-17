@@ -108,9 +108,11 @@ export default function Media() {
               <MediaFrame
                 type={m.mediaType}
                 src={m.url ?? ""}
+                item={m}
                 title={m.title}
                 caption={m.description}
                 poster={m.thumbUrl}
+                playable={m.playable}
               />
               {m.eventSlug && (
                 <Link className={styles.eventLink} to={`/events/${m.eventSlug}`}>

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import {
   eventPerformanceDetails,
@@ -9,15 +9,58 @@ import {
 } from "../schema";
 import type { MediaQuery } from "@shared/schemas/query";
 import type { MediaItemDTO } from "@shared/dto";
-import { mediaDeliveryUrl, mediaThumbUrl } from "../../media/url";
+import type { Env } from "../../env";
+import { sniffVideoCodec } from "../../media/codec";
+import { toMediaItemDTO } from "../../media/dto";
+
+const CODEC_TAIL_BYTES = 5_000_000;
+
+async function ensureVideoCodec(
+  db: Db,
+  bucket: Env["MEDIA"],
+  row: typeof media.$inferSelect,
+): Promise<string | null> {
+  if (row.mediaType !== "video" || row.videoCodec || !row.r2Key || !row.size) {
+    return row.videoCodec;
+  }
+
+  const offset = Math.max(0, row.size - CODEC_TAIL_BYTES);
+  const length = Math.min(row.size, CODEC_TAIL_BYTES);
+  const object = await bucket.get(row.r2Key, {
+    range: { offset, length },
+  });
+  if (!object) return null;
+
+  const codec = sniffVideoCodec(await object.arrayBuffer());
+  if (!codec) return null;
+
+  await db
+    .update(media)
+    .set({ videoCodec: codec, modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+    .where(eq(media.id, row.id));
+
+  return codec;
+}
 
 async function attachMediaPeople(
   db: Db,
   rows: (typeof media.$inferSelect)[],
   eventMeta?: { id: number; slug: string | null; title: string | null }[],
+  bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
   if (rows.length === 0) return [];
-  const ids = rows.map((row) => row.id);
+
+  const resolvedRows = bucket
+    ? await Promise.all(
+        rows.map(async (row) => {
+          if (row.mediaType !== "video" || row.videoCodec) return row;
+          const codec = await ensureVideoCodec(db, bucket, row);
+          return codec ? { ...row, videoCodec: codec } : row;
+        }),
+      )
+    : rows;
+
+  const ids = resolvedRows.map((row) => row.id);
   const links = await db
     .select({
       mediaId: mediaPeople.mediaId,
@@ -37,30 +80,16 @@ async function attachMediaPeople(
 
   const eventByMediaId = new Map((eventMeta ?? []).map((event) => [event.id, event]));
 
-  return rows.map((row) => {
+  return resolvedRows.map((row) => {
     const event = eventByMediaId.get(row.id);
-    return {
-      id: row.id,
-      title: row.title,
-      mediaType: row.mediaType,
-      status: row.status,
-      capturedDate: row.capturedDate,
-      datePrecision: row.datePrecision,
-      description: row.description,
-      eventId: row.eventId,
-      eventSlug: event?.slug ?? null,
-      eventTitle: event?.title ?? null,
-      provenance: row.provenance,
-      url: row.mediaType === "link" ? row.externalUrl : mediaDeliveryUrl(row.id),
-      thumbUrl: row.thumbKey ? mediaThumbUrl(row.id) : null,
-      people: byMedia.get(row.id) ?? [],
-    };
+    return toMediaItemDTO(row, event, byMedia.get(row.id) ?? []);
   });
 }
 
 export async function listMediaForEvent(
   db: Db,
   eventId: number,
+  bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
   const rows = await db
     .select()
@@ -68,17 +97,24 @@ export async function listMediaForEvent(
     .where(
       and(
         eq(media.eventId, eventId),
-        eq(media.status, "published"),
         eq(media.isDeleted, false),
+        sql`(
+          ${media.status} = 'published'
+          OR (
+            ${media.mediaType} = 'video'
+            AND ${media.status} IN ('uploading', 'uploaded', 'processing', 'failed')
+          )
+        )`,
       ),
     )
     .orderBy(desc(media.createdOn));
-  return attachMediaPeople(db, rows);
+  return attachMediaPeople(db, rows, undefined, bucket);
 }
 
 export async function listMedia(
   db: Db,
   q: MediaQuery,
+  bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
   const conds = [eq(media.status, "published"), eq(media.isDeleted, false)];
   if (q.media_type) conds.push(eq(media.mediaType, q.media_type));
@@ -119,12 +155,14 @@ export async function listMedia(
       slug: row.eventSlug,
       title: row.billingName || row.eventName,
     })),
+    bucket,
   );
 }
 
 export async function getMediaItemById(
   db: Db,
   id: number,
+  bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO | null> {
   const row = await db
     .select({
@@ -154,6 +192,7 @@ export async function getMediaItemById(
         title: row.billingName || row.eventName,
       },
     ],
+    bucket,
   );
   return dto ?? null;
 }

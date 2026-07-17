@@ -1,8 +1,11 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { MediaType } from "@shared/types";
+import type { MediaItemDTO } from "@shared/dto";
 import { cn } from "../../lib/cn";
 import { Icon, type IconName } from "../ui/Icon";
 import { MediaLightbox } from "./MediaLightbox";
+import { ProcessingMediaCard } from "./ProcessingMediaCard";
+import { VideoPlayer } from "./VideoPlayer";
 import styles from "./MediaFrame.module.css";
 
 export interface MediaFrameProps {
@@ -10,6 +13,8 @@ export interface MediaFrameProps {
   src: string;
   title?: string | null;
   caption?: string | null;
+  /** Full media item when rendering processing states. */
+  item?: MediaItemDTO;
   /** CSS aspect-ratio for photo/video tiles (e.g. `1`, `"4 / 3"`). */
   aspectRatio?: CSSProperties["aspectRatio"];
   /** When false, photos render statically with no lightbox or zoom cursor. */
@@ -20,6 +25,8 @@ export interface MediaFrameProps {
   playable?: boolean;
   poster?: string | null;
   onOpen?: () => void;
+  onRetryProcessing?: (item: MediaItemDTO) => void;
+  retryingProcessing?: boolean;
 }
 
 const TYPE_ICON: Record<MediaType, IconName> = {
@@ -35,12 +42,15 @@ export function MediaFrame({
   src,
   title,
   caption,
+  item,
   aspectRatio,
   isOpenable = true,
   overlay = false,
   playable = true,
   poster,
   onOpen,
+  onRetryProcessing,
+  retryingProcessing = false,
 }: MediaFrameProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const mediaStyle =
@@ -100,17 +110,28 @@ export function MediaFrame({
         ))}
 
       {type === "video" &&
-        (playable ? (
-          wrapVisual(
-            <video
-              className={styles.video}
-              style={mediaStyle}
-              src={src}
-              controls
-              preload="metadata"
-              poster={poster ?? undefined}
-            />,
-          )
+        (item &&
+        (item.status === "uploading" ||
+          item.status === "uploaded" ||
+          item.status === "processing" ||
+          item.status === "failed") ? (
+          <ProcessingMediaCard
+            item={item}
+            onRetry={onRetryProcessing}
+            retrying={retryingProcessing}
+          />
+        ) : playable ? (
+          <VideoPlayer
+            src={src}
+            mediaId={item?.id}
+            playbackUrl={item?.playbackUrl}
+            title={title}
+            caption={caption}
+            poster={poster}
+            aspectRatio={aspectRatio}
+            overlay={overlay}
+            onOpen={onOpen}
+          />
         ) : (
           <DownloadTile type={type} src={src} title={title} />
         ))}
@@ -150,10 +171,18 @@ function DownloadTile({
   src,
   title,
 }: Pick<MediaFrameProps, "type" | "src" | "title">) {
+  const hint =
+    type === "video"
+      ? "This video format cannot play in the browser. Download to view in QuickTime or VLC."
+      : null;
+
   return (
     <div className={styles.doc}>
       <Icon name={TYPE_ICON[type]} size={22} label={type} />
-      <span>{title ?? "Archived file"}</span>
+      <div className={styles.docText}>
+        <span>{title ?? "Archived file"}</span>
+        {hint && <span className={styles.downloadHint}>{hint}</span>}
+      </div>
       <a className={styles.download} href={src} download>
         Download
       </a>

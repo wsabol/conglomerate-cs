@@ -55,3 +55,24 @@ New people on an event PATCH accept inline `{ displayName }` (no `personId`);
 ## Uploads
 Upload lifecycle (presign, dev body proxy, finalize + hero-image promotion) lives in
 `mutations/uploads.ts`. Routes pass `c.env` for R2 binding access.
+
+**Images/audio/docs:** `uploading` → checksum/variants → `published` (sync).
+
+**Videos:** `uploading` → `uploaded` (R2 verified) → `claimAndIngestVideo()` in
+`media/ingest.ts` → `processing` (Stream UID saved) → webhook or cron → `published`.
+`beginUpload` sets `processingProvider: "stream"` for videos. Repeated `complete` is idempotent.
+
+## Stream video (summary)
+Full detail: `.cursor/rules/stream-video.mdc`.
+
+- **Webhook** — `POST /api/webhooks/cloudflare-stream` mounted **outside** `identity`
+  middleware (`app.ts`); secured by `Webhook-Signature` + `STREAM_WEBHOOK_SECRET`.
+  Production needs Cloudflare Access bypass on this path.
+- **Playback** — `GET /api/media/:id/playback` (signed token, `private, no-store`);
+  `GET /api/media/:id/thumbnail` (redirect to signed Stream poster).
+- **Delivery** — `GET /media/:id?variant=original` serves R2 original; Stream-backed
+  videos without `variant=original` do not byte-stream from R2.
+- **DTO mapping** — `media/dto.ts` `toMediaItemDTO()`; never expose `stream_uid` in API.
+- **Retry** — `POST /api/media/:id/retry-processing` (uploader or editor).
+- **Backfill** — `POST /api/admin/media/stream-backfill` (editor); `scripts/stream-backfill.mjs`.
+- **Delete** — `softDeleteMedia` best-effort deletes Stream asset + R2 keys via `media/retry.ts`.

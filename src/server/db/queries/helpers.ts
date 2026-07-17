@@ -3,10 +3,8 @@ import type { places } from "../schema";
 
 export function emptyAvailability(): MediaAvailabilityDTO {
   return {
-    photo: false,
     video: false,
     audio: false,
-    setlist: false,
   };
 }
 

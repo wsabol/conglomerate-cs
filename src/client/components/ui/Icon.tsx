@@ -13,6 +13,7 @@ export type IconName =
   | "mic"
   | "photo"
   | "video"
+  | "play"
   | "audio"
   | "document"
   | "link"
@@ -49,6 +50,7 @@ const PATHS: Record<IconName, string> = {
   photo:
     "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM3 17l5-4 4 3 3-2 6 5",
   video: "M4 6h11a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM16 10l5-3v10l-5-3",
+  play: "M10 8.5l9 5.5-9 5.5V8.5z",
   audio: "M3 12h3l3-7 4 16 3-9h5",
   document:
     "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M8 13h8M8 17h8",

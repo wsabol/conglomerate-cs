@@ -18,7 +18,8 @@
     "deploy:prod": "npx wrangler deploy --env production",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote --env production",
+    "media:stream-backfill": "node scripts/stream-backfill.mjs"
   },
   "dependencies": {
     "@fontsource/bodoni-moda": "^5.2.7",

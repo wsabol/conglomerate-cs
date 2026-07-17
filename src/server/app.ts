@@ -15,6 +15,7 @@ import adminRoute from "./routes/admin";
 import invitesRoute from "./routes/invites";
 import statsRoute from "./routes/stats";
 import mediaDeliveryRoute from "./routes/mediaDelivery";
+import streamWebhookRoute from "./routes/streamWebhook";
 
 /**
  * Builds the Hono application that owns `/api/*` and `/media/*`. The Worker
@@ -29,6 +30,7 @@ export function createApp() {
   const api = new Hono<AppEnv>();
   // Health is unauthenticated so uptime probes skip JWT verification and D1.
   api.route("/health", healthRoute);
+  api.route("/webhooks/cloudflare-stream", streamWebhookRoute);
 
   const authed = new Hono<AppEnv>();
   authed.use("*", identity);

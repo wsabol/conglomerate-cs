@@ -105,3 +105,9 @@ function putWithProgress(
 export async function deleteMedia(id: number): Promise<void> {
   await apiFetch(`/api/media/${id}`, { method: "DELETE" });
 }
+
+export async function retryProcessing(id: number): Promise<MediaItemDTO> {
+  return apiFetch<MediaItemDTO>(`/api/media/${id}/retry-processing`, {
+    method: "POST",
+  });
+}

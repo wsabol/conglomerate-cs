@@ -27,6 +27,9 @@ migrations_dir = "migrations"
 binding = "MEDIA"
 bucket_name = "conglomerate-media"
 
+[stream]
+binding = "STREAM"
+
 [vars]
 ENVIRONMENT = "development"
 # Local-only identity override (Cloudflare Access cannot run in `wrangler dev`).
@@ -39,9 +42,13 @@ ACCESS_AUD = ""
 ACCESS_ACCOUNT_ID = ""
 ACCESS_POLICY_ID = ""
 APP_BASE_URL = "http://localhost:5173"
+APP_ALLOWED_ORIGIN = "http://localhost:5173"
 INVITE_FROM_EMAIL = "invites@conglomochat.willsabol.com"
 INVITE_TOKEN_TTL_DAYS = "7"
 INVITE_THROTTLE_HOURS = "24"
+
+[triggers]
+crons = ["*/15 * * * *"]
 
 # ---- Production environment ----------------------------------------------
 [env.production]
@@ -58,6 +65,9 @@ run_worker_first = ["/api/*", "/media/*"]
 [env.production.observability]
 enabled = true
 
+[env.production.triggers]
+crons = ["*/15 * * * *"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
 DEV_USER_EMAIL = ""
@@ -68,6 +78,7 @@ ACCESS_AUD = "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a"
 ACCESS_ACCOUNT_ID = ""
 ACCESS_POLICY_ID = ""
 APP_BASE_URL = "https://conglomerate-cs.wsabol39.workers.dev/"
+APP_ALLOWED_ORIGIN = "https://conglomerate-cs.wsabol39.workers.dev"
 INVITE_FROM_EMAIL = "invites@conglomochat.willsabol.com"
 INVITE_TOKEN_TTL_DAYS = "7"
 INVITE_THROTTLE_HOURS = "24"
@@ -81,3 +92,6 @@ migrations_dir = "migrations"
 [[env.production.r2_buckets]]
 binding = "MEDIA"
 bucket_name = "conglomerate-media"
+
+[env.production.stream]
+binding = "STREAM"
