@@ -77,9 +77,10 @@ const WRONG_ANSWER_MESSAGES = [
   "Fired Bog for less.",
   "B*tch that's a mistake.",
   "You're out of your element!",
-  "There aren't even good pentatonics.",
+  "These aren't even good pentatonics.",
   "Real creative asshole...",
-  "THe Broprophet is dead and you killed him."
+  "The Broprophet is dead and you killed him.",
+  "You think you got a slick dick!",
 ] as const;
 
 export function pickWrongAnswerMessage(): string {
