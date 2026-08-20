@@ -1,11 +1,8 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Container, SidebarLayout } from "../layout";
-import { Icon } from "../ui/Icon";
-import { Button } from "../ui/Button";
 import { useAuth } from "../../lib/auth";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { eventDateOnlyLabel } from "../../lib/format";
-import { cn } from "../../lib/cn";
 import type { EventDetailDTO } from "@shared/dto";
 import { EventPeopleSection } from "./EventPeopleSection";
 import { EventPosterCard } from "./EventPosterCard";
@@ -139,29 +136,6 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
                 />
               </div>
-            )}
-
-            {isEditor && (
-              <>
-                {/* 
-                  TODO: make this event footer section for editors only actions (resembling the one in mediaDetailView)
-                    - Flex/stretch row of buttons
-                    - Move Edit event, edit acts, edit setlist, edit personnel to here
-                */}
-                <Link
-                  to={`/events/${event.slug}/edit`}
-                  className={cn(styles.tab, styles.editTab)}
-                >
-                  <Button
-                    type="button"
-                    variant="ghost-primary"
-                    size="sm"
-                    className={styles.editButton}
-                  >
-                    <Icon name="edit" size={14} /> Edit event
-                  </Button>
-                </Link>
-              </>
             )}
           </SidebarLayout>
         </div>

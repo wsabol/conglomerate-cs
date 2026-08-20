@@ -151,6 +151,10 @@
   color: var(--color-emerald);
 }
 
+.editEventButton {
+  margin-left: auto;
+}
+
 .sectionInfoFooter {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);

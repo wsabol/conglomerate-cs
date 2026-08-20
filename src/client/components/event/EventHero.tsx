@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { Button } from "../ui/Button";
+import { Icon } from "../ui/Icon";
 import {
   eventDateTimeMetaLabel,
   eventTypeLabel,
@@ -6,12 +9,16 @@ import type { EventDetailDTO } from "@shared/dto";
 import { Container } from "../layout";
 import { Tag } from "../ui/Pill";
 import styles from "./EventDetailView.module.css";
+import { useAuth } from "../../lib/auth";
+import { cn } from "@client/lib/cn";
 
 interface EventHeroProps {
   event: EventDetailDTO;
 }
 
 export function EventHero({ event }: EventHeroProps) {
+  const { user, isEditor } = useAuth();
+
   const performers = event.people.filter(
     (person) => person.relationshipType === "performer",
   );
@@ -51,6 +58,21 @@ export function EventHero({ event }: EventHeroProps) {
               </Tag>
             )}
             {event.headlined && <Tag icon="star" iconLabel="Headliner" />}
+
+            {isEditor && (
+              <Link
+                to={`/events/${event.slug}/edit`}
+                className={styles.editEventButton}
+              >
+                <Button
+                  type="button"
+                  variant="ghost-primary"
+                  size="sm"
+                >
+                  <Icon name="edit" size={14} /> Edit event
+                </Button>
+              </Link>
+            )}
           </div>
         </header>
       </Container>
