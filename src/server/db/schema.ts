@@ -62,6 +62,7 @@ export const people = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     displayName: text("display_name").notNull(),
+    instrument: text("instrument"),
     aliases: text("aliases"), // comma-separated / free text
     bio: text("bio"),
     isDeleted: isDeleted(),

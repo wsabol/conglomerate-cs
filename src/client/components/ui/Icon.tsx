@@ -34,7 +34,9 @@ export type IconName =
   | "confidence-low"
   | "flask"
   | "help"
-  | "info";
+  | "info"
+  | "user"
+  | "log-out";
 
 const PATHS: Record<IconName, string> = {
   menu: "M3 6h18M3 12h18M3 18h18",
@@ -79,6 +81,8 @@ const PATHS: Record<IconName, string> = {
     "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01",
   info:
     "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01",
+  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  "log-out": "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
 };
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {

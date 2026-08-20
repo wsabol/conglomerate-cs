@@ -16,6 +16,8 @@ export interface CurrentUser {
   role: UserRole;
   personId: number | null;
   displayName?: string | null;
+  instrument?: string | null;
+  logoutUrl?: string | null;
 }
 
 interface AuthContextValue {
@@ -23,6 +25,7 @@ interface AuthContextValue {
   isEditor: boolean;
   loading: boolean;
   refresh: () => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -30,6 +33,7 @@ const AuthContext = createContext<AuthContextValue>({
   isEditor: false,
   loading: true,
   refresh: () => {},
+  logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -48,9 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
+  const logout = useCallback(() => {
+    const url = user?.logoutUrl;
+    if (url) {
+      window.location.assign(url);
+      return;
+    }
+    setUser(null);
+    window.location.assign("/");
+  }, [user?.logoutUrl]);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isEditor: user?.role === "editor", loading, refresh }),
-    [user, loading, refresh],
+    () => ({ user, isEditor: user?.role === "editor", loading, refresh, logout }),
+    [user, loading, refresh, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { env } from "cloudflare:test";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
-import { users } from "../../src/server/db/schema";
+import { people, users } from "../../src/server/db/schema";
 import type { ApiResponse } from "../../src/shared/types";
 
 interface MeDTO {
@@ -10,6 +10,8 @@ interface MeDTO {
   email: string;
   role: string;
   displayName: string;
+  instrument: string | null;
+  logoutUrl: string | null;
 }
 
 describe("GET /api/me", () => {
@@ -23,6 +25,32 @@ describe("GET /api/me", () => {
     const body = (await res.json()) as ApiResponse<MeDTO>;
     expect(body.data?.email).toBe("dev@theconglomerate.local");
     expect(body.data?.role).toBe("editor");
+    expect(body.data?.instrument).toBeNull();
+    expect(body.data?.logoutUrl).toBeNull();
+  });
+
+  it("returns instrument from the linked person", async () => {
+    const person = await getDb(env)
+      .insert(people)
+      .values({ displayName: "Will", instrument: "Drums" })
+      .returning()
+      .get();
+    await getDb(env)
+      .insert(users)
+      .values({
+        email: "will@band.test",
+        role: "member",
+        personId: person.id,
+      });
+
+    const res = await app.request(
+      "/api/me",
+      { headers: { "Cf-Access-Authenticated-User-Email": "will@band.test" } },
+      env,
+    );
+    const body = (await res.json()) as ApiResponse<MeDTO>;
+    expect(body.data?.displayName).toBe("Will");
+    expect(body.data?.instrument).toBe("Drums");
   });
 
   it("resolves a known user's role from the database via the Access header", async () => {

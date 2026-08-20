@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { cn } from "../../lib/cn";
 import { useAuth } from "../../lib/auth";
 import { Icon } from "../ui/Icon";
+import { UserMenu } from "./UserMenu";
 import styles from "./shell.module.css";
 
 interface NavItem {
@@ -21,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
 
 function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isEditor, user } = useAuth();
+  const { isEditor } = useAuth();
   const location = useLocation();
 
   useEffect(() => setOpen(false), [location.pathname]);
@@ -55,12 +56,7 @@ function Navbar() {
         </nav>
 
         <div className={styles.spacer}>
-          {user && (
-            <span className={styles.user} title={user.email}>
-              {user.displayName ?? user.email}
-              {isEditor && <span className={styles.roleBadge}>Editor</span>}
-            </span>
-          )}
+          <UserMenu />
           <button
             type="button"
             className={styles.hamburger}

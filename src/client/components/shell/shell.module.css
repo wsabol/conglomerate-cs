@@ -71,27 +71,112 @@
   gap: var(--space-3);
 }
 
-.user {
+.userMenuRoot {
   display: none;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  position: relative;
 }
 
-.roleBadge {
+.userToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+}
+
+.userToggle:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+}
+
+.userToggleName {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userToggleChevron {
+  color: var(--color-text-secondary);
+  transition: transform var(--motion-fast);
+}
+
+.userToggleChevronOpen {
+  transform: rotate(180deg);
+}
+
+.userDropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 15rem;
+  background: var(--color-light);
+  color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: calc(var(--z-nav) + 1);
+}
+
+.userDropdownHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+}
+
+.userDropdownInstrument {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: var(--letter-spacing-wider);
-  color: var(--color-bg);
-  background: var(--color-emerald);
-  padding: 0.1rem 0.4rem;
-  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  color: var(--color-emerald);
+  font-weight: var(--weight-semibold);
+}
+
+.userDropdownEmail {
+  font-size: var(--text-sm);
+  color: var(--color-surface);
+  word-break: break-all;
+}
+
+.userDropdownDivider {
+  height: 1px;
+  background: color-mix(in srgb, var(--color-surface) 12%, transparent);
+}
+
+.userDropdownAction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  color: #1a1c1a;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  text-align: left;
+}
+
+.userDropdownAction:hover {
+  background: color-mix(in srgb, var(--color-surface) 6%, transparent);
 }
 
 @media (min-width: 768px) {
-  .user {
-    display: inline-flex;
+  .userMenuRoot {
+    display: block;
   }
 }
 
