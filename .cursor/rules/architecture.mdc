@@ -50,7 +50,9 @@ CORS - client and API share an origin.
 - `vite-plugin-pwa` in `vite.config.ts` — manifest + Workbox service worker at build.
 - `main.tsx` registers via `virtual:pwa-register` (`registerType: autoUpdate`, `injectRegister: null`).
 - Build outputs: `dist/client/manifest.webmanifest`, `sw.js`, `workbox-*.js` (served by ASSETS).
-- Precaches SPA shell (JS/CSS/fonts/icons). `/api` and `/media` are `NetworkOnly` — never cache archive data.
+- Precaches hashed JS/CSS/fonts/icons only — never `index.html` or other documents.
+- Do not register a Workbox `NavigationRoute` (`navigateFallback: null`). Document requests must reach the network so Cloudflare Access can 302 expired sessions to login. `/cdn-cgi` is denylisted if fallback is ever re-enabled.
+- `/api` and `/media` are `NetworkOnly` — never cache archive data.
 - Icons: static PNGs in `src/client/public/ico/` (favicons, PWA, apple-touch).
 - Dev SW enabled (`devOptions.enabled`); artifacts go to `src/client/dev-dist/` (gitignored).
 

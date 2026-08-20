@@ -111,8 +111,9 @@ The client is an installable Progressive Web App (standalone home-screen icon on
 mobile and desktop).
 
 - **Manifest + service worker:** generated at build time via `vite-plugin-pwa`
-- **Offline shell:** precaches the SPA assets; `/api` and `/media` always use the
-  network (no stale archive data)
+- **Cached assets:** precaches hashed JS/CSS/fonts/icons. Document navigations
+  are not intercepted so Cloudflare Access can redirect expired sessions to
+  login. `/api`, `/media`, and `/cdn-cgi` always use the network.
 - **Icons:** static PNGs in `src/client/public/ico/` (favicons, PWA, apple-touch)
 
 To test locally:

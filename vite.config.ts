@@ -52,9 +52,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/media/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // Do not intercept document navigations. A cached index.html would
+        // skip Cloudflare Access, so expired sessions never reach login.
+        // Unmatched navigations fall through to the browser (no respondWith).
+        navigateFallback: null,
+        directoryIndex: null,
+        navigateFallbackDenylist: [/^\/api/, /^\/media/, /^\/cdn-cgi/],
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^\/api\//,

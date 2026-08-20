@@ -1,19 +1,39 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiFetch, ApiClientError } from "../../src/client/lib/api";
+import {
+  apiFetch,
+  ApiClientError,
+  accessNavigation,
+} from "../../src/client/lib/api";
 
-function jsonResponse(
-  body: unknown,
-  status: number,
-): Response {
+function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
   });
 }
 
+function htmlResponse(url: string, redirected = false): Response {
+  const res = new Response("<html>login</html>", {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
+  Object.defineProperty(res, "url", { value: url });
+  if (redirected) {
+    Object.defineProperty(res, "redirected", { value: true });
+  }
+  return res;
+}
+
+function urlOf(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return String(input);
+  return input.url;
+}
+
 describe("apiFetch", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("retries GET requests once on 503", async () => {
@@ -53,5 +73,80 @@ describe("apiFetch", () => {
 
     await expect(apiFetch("/api/events")).rejects.toMatchObject({ status: 400 });
     expect(calls).toBe(1);
+  });
+
+  it("redirects to Access when fetch follows a login redirect", async () => {
+    const redirect = vi
+      .spyOn(accessNavigation, "redirect")
+      .mockImplementation(() => {});
+    const accessUrl =
+      "https://wsabol-team.cloudflareaccess.com/cdn-cgi/access/login/app";
+    vi.stubGlobal("fetch", async () => htmlResponse(accessUrl, true));
+
+    await expect(apiFetch("/api/me")).rejects.toMatchObject({ status: 401 });
+    expect(redirect).toHaveBeenCalledWith(accessUrl);
+  });
+
+  it("redirects to Access when the response is HTML instead of JSON", async () => {
+    const redirect = vi
+      .spyOn(accessNavigation, "redirect")
+      .mockImplementation(() => {});
+    vi.stubGlobal("fetch", async () =>
+      htmlResponse("https://example.test/api/me"),
+    );
+
+    await expect(apiFetch("/api/me")).rejects.toMatchObject({ status: 401 });
+    expect(redirect).toHaveBeenCalledWith(undefined);
+  });
+
+  it("does not redirect on a JSON 401 from the app", async () => {
+    const redirect = vi
+      .spyOn(accessNavigation, "redirect")
+      .mockImplementation(() => {});
+    vi.stubGlobal("fetch", async () =>
+      jsonResponse({ data: null, message: "Authentication required." }, 401),
+    );
+
+    await expect(apiFetch("/api/me")).rejects.toMatchObject({
+      status: 401,
+      message: "Authentication required.",
+    });
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("probes for a hidden Access 302 when fetch fails with a network error", async () => {
+    const redirect = vi
+      .spyOn(accessNavigation, "redirect")
+      .mockImplementation(() => {});
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      if (urlOf(input).includes("_access_check")) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location:
+              "https://wsabol-team.cloudflareaccess.com/cdn-cgi/access/login/app",
+          },
+        });
+      }
+      throw new TypeError("Failed to fetch");
+    });
+
+    await expect(apiFetch("/api/me")).rejects.toBeInstanceOf(TypeError);
+    expect(redirect).toHaveBeenCalled();
+  });
+
+  it("does not reload on a network error when the Access probe is not a redirect", async () => {
+    const redirect = vi
+      .spyOn(accessNavigation, "redirect")
+      .mockImplementation(() => {});
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      if (urlOf(input).includes("_access_check")) {
+        return jsonResponse({ data: null, message: "ok" }, 200);
+      }
+      throw new TypeError("Failed to fetch");
+    });
+
+    await expect(apiFetch("/api/me")).rejects.toBeInstanceOf(TypeError);
+    expect(redirect).not.toHaveBeenCalled();
   });
 });

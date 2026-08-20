@@ -14,6 +14,61 @@ export class ApiClientError extends Error {
 }
 
 const RETRY_DELAY_MS = 300;
+const ACCESS_URL_RE = /cloudflareaccess\.com|\/cdn-cgi\/access/i;
+
+function isCloudflareAccessUrl(url: string): boolean {
+  return ACCESS_URL_RE.test(url);
+}
+
+function isAccessChallengeResponse(res: Response): boolean {
+  if (isCloudflareAccessUrl(res.url)) return true;
+  const contentType = res.headers.get("content-type") ?? "";
+  return contentType.includes("text/html");
+}
+
+/**
+ * Top-level navigation when Cloudflare Access intercepts a request.
+ * Exported as an object so tests can spy on `redirect` (same-module calls
+ * would not go through a stubbed named export).
+ */
+export const accessNavigation = {
+  redirect(url?: string): void {
+    if (typeof window === "undefined") return;
+    if (url && isCloudflareAccessUrl(url)) {
+      window.location.assign(url);
+      return;
+    }
+    window.location.reload();
+  },
+};
+
+function redirectToAccess(res?: Response): void {
+  const url = res?.url;
+  accessNavigation.redirect(
+    url && isCloudflareAccessUrl(url) ? url : undefined,
+  );
+}
+
+/** CORS hides Access's 302; a manual-redirect probe to `/` makes it visible. */
+async function redirectIfAccessChallengeHidden(): Promise<void> {
+  try {
+    const res = await fetch(`/?_access_check=${Date.now()}`, {
+      method: "GET",
+      redirect: "manual",
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    if (
+      res.type === "opaqueredirect" ||
+      res.status === 302 ||
+      isCloudflareAccessUrl(res.url)
+    ) {
+      redirectToAccess(res);
+    }
+  } catch {
+    // Offline or blocked — do not reload.
+  }
+}
 
 function isRetryable(err: unknown): boolean {
   if (err instanceof ApiClientError) {
@@ -32,6 +87,11 @@ async function fetchEnvelope<T>(
   }
 
   const res = await fetch(path, { ...init, headers });
+
+  if (isAccessChallengeResponse(res)) {
+    redirectToAccess(res);
+    throw new ApiClientError("Authentication required.", 401);
+  }
 
   let body: ApiResponse<T> | null = null;
   try {
@@ -71,8 +131,12 @@ export async function apiFetch<T>(
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         continue;
       }
-      throw err;
+      break;
     }
+  }
+
+  if (!(lastError instanceof ApiClientError)) {
+    await redirectIfAccessChallengeHidden();
   }
 
   throw lastError;

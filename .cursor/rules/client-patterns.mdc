@@ -13,9 +13,11 @@ alwaysApply: false
 ## PWA
 - Service worker registered in `main.tsx` via `virtual:pwa-register` — do not add a second registration script.
 - PWA config lives in `vite.config.ts` only. Icons: static PNGs in `public/ico/`.
+- Never precache HTML or intercept navigations: a cached app shell bypasses Cloudflare Access. `/cdn-cgi`, `/api`, and `/media` must always hit the network.
 
 ## API layer
 - All fetch goes through `apiFetch` in `src/client/lib/api.ts` (unwraps `{ data, message }`).
+- `apiFetch` treats Cloudflare Access login HTML / redirects as a top-level navigation; JSON 401 from the app is not an Access challenge.
 - Domain modules wrap endpoints — do not scatter raw URL strings in routes/components:
   - `lib/events.ts` — `listEvents`, `getEvent`, `createEvent`, `patchEvent`, `performancePatch`, `sourcesInput`
   - `lib/annotations.ts` — annotation CRUD (`AnnotationCreateBody` / `AnnotationUpdateBody` from schemas)
