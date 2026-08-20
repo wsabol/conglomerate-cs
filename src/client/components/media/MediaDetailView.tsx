@@ -493,9 +493,6 @@ export function MediaDetailView({
               {item.eventPlace && (
                 <Detail label="Location" value={item.eventPlace.name} />
               )}
-              {item.provenance && (
-                <Detail label="Provenance" value={item.provenance} />
-              )}
             </dl>
 
             <div className={styles.actions}>
@@ -703,9 +700,7 @@ function MetadataModal({
 }) {
   const [description, setDescription] = useState("");
   const [capturedDate, setCapturedDate] = useState("");
-  const [datePrecision, setDatePrecision] =
-    useState<DatePrecision>("unknown");
-  const [provenance, setProvenance] = useState("");
+  const [datePrecision, setDatePrecision] = useState<DatePrecision>("unknown");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -714,7 +709,6 @@ function MetadataModal({
     setDescription(item.description ?? "");
     setCapturedDate(item.capturedDate ?? "");
     setDatePrecision(item.datePrecision);
-    setProvenance(item.provenance ?? "");
     setError(null);
   }, [open, item]);
 
@@ -726,7 +720,6 @@ function MetadataModal({
         description: description.trim() || null,
         capturedDate: capturedDate || null,
         datePrecision,
-        provenance: provenance.trim() || null,
       });
       onSaved(updated);
     } catch (err) {
@@ -769,12 +762,6 @@ function MetadataModal({
           onChange={(event) =>
             setDatePrecision(event.target.value as DatePrecision)
           }
-        />
-        <TextArea
-          label="Provenance"
-          rows={3}
-          value={provenance}
-          onChange={(event) => setProvenance(event.target.value)}
         />
       </div>
       {error && (

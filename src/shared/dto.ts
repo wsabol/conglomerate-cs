@@ -100,7 +100,6 @@ export interface MediaItemDTO {
   eventTime: string | null;
   eventDatePrecision: DatePrecision | null;
   eventPlace: { id: number; name: string } | null;
-  provenance: string | null;
   /**
    * Authenticated delivery URL for the stored media asset.
    * Stream-backed videos point at the archival R2 original.

@@ -99,7 +99,6 @@ export function toMediaItemDTO(
     eventTime: event?.eventTime ?? null,
     eventDatePrecision: event?.datePrecision ?? null,
     eventPlace: event?.place ?? null,
-    provenance: row.provenance,
     url: mapDeliveryUrl(row),
     thumbUrl: mapThumbUrl(row),
     playbackUrl: mapPlaybackUrl(row),
