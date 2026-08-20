@@ -22,6 +22,9 @@ interface MemoriesSectionProps {
   targetId: number;
   initial: AnnotationDTO[];
   contextLabel?: string;
+  title?: string;
+  addLabel?: string;
+  emptyTitle?: string;
 }
 
 export function MemoriesSection({
@@ -29,6 +32,9 @@ export function MemoriesSection({
   targetId,
   initial,
   contextLabel,
+  title = "Memberberries",
+  addLabel = "Add membery",
+  emptyTitle = "No memberies yet",
 }: MemoriesSectionProps) {
   const { user, isEditor, loading } = useAuth();
   const [items, setItems] = useState<AnnotationDTO[]>(initial);
@@ -102,11 +108,11 @@ export function MemoriesSection({
   return (
     <section>
       <div className={styles.header}>
-        <SectionTitle>Memberberries</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         {!loading && user && (
           <Button type="button" variant={items.length === 0 ? "ghost-primary" : "primary"} size="sm" onClick={openAdd}>
             <Icon name="plus" size={14} />
-            Add membery
+            {addLabel}
           </Button>
         )}
       </div>
@@ -114,10 +120,10 @@ export function MemoriesSection({
       <div className={styles.list}>
         {items.length === 0 ? (
           <EmptyState 
-            title="No memberies yet"
+            title={emptyTitle}
             icon="flask"
             size="sm"
-            action={<Button type="button" size="sm" variant="primary" style={{marginTop: 'var(--space-2)'}} onClick={openAdd}><Icon name="plus" size={14} /> Add a membery</Button>}
+            action={<Button type="button" size="sm" variant="primary" style={{marginTop: 'var(--space-2)'}} onClick={openAdd}><Icon name="plus" size={14} /> {addLabel}</Button>}
           >
             Be the first to add what you remember.
           </EmptyState>
@@ -148,7 +154,7 @@ export function MemoriesSection({
       <Modal
         open={adding}
         onClose={closeAdd}
-        title="Add a membery"
+        title={addLabel}
         context={contextLabel}
       >
         <MemoryForm

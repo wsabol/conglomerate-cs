@@ -86,12 +86,20 @@ export interface MediaItemDTO {
   title: string | null;
   mediaType: MediaType;
   status: MediaStatus;
+  originalFilename: string | null;
+  mimeType: string | null;
   capturedDate: string | null;
   datePrecision: DatePrecision;
+  createdOn: string;
+  createdById: number | null;
   description: string | null;
   eventId: number | null;
   eventSlug: string | null;
   eventTitle: string | null;
+  eventDate: string | null;
+  eventTime: string | null;
+  eventDatePrecision: DatePrecision | null;
+  eventPlace: { id: number; name: string } | null;
   provenance: string | null;
   /**
    * Authenticated delivery URL for the stored media asset.

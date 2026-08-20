@@ -51,6 +51,37 @@ describe("toMediaItemDTO", () => {
     expect(dto.processingError).toBeNull();
   });
 
+  it("includes archive and event context used by media detail", () => {
+    const dto = toMediaItemDTO(
+      baseRow({
+        capturedDate: "2008-10-12",
+        datePrecision: "exact",
+      }),
+      {
+        slug: "burger-boy-expo",
+        title: "Burger Boy Expo",
+        eventDate: "2008-10-12",
+        eventTime: "21:48",
+        datePrecision: "exact",
+        place: { id: 4, name: "College Station, TX" },
+      },
+      [{ id: 7, displayName: "Will" }],
+    );
+
+    expect(dto).toMatchObject({
+      originalFilename: "test.mp4",
+      mimeType: "video/mp4",
+      createdOn: "2024-01-01",
+      createdById: 1,
+      eventTitle: "Burger Boy Expo",
+      eventDate: "2008-10-12",
+      eventTime: "21:48",
+      eventDatePrecision: "exact",
+      eventPlace: { id: 4, name: "College Station, TX" },
+      people: [{ id: 7, displayName: "Will" }],
+    });
+  });
+
   it("maps processing Stream videos as not playable", () => {
     const dto = toMediaItemDTO(
       baseRow({ status: "processing", streamUid: null }),

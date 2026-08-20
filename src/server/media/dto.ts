@@ -70,7 +70,14 @@ function mapPlayable(row: MediaRow): boolean {
 
 export function toMediaItemDTO(
   row: MediaRow,
-  event?: { slug: string | null; title: string | null },
+  event?: {
+    slug: string | null;
+    title: string | null;
+    eventDate?: string | null;
+    eventTime?: string | null;
+    datePrecision?: MediaItemDTO["eventDatePrecision"];
+    place?: MediaItemDTO["eventPlace"];
+  },
   people: { id: number; displayName: string }[] = [],
 ): MediaItemDTO {
   return {
@@ -78,12 +85,20 @@ export function toMediaItemDTO(
     title: row.title,
     mediaType: row.mediaType,
     status: row.status,
+    originalFilename: row.originalFilename,
+    mimeType: row.mimeType,
     capturedDate: row.capturedDate,
     datePrecision: row.datePrecision,
+    createdOn: row.createdOn,
+    createdById: row.createdBy,
     description: row.description,
     eventId: row.eventId,
     eventSlug: event?.slug ?? null,
     eventTitle: event?.title ?? null,
+    eventDate: event?.eventDate ?? null,
+    eventTime: event?.eventTime ?? null,
+    eventDatePrecision: event?.datePrecision ?? null,
+    eventPlace: event?.place ?? null,
     provenance: row.provenance,
     url: mapDeliveryUrl(row),
     thumbUrl: mapThumbUrl(row),

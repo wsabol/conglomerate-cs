@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { SectionTitle } from "../ui/Card";
-import { Icon } from "../ui/Icon";
 import { MediaFrame } from "../media/MediaFrame";
+import { MediaDetailView } from "../media/MediaDetailView";
 import { MediaUpload } from "../media/MediaUpload";
 import { EmptyState } from "../state";
-import { useMediaQuery } from "../../lib/useMediaQuery";
 import { useProcessingMediaPoll } from "../../lib/useProcessingMediaPoll";
 import { patchEvent, performancePatch } from "../../lib/events";
-import { deleteMedia, retryProcessing } from "../../lib/media";
-import { cn } from "../../lib/cn";
+import { retryProcessing } from "../../lib/media";
 import type { EventDetailDTO, MediaItemDTO } from "@shared/dto";
 import styles from "./EventDetailView.module.css";
 
@@ -25,11 +23,10 @@ export function EventMediaGallery({
   isEditor,
   onReload,
 }: EventMediaGalleryProps) {
-  const isNarrow = useMediaQuery("(max-width: 767px)");
-  const canManage = isEditor && !isNarrow;
   const [mediaItems, setMediaItems] = useState<MediaItemDTO[]>(
     event.mediaItems,
   );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +58,7 @@ export function EventMediaGallery({
       onReload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to set hero image.");
+      throw err;
     } finally {
       setBusyId(null);
     }
@@ -78,6 +76,7 @@ export function EventMediaGallery({
       onReload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to set poster.");
+      throw err;
     } finally {
       setBusyId(null);
     }
@@ -100,27 +99,6 @@ export function EventMediaGallery({
     }
   }
 
-  async function handleRemove(item: MediaItemDTO) {
-    if (
-      !window.confirm(
-        "Remove this media from the archive? This cannot be undone.",
-      )
-    ) {
-      return;
-    }
-    setBusyId(item.id);
-    setError(null);
-    try {
-      await deleteMedia(item.id);
-      setMediaItems((current) => current.filter((m) => m.id !== item.id));
-      onReload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove media.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   return (
     <section className={styles.mediaSection}>
       <SectionTitle>Media</SectionTitle>
@@ -129,7 +107,6 @@ export function EventMediaGallery({
           {gallery.map((item) => {
             const isHero = item.id === event.heroImageId;
             const isPoster = item.id === event.performance?.eventPosterId;
-            const isPhoto = item.mediaType === "photo";
             const isPublished = item.status === "published";
             const busy = busyId === item.id;
 
@@ -141,11 +118,13 @@ export function EventMediaGallery({
                     src={item.url ?? ""}
                     item={item}
                     title={item.title}
-                    caption={item.description}
                     poster={item.thumbUrl}
                     playable={item.playable}
                     onRetryProcessing={handleRetryProcessing}
                     retryingProcessing={busy}
+                    onOpen={
+                      isPublished ? () => setSelectedId(item.id) : undefined
+                    }
                   />
                   {(isHero || isPoster) && (
                     <div className={styles.mediaBadges}>
@@ -158,38 +137,6 @@ export function EventMediaGallery({
                     </div>
                   )}
                 </div>
-                {canManage && isPublished && (
-                  <div className={styles.mediaActions}>
-                    {isPhoto && !isHero && (
-                      <button
-                        type="button"
-                        className={styles.actionButton}
-                        disabled={busy}
-                        onClick={() => handleSetHero(item)}
-                      >
-                        <Icon name="star" size={15} /> Set as hero
-                      </button>
-                    )}
-                    {isPhoto && !isPoster && (
-                      <button
-                        type="button"
-                        className={styles.actionButton}
-                        disabled={busy}
-                        onClick={() => handleSetPoster(item)}
-                      >
-                        <Icon name="photo" size={15} /> Set as poster
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className={cn(styles.actionButton, styles.danger)}
-                      disabled={busy}
-                      onClick={() => handleRemove(item)}
-                    >
-                      <Icon name="trash" size={15} /> Remove
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -213,6 +160,39 @@ export function EventMediaGallery({
           />
         </div>
       )}
+      <MediaDetailView
+        open={selectedId !== null}
+        items={gallery.filter((item) => item.status === "published")}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onClose={() => setSelectedId(null)}
+        onItemUpdated={(updated) =>
+          setMediaItems((current) =>
+            current.map((item) => (item.id === updated.id ? updated : item)),
+          )
+        }
+        onItemDeleted={(id, nextId) => {
+          setMediaItems((current) => current.filter((item) => item.id !== id));
+          setSelectedId(nextId);
+          onReload();
+        }}
+        isHero={(item) => item.id === event.heroImageId}
+        isPoster={(item) => item.id === event.performance?.eventPosterId}
+        onSetHero={
+          isEditor
+            ? async (item) => {
+                await handleSetHero(item);
+              }
+            : undefined
+        }
+        onSetPoster={
+          isEditor
+            ? async (item) => {
+                await handleSetPoster(item);
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }
