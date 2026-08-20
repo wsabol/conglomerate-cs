@@ -105,7 +105,6 @@ export function MediaDetailView({
     let cancelled = false;
     listAnnotations("media", item.id)
       .then((result) => {
-        debugger
         if (!cancelled) setAnnotations(result.results);
       })
       .catch(() => {
