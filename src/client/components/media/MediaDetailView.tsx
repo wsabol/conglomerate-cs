@@ -425,7 +425,6 @@ export function MediaDetailView({
           </section>
 
           <section className={styles.section}>
-            <p className={styles.sectionTitle}>People in this media</p>
             {item.people.length > 0 ? (
               <div className={styles.people}>
                 {item.people.map((person) => (
@@ -437,15 +436,13 @@ export function MediaDetailView({
             ) : (
               <p className={styles.emptyCopy}>No one has been tagged yet.</p>
             )}
-            {canManage && (
-              <button
+            <button
                 type="button"
                 className={styles.textAction}
                 onClick={() => setTagging(true)}
               >
                 <Icon name="plus" size={16} /> Tag people
               </button>
-            )}
           </section>
 
           <section className={styles.section}>
@@ -499,76 +496,81 @@ export function MediaDetailView({
               {item.provenance && (
                 <Detail label="Provenance" value={item.provenance} />
               )}
-              {item.originalFilename && (
-                <Detail label="Original file" value={item.originalFilename} />
-              )}
             </dl>
+
+            <div className={styles.actions}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditing(true)}
+              >
+                <Icon name="edit" size={16} /> Edit metadata
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setTagging(true)}
+              >
+                <Icon name="people" size={16} /> Tag people
+              </Button>
+            </div>
+            {actionError && (
+              <p className={styles.inlineError} role="alert">
+                {actionError}
+              </p>
+            )}
           </section>
 
           {canManage && (
             <section className={styles.section}>
-              <p className={styles.sectionTitle}>Actions</p>
-              <div className={styles.actions}>
+            <p className={styles.sectionTitleEditor}>Editor tools</p>
+            <div className={styles.actions}>
+              {onSetHero && item.mediaType === "photo" && !isHero?.(item) && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setEditing(true)}
+                  loading={actionBusy === "hero"}
+                  onClick={() =>
+                    runAction("hero", () => onSetHero(item))
+                  }
                 >
-                  <Icon name="edit" size={16} /> Edit metadata
+                  <Icon name="star" size={16} /> Set as hero
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTagging(true)}
-                >
-                  <Icon name="people" size={16} /> Tag people
-                </Button>
-                {onSetHero && item.mediaType === "photo" && !isHero?.(item) && (
+              )}
+              {onSetPoster &&
+                item.mediaType === "photo" &&
+                !isPoster?.(item) && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    loading={actionBusy === "hero"}
+                    loading={actionBusy === "poster"}
                     onClick={() =>
-                      runAction("hero", () => onSetHero(item))
+                      runAction("poster", () => onSetPoster(item))
                     }
                   >
-                    <Icon name="star" size={16} /> Set as hero
+                    <Icon name="photo" size={16} /> Set as poster
                   </Button>
                 )}
-                {onSetPoster &&
-                  item.mediaType === "photo" &&
-                  !isPoster?.(item) && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      loading={actionBusy === "poster"}
-                      onClick={() =>
-                        runAction("poster", () => onSetPoster(item))
-                      }
-                    >
-                      <Icon name="photo" size={16} /> Set as poster
-                    </Button>
-                  )}
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="sm"
-                  loading={actionBusy === "delete"}
-                  onClick={handleDelete}
-                >
-                  <Icon name="trash" size={16} /> Delete media
-                </Button>
-              </div>
-              {actionError && (
-                <p className={styles.inlineError} role="alert">
-                  {actionError}
-                </p>
-              )}
-            </section>
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                loading={actionBusy === "delete"}
+                onClick={handleDelete}
+              >
+                <Icon name="trash" size={16} /> Delete media
+              </Button>
+            </div>
+            {actionError && (
+              <p className={styles.inlineError} role="alert">
+                {actionError}
+              </p>
+            )}
+          </section>
           )}
           </div>
         </main>
@@ -699,7 +701,6 @@ function MetadataModal({
   onClose: () => void;
   onSaved: (item: MediaItemDTO) => void;
 }) {
-  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [capturedDate, setCapturedDate] = useState("");
   const [datePrecision, setDatePrecision] =
@@ -710,7 +711,6 @@ function MetadataModal({
 
   useEffect(() => {
     if (!open) return;
-    setTitle(item.title ?? "");
     setDescription(item.description ?? "");
     setCapturedDate(item.capturedDate ?? "");
     setDatePrecision(item.datePrecision);
@@ -723,7 +723,6 @@ function MetadataModal({
     setError(null);
     try {
       const updated = await patchMedia(item.id, {
-        title: title.trim() || null,
         description: description.trim() || null,
         capturedDate: capturedDate || null,
         datePrecision,
@@ -751,11 +750,6 @@ function MetadataModal({
   return (
     <Modal open={open} onClose={onClose} title="Edit media metadata">
       <div className={styles.metadataForm}>
-        <TextField
-          label="Title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
         <TextArea
           label="Description"
           rows={4}
