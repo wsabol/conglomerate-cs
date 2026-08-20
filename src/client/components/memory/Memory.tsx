@@ -5,8 +5,8 @@ import type { AnnotationType } from "@shared/types";
 import styles from "./Memory.module.css";
 
 const TYPE_LABELS: Record<AnnotationType, string> = {
-  personal_memory: "Firsthand memory",
-  secondhand_account: "Secondhand account",
+  personal_memory: "",
+  secondhand_account: "Secondhand",
   correction: "Correction",
   quote: "Quote",
 };
@@ -59,27 +59,16 @@ export function Memory({
         <span className={styles.author}>{authorName}</span>
         <span aria-hidden="true">-</span>
         <span>{dateLabel}</span>
-        <span aria-hidden="true">-</span>
-        <span className={styles.typeLabel}>{TYPE_LABELS[annotationType]}</span>
-      </div>
-      {canEdit && (onEdit || onDelete) && (
-        <div className={styles.actions}>
-          {onEdit && (
+        {annotationType !== "personal_memory" && (<>
+          <span aria-hidden="true">-</span>
+          <span className={styles.typeLabel}>{TYPE_LABELS[annotationType]}</span>
+        </>)}
+        {onEdit && (
             <button type="button" className={styles.actionButton} onClick={onEdit}>
-              <Icon name="edit" size={15} /> Edit memory
+              <Icon name="edit" size={15} /> Edit
             </button>
           )}
-          {onDelete && (
-            <button
-              type="button"
-              className={cn(styles.actionButton, styles.danger)}
-              onClick={onDelete}
-            >
-              <Icon name="trash" size={15} /> Delete
-            </button>
-          )}
-        </div>
-      )}
+      </div>
     </article>
   );
 }

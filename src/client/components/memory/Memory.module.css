@@ -56,7 +56,6 @@
 .actions {
   display: flex;
   gap: var(--space-3);
-  margin-top: var(--space-1);
 }
 
 .actionButton {
