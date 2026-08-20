@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
+import { Icon } from "../ui/Icon";
 import { MentionTextArea, RadioGroup } from "../form";
 import modalStyles from "../form/modal.module.css";
 import {
@@ -7,6 +8,7 @@ import {
   type MemoryFormValue,
 } from "@shared/schemas/annotation";
 import { ANNOTATION_TYPES } from "@shared/types";
+import { cn } from "../../lib/cn";
 import { zodFieldErrors } from "../../lib/zodErrors";
 import styles from "./MemoriesSection.module.css";
 
@@ -30,9 +32,11 @@ interface MemoryFormProps {
   title?: string;
   inModal?: boolean;
   submitting?: boolean;
+  deleting?: boolean;
   error?: string | null;
   onSubmit: (value: MemoryFormValue) => void;
   onCancel?: () => void;
+  onDelete?: () => void;
 }
 
 export function MemoryForm({
@@ -41,9 +45,11 @@ export function MemoryForm({
   title,
   inModal = false,
   submitting,
+  deleting,
   error,
   onSubmit,
   onCancel,
+  onDelete,
 }: MemoryFormProps) {
   const [body, setBody] = useState(initial?.body ?? "");
   const [annotationType, setAnnotationType] = useState(
@@ -55,7 +61,9 @@ export function MemoryForm({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const formClass = inModal ? modalStyles.modalForm : styles.form;
-  const actionsClass = inModal ? modalStyles.modalActions : styles.actions;
+  const actionsClass = inModal
+    ? cn(modalStyles.modalActions, onDelete && modalStyles.modalActionsWithDelete)
+    : styles.actions;
   const errorClass = inModal ? modalStyles.modalError : styles.error;
 
   return (
@@ -105,11 +113,31 @@ export function MemoryForm({
 
       <div className={actionsClass}>
         {onCancel && (
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={submitting || deleting}
+            onClick={onCancel}
+          >
             Cancel
           </Button>
         )}
-        <Button type="submit" loading={submitting} disabled={!body.trim()}>
+        {onDelete && (
+          <Button
+            type="button"
+            variant="danger"
+            loading={deleting}
+            disabled={submitting}
+            onClick={onDelete}
+          >
+            Delete
+          </Button>
+        )}
+        <Button
+          type="submit"
+          loading={submitting}
+          disabled={!body.trim() || deleting}
+        >
           {submitLabel}
         </Button>
       </div>

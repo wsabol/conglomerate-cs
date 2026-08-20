@@ -35,9 +35,7 @@ export interface MemoryProps {
   authorName: string;
   dateLabel: string;
   annotationType: AnnotationType;
-  canEdit?: boolean;
   onEdit?: () => void;
-  onDelete?: () => void;
 }
 
 export function Memory({
@@ -45,9 +43,7 @@ export function Memory({
   authorName,
   dateLabel,
   annotationType,
-  canEdit,
   onEdit,
-  onDelete,
 }: MemoryProps) {
   const isQuote = annotationType === "quote";
   return (

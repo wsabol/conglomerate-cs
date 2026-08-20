@@ -239,9 +239,7 @@ export default function Styleguide() {
             authorName="Will"
             dateLabel="6/7/2026"
             annotationType="quote"
-            canEdit
             onEdit={() => {}}
-            onDelete={() => {}}
           />
         </Card>
       </Section>

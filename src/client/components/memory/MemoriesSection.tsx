@@ -41,6 +41,7 @@ export function MemoriesSection({
   const { user, isEditor, loading: authLoading } = useAuth();
   const [items, setItems] = useState<AnnotationDTO[]>(initial);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AnnotationDTO | null>(null);
@@ -103,11 +104,16 @@ export function MemoriesSection({
 
   async function handleDelete(a: AnnotationDTO) {
     if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    setDeleting(true);
+    setError(null);
     try {
       await deleteAnnotation(a.id);
       setItems((cur) => cur.filter((x) => x.id !== a.id));
-    } catch {
-      window.alert("Could not delete that memory. Please try again.");
+      setEditing(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete that memory.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -141,9 +147,7 @@ export function MemoriesSection({
                 datePrecision: "exact",
               })}
               annotationType={a.annotationType}
-              canEdit={canModify(a)}
               onEdit={canModify(a) ? () => openEdit(a) : undefined}
-              onDelete={canModify(a) ? () => handleDelete(a) : undefined}
             />
           ))
         )}
@@ -173,7 +177,6 @@ export function MemoriesSection({
           submitting={submitting}
           error={error}
           onSubmit={handleCreate}
-          onCancel={closeAdd}
         />
       </Modal>
 
@@ -189,6 +192,7 @@ export function MemoriesSection({
             submitLabel="Save changes"
             inModal
             submitting={submitting}
+            deleting={deleting}
             error={error}
             initial={{
               body: editing.body,
@@ -196,7 +200,7 @@ export function MemoriesSection({
               incorporatePref: editing.incorporatePref,
             }}
             onSubmit={handleUpdate}
-            onCancel={closeEdit}
+            onDelete={() => handleDelete(editing)}
           />
         )}
       </Modal>

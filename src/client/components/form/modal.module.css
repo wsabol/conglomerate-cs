@@ -81,3 +81,11 @@
 .modalActions [type="submit"] {
   margin-left: auto;
 }
+
+.modalActionsWithDelete [type="submit"] {
+  margin-left: 0;
+}
+
+.modalActionsWithDelete > :last-child {
+  margin-left: auto;
+}
