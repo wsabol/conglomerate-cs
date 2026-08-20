@@ -228,7 +228,6 @@ export const media = sqliteTable(
       .notNull()
       .default("unknown"),
     description: text("description"),
-    provenance: text("provenance"),
     externalUrl: text("external_url"), // for media_type = link
     displayKey: text("display_key"), // derived display variant (images)
     thumbKey: text("thumb_key"), // derived thumbnail (images)

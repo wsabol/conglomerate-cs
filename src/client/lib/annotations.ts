@@ -1,5 +1,6 @@
 import { apiFetch } from "./api";
 import type { AnnotationDTO } from "@shared/dto";
+import type { ListResult } from "@shared/types";
 import {
   annotationCreateSchema,
   annotationUpdateSchema,
@@ -8,6 +9,14 @@ import type { z } from "zod";
 
 export type AnnotationCreateBody = z.input<typeof annotationCreateSchema>;
 export type AnnotationUpdateBody = z.input<typeof annotationUpdateSchema>;
+
+export function listAnnotations(targetType: "event" | "media", targetId: number) {
+  const query = new URLSearchParams({
+    targetType,
+    targetId: String(targetId),
+  });
+  return apiFetch<ListResult<AnnotationDTO>>(`/api/annotations?${query}`);
+}
 
 export function createAnnotation(input: AnnotationCreateBody) {
   return apiFetch<AnnotationDTO>("/api/annotations", {

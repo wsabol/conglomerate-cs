@@ -1,11 +1,8 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Container, SidebarLayout } from "../layout";
-import { Icon } from "../ui/Icon";
-import { Button } from "../ui/Button";
 import { useAuth } from "../../lib/auth";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { eventDateOnlyLabel } from "../../lib/format";
-import { cn } from "../../lib/cn";
 import type { EventDetailDTO } from "@shared/dto";
 import { EventPeopleSection } from "./EventPeopleSection";
 import { EventPosterCard } from "./EventPosterCard";
@@ -56,106 +53,91 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
       <Container>
         <div className={styles.content}>
           <SidebarLayout
-          aside={
-            <>
-              <OtherActsSection
-                event={event}
-                isEditor={isEditor}
-                onReload={onReload}
-              />
-              <EventPosterCard event={event} onReload={onReload} />
-              <SetlistSection
-                event={event}
-                isEditor={isEditor}
-                onReload={onReload}
-              />
-              <EventPeopleSection
-                event={event}
-                isEditor={isEditor}
-                onReload={onReload}
-              />
-            </>
-          }
-        >
-          <div
-            className={styles.tabList}
-            role="tablist"
-            aria-label="Event details"
+            aside={
+              <>
+                <OtherActsSection
+                  event={event}
+                  isEditor={isEditor}
+                  onReload={onReload}
+                />
+                <EventPosterCard event={event} onReload={onReload} />
+                <SetlistSection
+                  event={event}
+                  isEditor={isEditor}
+                  onReload={onReload}
+                />
+                <EventPeopleSection
+                  event={event}
+                  isEditor={isEditor}
+                  onReload={onReload}
+                />
+              </>
+            }
           >
-            {TABS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                id={`tab-${id}`}
-                aria-selected={tab === id}
-                aria-controls={`panel-${id}`}
-                className={styles.tab}
-                onClick={() => selectTab(id)}
-              >
-                {label}
-              </button>
-            ))}
-            {isEditor && (
-              <Link
-                to={`/events/${event.slug}/edit`}
-                className={cn(styles.tab, styles.editTab)}
-              >
-                <Button
+            <div
+              className={styles.tabList}
+              role="tablist"
+              aria-label="Event details"
+            >
+              {TABS.map(({ id, label }) => (
+                <button
+                  key={id}
                   type="button"
-                  variant="ghost-primary"
-                  size="sm"
-                  className={styles.editButton}
+                  role="tab"
+                  id={`tab-${id}`}
+                  aria-selected={tab === id}
+                  aria-controls={`panel-${id}`}
+                  className={styles.tab}
+                  onClick={() => selectTab(id)}
                 >
-                  <Icon name="edit" size={14} /> Edit event
-                </Button>
-              </Link>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {effectiveTab === "summary" && (
+              <div
+                role="tabpanel"
+                id="panel-summary"
+                aria-labelledby="tab-summary"
+                className={styles.tabPanel}
+              >
+                <EventSummaryPanel
+                  event={event}
+                  canUpload={!!user && !isNarrow}
+                  isEditor={isEditor}
+                  onReload={onReload}
+                />
+              </div>
             )}
-          </div>
 
-          {effectiveTab === "summary" && (
-            <div
-              role="tabpanel"
-              id="panel-summary"
-              aria-labelledby="tab-summary"
-              className={styles.tabPanel}
-            >
-              <EventSummaryPanel
-                event={event}
-                canUpload={!!user && !isNarrow}
-                isEditor={isEditor}
-                onReload={onReload}
-              />
-            </div>
-          )}
+            {effectiveTab === "description" && (
+              <div
+                role="tabpanel"
+                id="panel-description"
+                aria-labelledby="tab-description"
+                className={styles.tabPanel}
+              >
+                <EventPromoPanel event={event} />
+              </div>
+            )}
 
-          {effectiveTab === "description" && (
-            <div
-              role="tabpanel"
-              id="panel-description"
-              aria-labelledby="tab-description"
-              className={styles.tabPanel}
-            >
-              <EventPromoPanel event={event} />
-            </div>
-          )}
-
-          {effectiveTab === "sources" && (
-            <div
-              role="tabpanel"
-              id="panel-sources"
-              aria-labelledby="tab-sources"
-              className={styles.tabPanel}
-            >
-              <SourcesSection
-                event={event}
-                isEditor={isEditor}
-                onReload={onReload}
-                contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
-              />
-            </div>
-          )}
-        </SidebarLayout>
+            {effectiveTab === "sources" && (
+              <div
+                role="tabpanel"
+                id="panel-sources"
+                aria-labelledby="tab-sources"
+                className={styles.tabPanel}
+              >
+                <SourcesSection
+                  event={event}
+                  isEditor={isEditor}
+                  onReload={onReload}
+                  contextLabel={`${eventDateOnlyLabel(event)} · ${event.title}`}
+                />
+              </div>
+            )}
+          </SidebarLayout>
         </div>
       </Container>
     </>

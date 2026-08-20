@@ -1,23 +1,25 @@
-import { Link } from "react-router-dom";
 import { Container, Grid } from "../components/layout";
 import layoutStyles from "../components/layout/layout.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { MediaFrame } from "../components/media/MediaFrame";
+import { MediaDetailView } from "../components/media/MediaDetailView";
 import { Pill } from "../components/ui/Pill";
 import { Select } from "../components/form";
 import { EmptyState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { useFilterOptions } from "../lib/useFilterOptions";
 import { listMedia } from "../lib/media";
-import { eventDateLabel } from "../lib/format";
 import type { MediaType } from "@shared/types";
-import { useMemo, useState } from "react";
+import type { MediaItemDTO } from "@shared/dto";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./Media.module.css";
 
 export default function Media() {
   const [mediaType, setMediaType] = useState<MediaType | "">("");
   const [year, setYear] = useState("");
   const [person, setPerson] = useState("");
+  const [items, setItems] = useState<MediaItemDTO[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const { data, loading, error } = useAsync(
     () =>
@@ -39,7 +41,13 @@ export default function Media() {
     return [...set].sort((a, b) => b - a);
   }, [data]);
 
-  const items = data?.results ?? [];
+  useEffect(() => {
+    setItems(data?.results ?? []);
+  }, [data]);
+
+  useEffect(() => {
+    setSelectedId(null);
+  }, [mediaType, year, person]);
 
   return (
     <Container>
@@ -110,28 +118,30 @@ export default function Media() {
                 src={m.url ?? ""}
                 item={m}
                 title={m.title}
-                caption={m.description}
                 poster={m.thumbUrl}
                 playable={m.playable}
+                onOpen={() => setSelectedId(m.id)}
               />
-              {m.eventSlug && (
-                <Link className={styles.eventLink} to={`/events/${m.eventSlug}`}>
-                  {m.eventTitle ?? "View event"}
-                </Link>
-              )}
-              {m.capturedDate && (
-                <span className={styles.meta}>
-                  {eventDateLabel({
-                    eventDate: m.capturedDate,
-                    eventTime: null,
-                    datePrecision: m.datePrecision,
-                  })}
-                </span>
-              )}
             </article>
           ))}
         </Grid>
       )}
+      <MediaDetailView
+        open={selectedId !== null}
+        items={items}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onClose={() => setSelectedId(null)}
+        onItemUpdated={(updated) =>
+          setItems((current) =>
+            current.map((item) => (item.id === updated.id ? updated : item)),
+          )
+        }
+        onItemDeleted={(id, nextId) => {
+          setItems((current) => current.filter((item) => item.id !== id));
+          setSelectedId(nextId);
+        }}
+      />
     </Container>
   );
 }

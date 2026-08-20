@@ -26,7 +26,6 @@ export const mediaUpdateSchema = z
       .nullable()
       .optional(),
     datePrecision: z.enum(DATE_PRECISIONS).optional(),
-    provenance: z.string().trim().max(2000).nullable().optional(),
     peopleIds: z.array(z.number().int().positive()).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "Nothing to update." });

@@ -6,6 +6,7 @@ import {
   media,
   mediaPeople,
   people,
+  places,
 } from "../schema";
 import type { MediaQuery } from "@shared/schemas/query";
 import type { MediaItemDTO } from "@shared/dto";
@@ -45,7 +46,15 @@ async function ensureVideoCodec(
 async function attachMediaPeople(
   db: Db,
   rows: (typeof media.$inferSelect)[],
-  eventMeta?: { id: number; slug: string | null; title: string | null }[],
+  eventMeta?: {
+    id: number;
+    slug: string | null;
+    title: string | null;
+    eventDate: string | null;
+    eventTime: string | null;
+    datePrecision: MediaItemDTO["eventDatePrecision"];
+    place: MediaItemDTO["eventPlace"];
+  }[],
   bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
   if (rows.length === 0) return [];
@@ -92,8 +101,24 @@ export async function listMediaForEvent(
   bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
   const rows = await db
-    .select()
+    .select({
+      media,
+      eventSlug: events.slug,
+      eventName: events.name,
+      billingName: eventPerformanceDetails.billingName,
+      eventDate: events.eventDate,
+      eventTime: events.eventTime,
+      eventDatePrecision: events.datePrecision,
+      placeId: places.id,
+      placeName: places.name,
+    })
     .from(media)
+    .leftJoin(events, eq(events.id, media.eventId))
+    .leftJoin(
+      eventPerformanceDetails,
+      eq(eventPerformanceDetails.eventId, media.eventId),
+    )
+    .leftJoin(places, eq(places.id, events.placeId))
     .where(
       and(
         eq(media.eventId, eventId),
@@ -107,8 +132,24 @@ export async function listMediaForEvent(
         )`,
       ),
     )
-    .orderBy(desc(media.createdOn));
-  return attachMediaPeople(db, rows, undefined, bucket);
+    .orderBy(desc(media.createdOn), desc(media.id));
+  return attachMediaPeople(
+    db,
+    rows.map((row) => row.media),
+    rows.map((row) => ({
+      id: row.media.id,
+      slug: row.eventSlug,
+      title: row.billingName || row.eventName,
+      eventDate: row.eventDate,
+      eventTime: row.eventTime,
+      datePrecision: row.eventDatePrecision,
+      place:
+        row.placeId && row.placeName
+          ? { id: row.placeId, name: row.placeName }
+          : null,
+    })),
+    bucket,
+  );
 }
 
 export async function listMedia(
@@ -137,6 +178,11 @@ export async function listMedia(
       eventSlug: events.slug,
       eventName: events.name,
       billingName: eventPerformanceDetails.billingName,
+      eventDate: events.eventDate,
+      eventTime: events.eventTime,
+      eventDatePrecision: events.datePrecision,
+      placeId: places.id,
+      placeName: places.name,
     })
     .from(media)
     .leftJoin(events, eq(events.id, media.eventId))
@@ -144,8 +190,9 @@ export async function listMedia(
       eventPerformanceDetails,
       eq(eventPerformanceDetails.eventId, media.eventId),
     )
+    .leftJoin(places, eq(places.id, events.placeId))
     .where(and(...conds))
-    .orderBy(desc(media.createdOn));
+    .orderBy(desc(media.createdOn), desc(media.id));
 
   return attachMediaPeople(
     db,
@@ -154,6 +201,13 @@ export async function listMedia(
       id: row.media.id,
       slug: row.eventSlug,
       title: row.billingName || row.eventName,
+      eventDate: row.eventDate,
+      eventTime: row.eventTime,
+      datePrecision: row.eventDatePrecision,
+      place:
+        row.placeId && row.placeName
+          ? { id: row.placeId, name: row.placeName }
+          : null,
     })),
     bucket,
   );
@@ -170,6 +224,11 @@ export async function getMediaItemById(
       eventSlug: events.slug,
       eventName: events.name,
       billingName: eventPerformanceDetails.billingName,
+      eventDate: events.eventDate,
+      eventTime: events.eventTime,
+      eventDatePrecision: events.datePrecision,
+      placeId: places.id,
+      placeName: places.name,
     })
     .from(media)
     .leftJoin(events, eq(events.id, media.eventId))
@@ -177,6 +236,7 @@ export async function getMediaItemById(
       eventPerformanceDetails,
       eq(eventPerformanceDetails.eventId, media.eventId),
     )
+    .leftJoin(places, eq(places.id, events.placeId))
     .where(and(eq(media.id, id), eq(media.isDeleted, false)))
     .get();
 
@@ -190,6 +250,13 @@ export async function getMediaItemById(
         id: row.media.id,
         slug: row.eventSlug,
         title: row.billingName || row.eventName,
+        eventDate: row.eventDate,
+        eventTime: row.eventTime,
+        datePrecision: row.eventDatePrecision,
+        place:
+          row.placeId && row.placeName
+            ? { id: row.placeId, name: row.placeName }
+            : null,
       },
     ],
     bucket,

@@ -55,9 +55,6 @@ export async function updateMedia(
       ...(input.datePrecision !== undefined
         ? { datePrecision: input.datePrecision }
         : {}),
-      ...(input.provenance !== undefined
-        ? { provenance: input.provenance }
-        : {}),
       modifiedOn: sql`(CURRENT_TIMESTAMP)`,
     })
     .where(eq(media.id, id));

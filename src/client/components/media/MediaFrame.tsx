@@ -133,33 +133,58 @@ export function MediaFrame({
             onOpen={onOpen}
           />
         ) : (
-          <DownloadTile type={type} src={src} title={title} />
+          <DownloadTile type={type} src={src} title={title} onOpen={onOpen} />
         ))}
 
       {type === "audio" &&
         (playable ? (
-          <div className={styles.audio}>
-            <span className={styles.iconRow}>
-              <Icon name="audio" size={16} /> {title ?? "Audio recording"}
-            </span>
-            <audio src={src} controls preload="metadata" />
-          </div>
+          onOpen ? (
+            <button
+              type="button"
+              className={styles.tileButton}
+              onClick={onOpen}
+              aria-label={`Open ${title ?? "audio recording"}`}
+            >
+              <span className={styles.audio}>
+                <span className={styles.iconRow}>
+                  <Icon name="audio" size={16} /> {title ?? "Audio recording"}
+                </span>
+              </span>
+            </button>
+          ) : (
+            <div className={styles.audio}>
+              <span className={styles.iconRow}>
+                <Icon name="audio" size={16} /> {title ?? "Audio recording"}
+              </span>
+              <audio src={src} controls preload="metadata" />
+            </div>
+          )
         ) : (
-          <DownloadTile type={type} src={src} title={title} />
+          <DownloadTile type={type} src={src} title={title} onOpen={onOpen} />
         ))}
 
-      {(type === "document" || type === "link") && (
-        <a
-          className={styles.doc}
-          href={src}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Icon name={TYPE_ICON[type]} size={22} label={type} />
-          <span>{title ?? (type === "link" ? "External link" : "Document")}</span>
-          <Icon name="external" size={16} />
-        </a>
-      )}
+      {(type === "document" || type === "link") &&
+        (onOpen ? (
+          <button type="button" className={styles.tileButton} onClick={onOpen}>
+            <span className={styles.doc}>
+              <Icon name={TYPE_ICON[type]} size={22} label={type} />
+              <span>
+                {title ?? (type === "link" ? "External link" : "Document")}
+              </span>
+            </span>
+          </button>
+        ) : (
+          <a
+            className={styles.doc}
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Icon name={TYPE_ICON[type]} size={22} label={type} />
+            <span>{title ?? (type === "link" ? "External link" : "Document")}</span>
+            <Icon name="external" size={16} />
+          </a>
+        ))}
 
       {caption && <figcaption className={styles.caption}>{caption}</figcaption>}
     </figure>
@@ -170,13 +195,14 @@ function DownloadTile({
   type,
   src,
   title,
-}: Pick<MediaFrameProps, "type" | "src" | "title">) {
+  onOpen,
+}: Pick<MediaFrameProps, "type" | "src" | "title" | "onOpen">) {
   const hint =
     type === "video"
       ? "This video format cannot play in the browser. Download to view in QuickTime or VLC."
       : null;
 
-  return (
+  const content = (
     <div className={styles.doc}>
       <Icon name={TYPE_ICON[type]} size={22} label={type} />
       <div className={styles.docText}>
@@ -188,4 +214,20 @@ function DownloadTile({
       </a>
     </div>
   );
+
+  if (onOpen) {
+    return (
+      <button type="button" className={styles.tileButton} onClick={onOpen}>
+        <span className={styles.doc}>
+          <Icon name={TYPE_ICON[type]} size={22} label={type} />
+          <span className={styles.docText}>
+            <span>{title ?? "Archived file"}</span>
+            {hint && <span className={styles.downloadHint}>{hint}</span>}
+          </span>
+        </span>
+      </button>
+    );
+  }
+
+  return content;
 }

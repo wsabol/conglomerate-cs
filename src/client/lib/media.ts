@@ -2,6 +2,7 @@ import { apiFetch, ApiClientError, toQuery } from "./api";
 import type { MediaItemDTO } from "@shared/dto";
 import type { ListResult, MediaType, ApiErrorDetail } from "@shared/types";
 import type { UploadCreateInput } from "@shared/schemas/media";
+import type { MediaUpdateInput } from "@shared/schemas/media";
 import { sha256Hex } from "@shared/checksum";
 import { validateUploadFileSize } from "@shared/uploadLimits";
 
@@ -116,6 +117,16 @@ function putWithProgress(
 
 export async function deleteMedia(id: number): Promise<void> {
   await apiFetch(`/api/media/${id}`, { method: "DELETE" });
+}
+
+export function patchMedia(
+  id: number,
+  input: MediaUpdateInput,
+): Promise<MediaItemDTO> {
+  return apiFetch<MediaItemDTO>(`/api/media/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function retryProcessing(id: number): Promise<MediaItemDTO> {
