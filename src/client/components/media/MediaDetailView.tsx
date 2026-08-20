@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type TouchEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -15,6 +16,7 @@ import { listAnnotations } from "../../lib/annotations";
 import { useAuth } from "../../lib/auth";
 import { deleteMedia, patchMedia } from "../../lib/media";
 import { listPeople } from "../../lib/people";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { TextArea, TextField, Select } from "../form";
 import { MemoriesSection } from "../memory/MemoriesSection";
 import { Button } from "../ui/Button";
@@ -61,10 +63,14 @@ export function MediaDetailView({
   onSetHero,
   onSetPoster,
 }: MediaDetailViewProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const informationRef = useRef<HTMLElement>(null);
   const titleId = useId();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const trayDragStart = useRef<number | null>(null);
+  const trayDragCurrent = useRef(0);
+  const trayWasDragged = useRef(false);
+  const isNarrow = useMediaQuery("(max-width: 767px)");
   const { user, isEditor } = useAuth();
   const [annotations, setAnnotations] = useState<AnnotationDTO[] | null>(null);
   const [annotationError, setAnnotationError] = useState<string | null>(null);
@@ -72,6 +78,9 @@ export function MediaDetailView({
   const [editing, setEditing] = useState(false);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [trayOpen, setTrayOpen] = useState(false);
+  const [trayDragOffset, setTrayDragOffset] = useState(0);
+  const [trayDragging, setTrayDragging] = useState(false);
 
   const index = Math.max(
     0,
@@ -90,7 +99,7 @@ export function MediaDetailView({
 
   useEffect(() => {
     if (!open || !item) return;
-    overlayRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    informationRef.current?.scrollTo({ top: 0, behavior: "auto" });
     setAnnotations(null);
     setAnnotationError(null);
     let cancelled = false;
@@ -129,7 +138,7 @@ export function MediaDetailView({
 
       const nodes = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-      );
+      ).filter((node) => !node.closest("[inert]"));
       if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
@@ -155,6 +164,8 @@ export function MediaDetailView({
       setTagging(false);
       setEditing(false);
       setActionError(null);
+      setTrayOpen(false);
+      setTrayDragOffset(0);
     }
   }, [open]);
 
@@ -182,9 +193,56 @@ export function MediaDetailView({
     const touch = event.changedTouches[0];
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
+    if (
+      isNarrow &&
+      !trayOpen &&
+      dy > 80 &&
+      Math.abs(dy) > Math.abs(dx)
+    ) {
+      onClose();
+      return;
+    }
     if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
     if (dx > 0 && hasPrevious) selectRelative(-1);
     if (dx < 0 && hasNext) selectRelative(1);
+  }
+
+  function handleTrayTouchStart(event: TouchEvent) {
+    const touch = event.changedTouches[0];
+    trayDragStart.current = touch.clientY;
+    trayDragCurrent.current = 0;
+    trayWasDragged.current = false;
+    setTrayDragging(true);
+    setTrayDragOffset(0);
+  }
+
+  function handleTrayTouchMove(event: TouchEvent) {
+    if (trayDragStart.current === null) return;
+    const touch = event.changedTouches[0];
+    const delta = touch.clientY - trayDragStart.current;
+    const constrained = trayOpen ? Math.max(0, delta) : Math.min(0, delta);
+    trayDragCurrent.current = constrained;
+    if (Math.abs(constrained) > 8) trayWasDragged.current = true;
+    setTrayDragOffset(constrained);
+    event.preventDefault();
+  }
+
+  function handleTrayTouchEnd() {
+    const delta = trayDragCurrent.current;
+    if (trayOpen && delta > 60) setTrayOpen(false);
+    if (!trayOpen && delta < -60) setTrayOpen(true);
+    trayDragStart.current = null;
+    trayDragCurrent.current = 0;
+    setTrayDragOffset(0);
+    setTrayDragging(false);
+  }
+
+  function handleTrayToggle() {
+    if (trayWasDragged.current) {
+      trayWasDragged.current = false;
+      return;
+    }
+    setTrayOpen((current) => !current);
   }
 
   async function runAction(key: string, action: () => Promise<void>) {
@@ -217,7 +275,7 @@ export function MediaDetailView({
   }
 
   return createPortal(
-    <div ref={overlayRef} className={styles.overlay}>
+    <div className={styles.overlay}>
       <div
         ref={dialogRef}
         className={styles.dialog}
@@ -307,12 +365,38 @@ export function MediaDetailView({
           >
             <Icon name="chevron-right" />
           </button>
-          <span className={styles.scrollHint} aria-hidden="true">
-            <Icon name="chevron-down" size={18} /> Details
-          </span>
         </section>
 
-        <main className={styles.information}>
+        <main
+          ref={informationRef}
+          className={`${styles.information} ${
+            trayOpen ? styles.trayOpen : styles.trayClosed
+          } ${trayDragging ? styles.trayDragging : ""}`}
+          style={
+            {
+              "--tray-drag": `${trayDragOffset}px`,
+            } as CSSProperties
+          }
+        >
+          <button
+            type="button"
+            className={styles.trayHandle}
+            aria-label={trayOpen ? "Close media details" : "Open media details"}
+            aria-expanded={!isNarrow || trayOpen}
+            onClick={handleTrayToggle}
+            onTouchStart={handleTrayTouchStart}
+            onTouchMove={handleTrayTouchMove}
+            onTouchEnd={handleTrayTouchEnd}
+            onTouchCancel={handleTrayTouchEnd}
+          >
+            <span aria-hidden="true" />
+            <span>Details</span>
+          </button>
+          <div
+            className={styles.informationContent}
+            aria-hidden={isNarrow && !trayOpen}
+            inert={isNarrow && !trayOpen}
+          >
           <section className={styles.context}>
             <h3>
               {item.eventSlug ? (
@@ -486,6 +570,7 @@ export function MediaDetailView({
               )}
             </section>
           )}
+          </div>
         </main>
       </div>
 
