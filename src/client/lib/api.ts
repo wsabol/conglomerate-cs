@@ -16,6 +16,17 @@ export class ApiClientError extends Error {
 const RETRY_DELAY_MS = 300;
 const ACCESS_URL_RE = /cloudflareaccess\.com|\/cdn-cgi\/access/i;
 
+interface BrowserWindow {
+  location: {
+    assign(url: string): void;
+    reload(): void;
+  };
+}
+
+function getBrowserWindow(): BrowserWindow | undefined {
+  return (globalThis as typeof globalThis & { window?: BrowserWindow }).window;
+}
+
 function isCloudflareAccessUrl(url: string): boolean {
   return ACCESS_URL_RE.test(url);
 }
@@ -33,12 +44,13 @@ function isAccessChallengeResponse(res: Response): boolean {
  */
 export const accessNavigation = {
   redirect(url?: string): void {
-    if (typeof window === "undefined") return;
+    const browserWindow = getBrowserWindow();
+    if (!browserWindow) return;
     if (url && isCloudflareAccessUrl(url)) {
-      window.location.assign(url);
+      browserWindow.location.assign(url);
       return;
     }
-    window.location.reload();
+    browserWindow.location.reload();
   },
 };
 
@@ -52,14 +64,15 @@ function redirectToAccess(res?: Response): void {
 /** CORS hides Access's 302; a manual-redirect probe to `/` makes it visible. */
 async function redirectIfAccessChallengeHidden(): Promise<void> {
   try {
-    const res = await fetch(`/?_access_check=${Date.now()}`, {
+    const probeInit: RequestInit & { credentials: "same-origin" } = {
       method: "GET",
       redirect: "manual",
       cache: "no-store",
       credentials: "same-origin",
-    });
+    };
+    const res = await fetch(`/?_access_check=${Date.now()}`, probeInit);
     if (
-      res.type === "opaqueredirect" ||
+      String(res.type) === "opaqueredirect" ||
       res.status === 302 ||
       isCloudflareAccessUrl(res.url)
     ) {
