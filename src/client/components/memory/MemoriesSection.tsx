@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SectionTitle } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
-import { EmptyState } from "../state";
+import { EmptyState, Spinner } from "../state";
 import { Memory } from "./Memory";
 import { MemoryForm, type MemoryFormValue } from "./MemoryForm";
 import { useAuth } from "../../lib/auth";
@@ -25,6 +25,7 @@ interface MemoriesSectionProps {
   title?: string;
   addLabel?: string;
   emptyTitle?: string;
+  loading?: boolean;
 }
 
 export function MemoriesSection({
@@ -35,13 +36,18 @@ export function MemoriesSection({
   title = "Memberberries",
   addLabel = "Add membery",
   emptyTitle = "No memberies yet",
+  loading = false,
 }: MemoriesSectionProps) {
-  const { user, isEditor, loading } = useAuth();
+  const { user, isEditor, loading: authLoading } = useAuth();
   const [items, setItems] = useState<AnnotationDTO[]>(initial);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AnnotationDTO | null>(null);
+
+  useEffect(() => {
+    if (!loading) setItems(initial);
+  }, [initial, loading]);
 
   const canModify = (a: AnnotationDTO) =>
     !!user && (isEditor || a.authorId === user.id);
@@ -109,16 +115,12 @@ export function MemoriesSection({
     <section>
       <div className={styles.header}>
         <SectionTitle>{title}</SectionTitle>
-        {!loading && user && (
-          <Button type="button" variant={items.length === 0 ? "ghost-primary" : "primary"} size="sm" onClick={openAdd}>
-            <Icon name="plus" size={14} />
-            {addLabel}
-          </Button>
-        )}
       </div>
 
       <div className={styles.list}>
-        {items.length === 0 ? (
+        {loading ? (
+          <Spinner label={`Loading ${title.toLowerCase()}`} />
+        ) : items.length === 0 ? (
           <EmptyState 
             title={emptyTitle}
             icon="flask"
@@ -147,7 +149,14 @@ export function MemoriesSection({
         )}
       </div>
 
-      {!loading && !user && (
+      {items.length > 0 && !loading && !authLoading && user && (
+        <Button className={styles.addButton} type="button" variant={"ghost-primary"} size="sm" onClick={openAdd}>
+          <Icon name="plus" size={14} />
+          {addLabel}
+        </Button>
+      )}
+
+      {!loading && !authLoading && !user && (
         <p className={styles.signedOut}>Sign in to add a memory.</p>
       )}
 

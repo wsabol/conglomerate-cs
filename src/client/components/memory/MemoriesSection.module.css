@@ -27,6 +27,12 @@
   font-weight: var(--weight-semibold);
 }
 
+.addButton {
+  margin-top: var(--space-4);
+  width: 100%;
+  justify-content: center;
+}
+
 .pills {
   display: flex;
   flex-wrap: wrap;

@@ -105,6 +105,7 @@ export function MediaDetailView({
     let cancelled = false;
     listAnnotations("media", item.id)
       .then((result) => {
+        debugger
         if (!cancelled) setAnnotations(result.results);
       })
       .catch(() => {
@@ -446,20 +447,17 @@ export function MediaDetailView({
           </section>
 
           <section className={styles.section}>
-            {annotations === null ? (
-              <p className={styles.emptyCopy}>Loading memories…</p>
-            ) : (
-              <MemoriesSection
-                key={item.id}
-                targetType="media"
-                targetId={item.id}
-                initial={annotations}
-                contextLabel={contextTitle}
-                title="Memories"
-                addLabel="Add a memory"
-                emptyTitle="No memories yet"
-              />
-            )}
+            <MemoriesSection
+              key={item.id}
+              targetType="media"
+              targetId={item.id}
+              initial={annotations ?? []}
+              contextLabel={contextTitle}
+              title="Memories"
+              addLabel="Add a memory"
+              emptyTitle="No memories yet"
+              loading={annotations === null}
+            />
             {annotationError && (
               <p className={styles.inlineError} role="alert">
                 {annotationError}
