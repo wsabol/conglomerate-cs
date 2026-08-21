@@ -3,10 +3,18 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
+const buildVersion =
+  process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 8) ??
+  process.env.GITHUB_SHA?.slice(0, 8) ??
+  "local";
+
 // The React app lives in src/client and builds to dist/client, which the
 // Worker serves via the ASSETS binding. During development, run `wrangler dev`
 // (the Worker/API on :8787) alongside `vite` (:5173) and API calls are proxied.
 export default defineConfig({
+  define: {
+    __BUILD_VERSION__: JSON.stringify(buildVersion),
+  },
   plugins: [
     react(),
     VitePWA({
