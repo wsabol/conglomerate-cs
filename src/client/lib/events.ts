@@ -14,6 +14,7 @@ export interface ListEventsParams {
   sort?: "date" | "modified";
   limit?: number;
   event_type?: EventType;
+  exclude_event_type?: EventType;
   q?: string;
   place?: string | number;
   person?: string | number;

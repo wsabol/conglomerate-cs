@@ -16,7 +16,7 @@ import { MediaFrame } from "@client/components/media/MediaFrame";
 
 export default function Home() {
   const { data, loading, error, reload } = useAsync(
-    () => listEvents({ sort: "modified", limit: 4 }),
+    () => listEvents({ event_type: "performance", sort: "modified", limit: 4 }),
     [],
   );
   const { data: stats } = useAsync(() => getArchiveStats(), []);

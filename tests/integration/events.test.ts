@@ -135,6 +135,42 @@ describe("GET /api/events", () => {
     expect(res.status).toBe(400);
   });
 
+  it("excludes an event type when exclude_event_type is set", async () => {
+    const db = getDb(env);
+    await seed();
+    await db
+      .insert(events)
+      .values({
+        slug: "reunion-2015",
+        name: "Ten Year Reunion",
+        eventType: "reunion",
+        eventDate: "2015-06-01",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .run();
+
+    const res = await app.request(
+      "/api/events?exclude_event_type=performance",
+      {},
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ApiResponse<ListResult<EventListItemDTO>>;
+    expect(body.data?.results).toHaveLength(1);
+    expect(body.data?.results[0].eventType).toBe("reunion");
+  });
+
+  it("rejects event_type and exclude_event_type together", async () => {
+    await seed();
+    const res = await app.request(
+      "/api/events?event_type=performance&exclude_event_type=party",
+      {},
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("returns export-shaped aggregates when detailed=true", async () => {
     const { personId } = await seed();
     const res = await app.request("/api/events?detailed=true", {}, env);

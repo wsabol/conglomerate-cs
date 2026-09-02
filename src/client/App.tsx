@@ -5,6 +5,7 @@ import { RequireEditor } from "./components/RequireEditor";
 import Home from "./routes/Home";
 import Timeline from "./routes/Timeline";
 import Performances from "./routes/Performances";
+import Events from "./routes/Events";
 import EventDetail from "./routes/EventDetail";
 import EventForm from "./routes/EventForm";
 import Media from "./routes/Media";
@@ -25,6 +26,7 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/performances" element={<Performances />} />
+            <Route path="/events" element={<Events />} />
             <Route
               path="/events/new"
               element={

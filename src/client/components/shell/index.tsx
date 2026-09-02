@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/timeline", label: "Timeline" },
   { to: "/performances", label: "Performances" },
+  { to: "/events", label: "Events" },
   { to: "/media", label: "Media" },
   { to: "/admin", label: "Admin", editorOnly: true, hideOnMobile: true },
 ];

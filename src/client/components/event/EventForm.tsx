@@ -9,6 +9,7 @@ import { useAsync } from "../../lib/useAsync";
 import { createEvent, getEvent, patchEvent } from "../../lib/events";
 import { useFilterOptions } from "../../lib/useFilterOptions";
 import { zodFieldErrors } from "../../lib/zodErrors";
+import { eventTypeLabel, isPerformance } from "../../lib/format";
 import {
   eventCreateSchema,
   eventUpdateSchema,
@@ -77,11 +78,15 @@ function buildEventBody(form: FormState) {
     placeId: form.placeId ? Number(form.placeId) : null,
     summary: form.summary || null,
     confidence: form.confidence,
-    performance: {
-      billingName: form.billingName || null,
-      setlistText: form.setlistText || null,
-      promotionText: form.promotionText || null,
-    },
+    ...(isPerformance(form.eventType)
+      ? {
+          performance: {
+            billingName: form.billingName || null,
+            setlistText: form.setlistText || null,
+            promotionText: form.promotionText || null,
+          },
+        }
+      : {}),
   };
 }
 
@@ -233,7 +238,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.eventType}
           options={EVENT_TYPES.map((t) => ({
             value: t,
-            label: t.charAt(0).toUpperCase() + t.slice(1),
+            label: eventTypeLabel(t),
           }))}
         />
         <TextField
@@ -283,28 +288,32 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.summary}
           rows={6}
         />
-        <TextArea
-          label="Setlist"
-          value={form.setlistText}
-          onChange={(e) => updateField("setlistText", e.target.value)}
-          error={fieldErrors.setlistText}
-          rows={4}
-        />
-        <TextField
-          label="Billing name"
-          value={form.billingName}
-          onChange={(e) => updateField("billingName", e.target.value)}
-          error={fieldErrors.billingName}
-          hint="Name the event was billed as"
-        />
-        <TextArea
-          label="Promotion text"
-          value={form.promotionText}
-          onChange={(e) => updateField("promotionText", e.target.value)}
-          error={fieldErrors.promotionText}
-          hint="Original promotional content for the event"
-          rows={3}
-        />
+        {isPerformance(form.eventType) && (
+          <>
+            <TextArea
+              label="Setlist"
+              value={form.setlistText}
+              onChange={(e) => updateField("setlistText", e.target.value)}
+              error={fieldErrors.setlistText}
+              rows={4}
+            />
+            <TextField
+              label="Billing name"
+              value={form.billingName}
+              onChange={(e) => updateField("billingName", e.target.value)}
+              error={fieldErrors.billingName}
+              hint="Name the event was billed as"
+            />
+            <TextArea
+              label="Promotion text"
+              value={form.promotionText}
+              onChange={(e) => updateField("promotionText", e.target.value)}
+              error={fieldErrors.promotionText}
+              hint="Original promotional content for the event"
+              rows={3}
+            />
+          </>
+        )}
 
         {error && (
           <ErrorState title="Save failed" message={error} />

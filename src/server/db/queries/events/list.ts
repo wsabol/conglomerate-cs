@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, desc, eq, inArray, like, ne, or } from "drizzle-orm";
 import type { Db } from "../../client";
 import {
   eventActs,
@@ -55,6 +55,9 @@ function lineupActConditions(lineup: BillingRole) {
 export function eventListConditions(db: Db, q: EventsQuery) {
   const conds = [eq(events.isDeleted, false)];
   if (q.event_type) conds.push(eq(events.eventType, q.event_type));
+  if (q.exclude_event_type) {
+    conds.push(ne(events.eventType, q.exclude_event_type));
+  }
   if (q.place) conds.push(eq(events.placeId, q.place));
   if (q.year) conds.push(like(events.eventDate, `${q.year}-%`));
   if (q.q) {

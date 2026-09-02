@@ -10,4 +10,19 @@ describe("eventsQuerySchema", () => {
     expect(() => eventsQuerySchema.parse({ limit: "0" })).toThrow();
     expect(() => eventsQuerySchema.parse({ limit: "501" })).toThrow();
   });
+
+  it("accepts exclude_event_type", () => {
+    expect(
+      eventsQuerySchema.parse({ exclude_event_type: "performance" }),
+    ).toMatchObject({ exclude_event_type: "performance" });
+  });
+
+  it("rejects event_type and exclude_event_type together", () => {
+    expect(() =>
+      eventsQuerySchema.parse({
+        event_type: "performance",
+        exclude_event_type: "party",
+      }),
+    ).toThrow(/cannot be used together/);
+  });
 });

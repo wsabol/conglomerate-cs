@@ -39,8 +39,21 @@ export function eventDateTimeMetaLabel(e: DateFields): string {
   return date;
 }
 
+const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  performance: "Performance",
+  party: "Party",
+  rehearsal: "Rehearsal",
+  recording: "Recording session",
+  reunion: "Reunion",
+  other: "Other",
+};
+
 export function eventTypeLabel(type: EventType): string {
-  return type.charAt(0).toUpperCase() + type.slice(1);
+  return EVENT_TYPE_LABELS[type];
+}
+
+export function isPerformance(type: EventType): boolean {
+  return type === "performance";
 }
 
 export function yearOf(dateISO: string | null): string {
