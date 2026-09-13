@@ -16,17 +16,23 @@ import styles from "./EventDetailView.module.css";
 
 type DetailTab = "summary" | "description" | "sources";
 
-const TABS: { id: DetailTab; label: string }[] = [
+const PERFORMANCE_TABS: { id: DetailTab; label: string }[] = [
   { id: "summary", label: "Summary" },
   { id: "description", label: "Event Promo" },
   { id: "sources", label: "Sources" },
 ];
 
-const DETAIL_TAB_IDS = new Set<DetailTab>(TABS.map(({ id }) => id));
+const NON_PERFORMANCE_TABS: { id: DetailTab; label: string }[] = [
+  { id: "summary", label: "Summary" },
+  { id: "sources", label: "Sources" },
+];
 
-function tabFromHash(hash: string): DetailTab {
+function tabFromHash(
+  hash: string,
+  tabs: { id: DetailTab; label: string }[],
+): DetailTab {
   const id = hash.replace(/^#/, "") as DetailTab;
-  return DETAIL_TAB_IDS.has(id) ? id : "summary";
+  return tabs.some((item) => item.id === id) ? id : "summary";
 }
 
 interface EventDetailViewProps {
@@ -39,7 +45,9 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const isNarrow = useMediaQuery("(max-width: 767px)");
-  const tab = tabFromHash(location.hash);
+  const isPerformance = event.eventType === "performance";
+  const tabs = isPerformance ? PERFORMANCE_TABS : NON_PERFORMANCE_TABS;
+  const tab = tabFromHash(location.hash, tabs);
   const effectiveTab = isNarrow ? "summary" : tab;
 
   function selectTab(id: DetailTab) {
@@ -55,21 +63,26 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
           <SidebarLayout
             aside={
               <>
-                <OtherActsSection
-                  event={event}
-                  isEditor={isEditor}
-                  onReload={onReload}
-                />
-                <EventPosterCard event={event} onReload={onReload} />
-                <SetlistSection
-                  event={event}
-                  isEditor={isEditor}
-                  onReload={onReload}
-                />
+                {isPerformance && (
+                  <>
+                    <OtherActsSection
+                      event={event}
+                      isEditor={isEditor}
+                      onReload={onReload}
+                    />
+                    <EventPosterCard event={event} onReload={onReload} />
+                    <SetlistSection
+                      event={event}
+                      isEditor={isEditor}
+                      onReload={onReload}
+                    />
+                  </>
+                )}
                 <EventPeopleSection
                   event={event}
                   isEditor={isEditor}
                   onReload={onReload}
+                  isPerformance={isPerformance}
                 />
               </>
             }
@@ -79,7 +92,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               role="tablist"
               aria-label="Event details"
             >
-              {TABS.map(({ id, label }) => (
+              {tabs.map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
@@ -111,7 +124,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
               </div>
             )}
 
-            {effectiveTab === "description" && (
+            {isPerformance && effectiveTab === "description" && (
               <div
                 role="tabpanel"
                 id="panel-description"

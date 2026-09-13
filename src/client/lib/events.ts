@@ -4,7 +4,7 @@ import {
   eventCreateSchema,
   eventUpdateSchema,
 } from "@shared/schemas/event";
-import type { BillingRole, EventType, ListResult } from "@shared/types";
+import type { BillingRole, EventGroup, EventType, ListResult } from "@shared/types";
 import type { z } from "zod";
 
 export type EventCreateBody = z.input<typeof eventCreateSchema>;
@@ -14,6 +14,7 @@ export interface ListEventsParams {
   sort?: "date" | "modified";
   limit?: number;
   event_type?: EventType;
+  event_group?: EventGroup;
   q?: string;
   place?: string | number;
   person?: string | number;

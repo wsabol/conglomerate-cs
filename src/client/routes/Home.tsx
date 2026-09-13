@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Container, Grid } from "../components/layout";
 import { Button, buttonClass } from "../components/ui/Button";
-import { PerformanceCard } from "../components/cards/PerformanceCard";
+import { EventCard } from "../components/cards/EventCard";
 import { ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listEvents } from "../lib/events";
@@ -113,7 +113,7 @@ export default function Home() {
           ) : (
             <Grid min={240}>
               {recent.map((event) => (
-                <PerformanceCard key={event.id} event={event} />
+                <EventCard key={event.id} event={event} />
               ))}
             </Grid>
           )}
