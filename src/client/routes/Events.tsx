@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 import { useFilterOptions } from "../lib/useFilterOptions";
+import { placeSelectOptions } from "../lib/places";
 import { listEvents } from "../lib/events";
 import { eventTypeLabel } from "../lib/format";
 import { useAuth } from "../lib/auth";
@@ -89,10 +90,7 @@ export default function Events() {
             placeholder="All places"
             value={place}
             onChange={(e) => setPlace(e.target.value)}
-            options={filters.places.map((item) => ({
-              value: String(item.id),
-              label: item.name,
-            }))}
+            options={placeSelectOptions(filters.places)}
           />
           <Select
             label="Attendees"

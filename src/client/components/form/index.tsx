@@ -118,6 +118,7 @@ export function TextArea({
 export interface SelectOption {
   value: string;
   label: string;
+  group?: string;
 }
 
 interface SelectProps
@@ -141,6 +142,16 @@ export function Select({
 }: SelectProps) {
   const generated = useId();
   const fieldId = id ?? generated;
+  const ungroupedOptions = options.filter((option) => !option.group);
+  const groupedOptions = new Map<string, SelectOption[]>();
+
+  for (const option of options) {
+    if (!option.group) continue;
+    const group = groupedOptions.get(option.group) ?? [];
+    group.push(option);
+    groupedOptions.set(option.group, group);
+  }
+
   return (
     <Field label={label} htmlFor={fieldId} hint={hint} error={error} required={required}>
       <div className={styles.selectWrap}>
@@ -152,10 +163,19 @@ export function Select({
           {...rest}
         >
           {placeholder && <option value="">{placeholder}</option>}
-          {options.map((o) => (
+          {ungroupedOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
+          ))}
+          {[...groupedOptions].map(([group, groupOptions]) => (
+            <optgroup key={group} label={group}>
+              {groupOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <Icon name="chevron-down" size={18} />

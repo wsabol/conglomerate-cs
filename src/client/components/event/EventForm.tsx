@@ -8,6 +8,7 @@ import { ErrorState, Spinner } from "../state";
 import { useAsync } from "../../lib/useAsync";
 import { createEvent, getEvent, patchEvent } from "../../lib/events";
 import { useFilterOptions } from "../../lib/useFilterOptions";
+import { placeSelectOptions } from "../../lib/places";
 import { zodFieldErrors } from "../../lib/zodErrors";
 import {
   eventCreateSchema,
@@ -147,11 +148,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
   }, [eventData]);
 
   const placeOptions = useMemo(
-    () =>
-      places.map((p) => ({
-        value: String(p.id),
-        label: p.name,
-      })),
+    () => placeSelectOptions(places),
     [places],
   );
 

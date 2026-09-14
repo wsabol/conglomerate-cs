@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 import { useFilterOptions } from "../lib/useFilterOptions";
+import { placeSelectOptions } from "../lib/places";
 import { listEvents } from "../lib/events";
 import type { BillingRole } from "@shared/types";
 import styles from "./Performances.module.css";
@@ -61,10 +62,7 @@ export default function Performances() {
             placeholder="All venues"
             value={place}
             onChange={(e) => setPlace(e.target.value)}
-            options={filters.places.map((p) => ({
-              value: String(p.id),
-              label: p.name,
-            }))}
+            options={placeSelectOptions(filters.places)}
           />
           <Select
             label="Personnel"
