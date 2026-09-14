@@ -55,7 +55,10 @@ export default function Events() {
         subtitle="Reunions, parties, rehearsals, recording sessions, and everything in between."
         actions={
           isEditor ? (
-            <Link to="/events/new" className={buttonClass("primary")}>
+            <Link
+              to="/events/new?event_type=other"
+              className={buttonClass("primary")}
+            >
               <Icon name="plus" size={16} /> Add event
             </Link>
           ) : undefined

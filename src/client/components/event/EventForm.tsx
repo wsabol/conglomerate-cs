@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
 import { PageHeader } from "../ui/PageHeader";
 import { Button } from "../ui/Button";
@@ -104,7 +104,14 @@ function mapZodErrorsToForm(
 export function EventForm({ mode }: { mode: "new" | "edit" }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState<FormState>(() => {
+    if (mode !== "new") return emptyForm;
+    const requestedType = searchParams.get("event_type");
+    const eventType =
+      EVENT_TYPES.find((type) => type === requestedType) ?? "performance";
+    return { ...emptyForm, eventType };
+  });
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<FormField, string>>
   >({});
