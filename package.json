@@ -5,7 +5,8 @@
   "type": "module",
   "description": "The Conglomerate - a private chronological band archive (Cloudflare Worker + React).",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx concurrently -c \"#fdba74,#93c5fd\" \"npm run dev:client\" \"npm run dev:worker\" --names=client,worker",
+    "dev:client": "vite",
     "dev:worker": "wrangler dev",
     "preview": "npm run build && wrangler dev",
     "typecheck": "tsc -p tsconfig.client.json && tsc -p tsconfig.server.json && tsc -p tsconfig.node.json",
