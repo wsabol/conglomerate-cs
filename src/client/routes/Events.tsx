@@ -56,7 +56,7 @@ export default function Events() {
         actions={
           isEditor ? (
             <Link
-              to="/events/new?event_type=other"
+              to="/events/new?event_type=party"
               className={buttonClass("primary")}
             >
               <Icon name="plus" size={16} /> Add event
