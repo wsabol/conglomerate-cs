@@ -691,7 +691,7 @@ Use emerald for interactive states, brass for featured and archival emphasis, or
 
 ### Typography
 
-- Display/editorial: Cormorant Garamond or Bodoni Moda
+- Display/editorial: Bodoni Moda
 - Main UI/body: Inter or Manrope
 - Metadata/dates/setlists: IBM Plex Mono
 

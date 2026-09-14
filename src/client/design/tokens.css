@@ -32,8 +32,7 @@
   --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-emerald);
 
   /* ---- Typography ---- */
-  --font-impact: "Bodoni Moda", Georgia, serif;
-  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-display: "Bodoni Moda", Georgia, serif;
   --font-body: "Manrope", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
