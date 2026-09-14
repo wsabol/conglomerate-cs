@@ -70,6 +70,21 @@
   border-radius: var(--radius-sm);
 }
 
+.eventTypeBadge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--letter-spacing-wider);
+  text-transform: uppercase;
+  color: var(--color-bg);
+  background: var(--color-brass);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
 .body {
   display: flex;
   flex-direction: column;

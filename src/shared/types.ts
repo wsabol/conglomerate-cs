@@ -25,6 +25,17 @@ export const EVENT_TYPES = [
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
+export const NON_PERFORMANCE_EVENT_TYPES = [
+  "party",
+  "rehearsal",
+  "recording",
+  "reunion",
+  "other",
+] as const satisfies readonly EventType[];
+
+export const EVENT_GROUPS = ["performance", "non_performance"] as const;
+export type EventGroup = (typeof EVENT_GROUPS)[number];
+
 export const DATE_PRECISIONS = [
   "exact",
   "month",

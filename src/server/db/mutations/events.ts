@@ -8,11 +8,30 @@ import {
   events,
 } from "../schema";
 import type { EventCreateInput, EventUpdateInput } from "@shared/schemas/event";
+import type { EventType } from "@shared/types";
 import { eventSlug } from "../../lib/slug";
+import { badRequest } from "../../lib/errors";
 import { recordRevision } from "../../audit/revision";
 import { getEventDetail } from "../queries/events";
 import { createPeopleBatch } from "./people";
 import type { EventPersonInput } from "@shared/schemas/event";
+
+function isPerformance(type: EventType): boolean {
+  return type === "performance";
+}
+
+function validateTypeSpecificInput(
+  eventType: EventType,
+  input: Partial<Pick<EventCreateInput, "performance" | "acts">>,
+) {
+  if (isPerformance(eventType)) return;
+  if (input.performance !== undefined) {
+    throw badRequest("Performance details are only allowed for performances.");
+  }
+  if (input.acts && input.acts.length > 0) {
+    throw badRequest("Billed acts are only allowed for performances.");
+  }
+}
 
 /** Generate a unique slug, appending `-2`, `-3`, … on collision. */
 export async function uniqueEventSlug(
@@ -44,6 +63,7 @@ export async function createEvent(
   input: EventCreateInput,
   changedBy: number,
 ) {
+  validateTypeSpecificInput(input.eventType, input);
   const slug = await uniqueEventSlug(db, input.name, input.eventDate);
 
   const inserted = await db
@@ -87,6 +107,14 @@ export async function updateEventBySlug(
     .where(and(eq(events.slug, slug), eq(events.isDeleted, false)))
     .get();
   if (!existing) return null;
+
+  const nextEventType = input.eventType ?? existing.eventType;
+  if (isPerformance(nextEventType) !== isPerformance(existing.eventType)) {
+    throw badRequest(
+      "Events cannot be changed between performance and non-performance types.",
+    );
+  }
+  validateTypeSpecificInput(nextEventType, input);
 
   const name = input.name ?? existing.name;
   const eventDate =

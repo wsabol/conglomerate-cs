@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
 import { PageHeader } from "../ui/PageHeader";
 import { Button } from "../ui/Button";
@@ -17,10 +17,12 @@ import {
   CONFIDENCE_LEVELS,
   DATE_PRECISIONS,
   EVENT_TYPES,
+  NON_PERFORMANCE_EVENT_TYPES,
   type Confidence,
   type DatePrecision,
   type EventType,
 } from "@shared/types";
+import { eventTypeLabel } from "../../lib/format";
 import styles from "./EventForm.module.css";
 
 type FormState = {
@@ -68,7 +70,7 @@ const emptyForm: FormState = {
 };
 
 function buildEventBody(form: FormState) {
-  return {
+  const common = {
     name: form.name,
     eventType: form.eventType,
     eventDate: form.eventDate || null,
@@ -77,6 +79,10 @@ function buildEventBody(form: FormState) {
     placeId: form.placeId ? Number(form.placeId) : null,
     summary: form.summary || null,
     confidence: form.confidence,
+  };
+  if (form.eventType !== "performance") return common;
+  return {
+    ...common,
     performance: {
       billingName: form.billingName || null,
       setlistText: form.setlistText || null,
@@ -98,7 +104,14 @@ function mapZodErrorsToForm(
 export function EventForm({ mode }: { mode: "new" | "edit" }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState<FormState>(() => {
+    if (mode !== "new") return emptyForm;
+    const requestedType = searchParams.get("event_type");
+    const eventType =
+      EVENT_TYPES.find((type) => type === requestedType) ?? "performance";
+    return { ...emptyForm, eventType };
+  });
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<FormField, string>>
   >({});
@@ -141,6 +154,16 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
       })),
     [places],
   );
+
+  const eventTypeOptions = useMemo(() => {
+    const types =
+      mode === "edit" && eventData?.eventType === "performance"
+        ? (["performance"] as const)
+        : mode === "edit" && eventData
+          ? NON_PERFORMANCE_EVENT_TYPES
+          : EVENT_TYPES;
+    return types.map((type) => ({ value: type, label: eventTypeLabel(type) }));
+  }, [mode, eventData]);
 
   function updateField<K extends FormField>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -231,10 +254,13 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
             updateField("eventType", e.target.value as EventType)
           }
           error={fieldErrors.eventType}
-          options={EVENT_TYPES.map((t) => ({
-            value: t,
-            label: t.charAt(0).toUpperCase() + t.slice(1),
-          }))}
+          disabled={mode === "edit" && eventData?.eventType === "performance"}
+          hint={
+            mode === "edit" && eventData?.eventType === "performance"
+              ? "Performances cannot be changed to another event type."
+              : undefined
+          }
+          options={eventTypeOptions}
         />
         <TextField
           label="Date"
@@ -283,28 +309,32 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.summary}
           rows={6}
         />
-        <TextArea
-          label="Setlist"
-          value={form.setlistText}
-          onChange={(e) => updateField("setlistText", e.target.value)}
-          error={fieldErrors.setlistText}
-          rows={4}
-        />
-        <TextField
-          label="Billing name"
-          value={form.billingName}
-          onChange={(e) => updateField("billingName", e.target.value)}
-          error={fieldErrors.billingName}
-          hint="Name the event was billed as"
-        />
-        <TextArea
-          label="Promotion text"
-          value={form.promotionText}
-          onChange={(e) => updateField("promotionText", e.target.value)}
-          error={fieldErrors.promotionText}
-          hint="Original promotional content for the event"
-          rows={3}
-        />
+        {form.eventType === "performance" && (
+          <>
+            <TextArea
+              label="Setlist"
+              value={form.setlistText}
+              onChange={(e) => updateField("setlistText", e.target.value)}
+              error={fieldErrors.setlistText}
+              rows={4}
+            />
+            <TextField
+              label="Billing name"
+              value={form.billingName}
+              onChange={(e) => updateField("billingName", e.target.value)}
+              error={fieldErrors.billingName}
+              hint="Name the event was billed as"
+            />
+            <TextArea
+              label="Promotion text"
+              value={form.promotionText}
+              onChange={(e) => updateField("promotionText", e.target.value)}
+              error={fieldErrors.promotionText}
+              hint="Original promotional content for the event"
+              rows={3}
+            />
+          </>
+        )}
 
         {error && (
           <ErrorState title="Save failed" message={error} />

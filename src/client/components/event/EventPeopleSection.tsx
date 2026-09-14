@@ -27,6 +27,7 @@ interface EventPeopleSectionProps {
   event: EventDetailDTO;
   isEditor: boolean;
   onReload: () => void;
+  isPerformance: boolean;
 }
 
 interface DraftPerson {
@@ -91,6 +92,7 @@ export function EventPeopleSection({
   event,
   isEditor,
   onReload,
+  isPerformance,
 }: EventPeopleSectionProps) {
   const sortedPeople = useMemo(
     () => sortPeopleForDisplay(event.people),
@@ -99,12 +101,12 @@ export function EventPeopleSection({
 
   return (
     <EditableSidebarSection
-      title="Personnel"
+      title={isPerformance ? "Personnel" : "Attendees"}
       items={sortedPeople}
       isEditor={isEditor}
-      emptyMessage="No personnel listed yet."
-      addLabel="Add personnel"
-      editLabel="Edit personnel"
+      emptyMessage={isPerformance ? "No personnel listed yet." : "No attendees listed yet."}
+      addLabel={isPerformance ? "Add personnel" : "Add attendees"}
+      editLabel={isPerformance ? "Edit personnel" : "Edit attendees"}
       getItemKey={(person) => `${person.personId}:${person.relationshipType}`}
       renderItem={(person) => {
         const showRole = person.relationshipType !== "performer";
@@ -123,7 +125,7 @@ export function EventPeopleSection({
       }}
       onReload={onReload}
       renderModal={(modalProps) => (
-        <EventPeopleModal event={event} {...modalProps} />
+        <EventPeopleModal event={event} isPerformance={isPerformance} {...modalProps} />
       )}
     />
   );
@@ -134,11 +136,13 @@ function EventPeopleModal({
   open,
   onClose,
   onSaved,
+  isPerformance,
 }: {
   event: EventDetailDTO;
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  isPerformance: boolean;
 }) {
   const [draftPeople, setDraftPeople] = useState<DraftPerson[]>([]);
   const { submitting, error, save } = useEditorModal(open);
@@ -171,7 +175,9 @@ function EventPeopleModal({
   }, [open, event.people]);
 
   function addPerson(result: PersonAutocompleteSubmit) {
-    const relationshipType: RelationshipType = "performer";
+    const relationshipType: RelationshipType = isPerformance
+      ? "performer"
+      : "attendee";
     const candidate =
       "isNew" in result
         ? {
@@ -248,8 +254,8 @@ function EventPeopleModal({
     <EditorModalForm
       open={open}
       onClose={onClose}
-      title="Personnel"
-      submitLabel="Save personnel"
+      title={isPerformance ? "Personnel" : "Attendees"}
+      submitLabel={isPerformance ? "Save personnel" : "Save attendees"}
       submitting={submitting}
       error={error}
       onSubmit={handleSubmit}
@@ -261,7 +267,7 @@ function EventPeopleModal({
               <span className={`${styles.modalListAct} ${eventStyles.actRow}`}>
                 <span>{person.displayName}</span>
                 {person.isNew && (
-                  <Tag iconLabel="New person">New</Tag>
+                  <Tag iconLabel="New person" icon="plus">New</Tag>
                 )}
               </span>
               <select

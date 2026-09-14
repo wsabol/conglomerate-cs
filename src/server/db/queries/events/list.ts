@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, desc, eq, inArray, like, ne, or } from "drizzle-orm";
 import type { Db } from "../../client";
 import {
   eventActs,
@@ -55,6 +55,12 @@ function lineupActConditions(lineup: BillingRole) {
 export function eventListConditions(db: Db, q: EventsQuery) {
   const conds = [eq(events.isDeleted, false)];
   if (q.event_type) conds.push(eq(events.eventType, q.event_type));
+  if (q.event_group === "performance") {
+    conds.push(eq(events.eventType, "performance"));
+  }
+  if (q.event_group === "non_performance") {
+    conds.push(ne(events.eventType, "performance"));
+  }
   if (q.place) conds.push(eq(events.placeId, q.place));
   if (q.year) conds.push(like(events.eventDate, `${q.year}-%`));
   if (q.q) {
@@ -151,7 +157,8 @@ export async function listEvents(
       heroImageId: row.heroImageId,
       heroImageUrl: row.heroImageId ? mediaDeliveryUrl(row.heroImageId) : null,
       media: avail,
-      headlined: headlinedIds.has(row.id),
+      headlined:
+        row.eventType === "performance" && headlinedIds.has(row.id),
     };
   });
 }

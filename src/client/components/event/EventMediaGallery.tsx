@@ -186,7 +186,7 @@ export function EventMediaGallery({
             : undefined
         }
         onSetPoster={
-          isEditor
+          isEditor && event.eventType === "performance"
             ? async (item) => {
                 await handleSetPoster(item);
               }

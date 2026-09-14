@@ -10,4 +10,28 @@ describe("eventsQuerySchema", () => {
     expect(() => eventsQuerySchema.parse({ limit: "0" })).toThrow();
     expect(() => eventsQuerySchema.parse({ limit: "501" })).toThrow();
   });
+
+  it("accepts compatible event group and type filters", () => {
+    expect(
+      eventsQuerySchema.parse({
+        event_group: "non_performance",
+        event_type: "party",
+      }),
+    ).toMatchObject({ event_group: "non_performance", event_type: "party" });
+  });
+
+  it("rejects contradictory event group and type filters", () => {
+    expect(() =>
+      eventsQuerySchema.parse({
+        event_group: "performance",
+        event_type: "party",
+      }),
+    ).toThrow();
+    expect(() =>
+      eventsQuerySchema.parse({
+        event_group: "non_performance",
+        event_type: "performance",
+      }),
+    ).toThrow();
+  });
 });

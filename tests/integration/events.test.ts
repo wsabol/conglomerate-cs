@@ -114,6 +114,88 @@ describe("GET /api/events", () => {
     expect(body.data?.results[0].slug).toBe("the-syndicate-2010-07-02");
   });
 
+  it("filters performance and non-performance event groups", async () => {
+    const { placeId, personId } = await seed();
+    const db = getDb(env);
+    const party = await db
+      .insert(events)
+      .values({
+        slug: "reunion-party-2012",
+        name: "Reunion Party",
+        eventType: "party",
+        eventDate: "2012-08-04",
+        datePrecision: "exact",
+        placeId,
+        summary: "Everyone got back together.",
+        confidence: "high",
+      })
+      .returning()
+      .get();
+    await db.insert(eventPeople).values({
+      eventId: party.id,
+      personId,
+      relationshipType: "attendee",
+    });
+
+    const performanceRes = await app.request(
+      "/api/events?event_group=performance",
+      {},
+      env,
+    );
+    const performances = (await performanceRes.json()) as ApiResponse<
+      ListResult<EventListItemDTO>
+    >;
+    expect(performances.data?.results).toHaveLength(2);
+    expect(performances.data?.results.every((event) => event.eventType === "performance")).toBe(true);
+
+    const eventRes = await app.request(
+      `/api/events?event_group=non_performance&q=together&place=${placeId}&person=${personId}&sort=date`,
+      {},
+      env,
+    );
+    const otherEvents = (await eventRes.json()) as ApiResponse<
+      ListResult<EventListItemDTO>
+    >;
+    expect(otherEvents.data?.results.map((event) => event.slug)).toEqual([
+      "reunion-party-2012",
+    ]);
+  });
+
+  it("filters each exact non-performance event type", async () => {
+    await seed();
+    const db = getDb(env);
+    const types = ["party", "rehearsal", "recording", "reunion", "other"] as const;
+    await db.insert(events).values(
+      types.map((eventType, index) => ({
+        slug: `${eventType}-event`,
+        name: `${eventType} event`,
+        eventType,
+        eventDate: `2012-08-${String(index + 1).padStart(2, "0")}`,
+        datePrecision: "exact" as const,
+        confidence: "medium" as const,
+      })),
+    );
+
+    for (const eventType of types) {
+      const res = await app.request(
+        `/api/events?event_group=non_performance&event_type=${eventType}`,
+        {},
+        env,
+      );
+      const body = (await res.json()) as ApiResponse<ListResult<EventListItemDTO>>;
+      expect(body.data?.results.map((event) => event.eventType)).toEqual([eventType]);
+    }
+  });
+
+  it("rejects contradictory event group and type filters", async () => {
+    const res = await app.request(
+      "/api/events?event_group=performance&event_type=party",
+      {},
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("sorts by date when requested", async () => {
     await seed();
     const res = await app.request("/api/events?sort=date", {}, env);
@@ -746,5 +828,238 @@ describe("PATCH /api/events/:slug acts", () => {
       .from(eventActs)
       .where(eq(eventActs.eventId, event.id));
     expect(rows).toHaveLength(0);
+  });
+});
+
+describe("non-performance event invariants", () => {
+  beforeEach(async () => {
+    const db = getDb(env);
+    await db.delete(eventPeople);
+    await db.delete(eventSources);
+    await db.delete(eventActs);
+    await db.delete(eventPerformanceDetails);
+    await db.delete(events);
+    await db.delete(people);
+    await db.delete(places);
+  });
+
+  it("creates every non-performance type without performance details", async () => {
+    const types = ["party", "rehearsal", "recording", "reunion", "other"] as const;
+
+    for (const eventType of types) {
+      const res = await app.request(
+        "/api/events",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `${eventType} event`,
+            eventType,
+            eventDate: "2012-08-04",
+          }),
+        },
+        env,
+      );
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as ApiResponse<EventDetailDTO>;
+      expect(body.data?.eventType).toBe(eventType);
+      expect(body.data?.performance).toBeNull();
+      expect(body.data?.headlined).toBe(false);
+    }
+
+    const performanceRows = await getDb(env).select().from(eventPerformanceDetails);
+    expect(performanceRows).toHaveLength(0);
+  });
+
+  it("strips leftover performance details and acts from non-performance detail", async () => {
+    const db = getDb(env);
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "legacy-party",
+        name: "Legacy Party",
+        eventType: "party",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+    await db.insert(eventPerformanceDetails).values({
+      eventId: event.id,
+      billingName: "Old Billing",
+      promotionText: "Old promo",
+      setlistText: "Old setlist",
+    });
+    await db.insert(eventActs).values({
+      eventId: event.id,
+      name: "The Conglomerate",
+      billingRole: "headliner",
+    });
+
+    const res = await app.request("/api/events/legacy-party", {}, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ApiResponse<EventDetailDTO>;
+    expect(body.data?.performance).toBeNull();
+    expect(body.data?.acts).toEqual([]);
+    expect(body.data?.headlined).toBe(false);
+  });
+
+  it("allows changes among non-performance types", async () => {
+    const createRes = await app.request(
+      "/api/events",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Band Party", eventType: "party" }),
+      },
+      env,
+    );
+    const created = (await createRes.json()) as ApiResponse<EventDetailDTO>;
+
+    const updateRes = await app.request(
+      `/api/events/${created.data!.slug}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventType: "reunion" }),
+      },
+      env,
+    );
+    expect(updateRes.status).toBe(200);
+    const updated = (await updateRes.json()) as ApiResponse<EventDetailDTO>;
+    expect(updated.data?.eventType).toBe("reunion");
+  });
+
+  it("rejects changes across the performance boundary without modifying the event", async () => {
+    const db = getDb(env);
+    await db.insert(events).values([
+      {
+        slug: "boundary-show",
+        name: "Boundary Show",
+        eventType: "performance",
+        datePrecision: "exact",
+        confidence: "medium",
+      },
+      {
+        slug: "boundary-party",
+        name: "Boundary Party",
+        eventType: "party",
+        datePrecision: "exact",
+        confidence: "medium",
+      },
+    ]);
+
+    const toParty = await app.request(
+      "/api/events/boundary-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventType: "party" }),
+      },
+      env,
+    );
+    const toPerformance = await app.request(
+      "/api/events/boundary-party",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventType: "performance" }),
+      },
+      env,
+    );
+    expect(toParty.status).toBe(400);
+    expect(toPerformance.status).toBe(400);
+
+    const rows = await db.select({ slug: events.slug, eventType: events.eventType }).from(events);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { slug: "boundary-show", eventType: "performance" },
+        { slug: "boundary-party", eventType: "party" },
+      ]),
+    );
+  });
+
+  it("rejects performance metadata and billed acts for non-performance events", async () => {
+    const createWithPerformance = await app.request(
+      "/api/events",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Invalid Party",
+          eventType: "party",
+          performance: { setlistText: "A song" },
+        }),
+      },
+      env,
+    );
+    const createWithActs = await app.request(
+      "/api/events",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Invalid Reunion",
+          eventType: "reunion",
+          acts: [{ name: "The Conglomerate", billingRole: "headliner" }],
+        }),
+      },
+      env,
+    );
+    expect(createWithPerformance.status).toBe(400);
+    expect(createWithActs.status).toBe(400);
+
+    await getDb(env).insert(events).values({
+      slug: "recording-session",
+      name: "Recording Session",
+      eventType: "recording",
+      datePrecision: "exact",
+      confidence: "medium",
+    });
+    const updateWithPerformance = await app.request(
+      "/api/events/recording-session",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ performance: { promotionText: "Promo" } }),
+      },
+      env,
+    );
+    const updateWithActs = await app.request(
+      "/api/events/recording-session",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acts: [{ name: "The Conglomerate", billingRole: "headliner" }],
+        }),
+      },
+      env,
+    );
+    expect(updateWithPerformance.status).toBe(400);
+    expect(updateWithActs.status).toBe(400);
+  });
+
+  it("continues to create performances with performance details and billed acts", async () => {
+    const res = await app.request(
+      "/api/events",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "New Show",
+          eventType: "performance",
+          performance: { setlistText: "The Lick" },
+          acts: [{ name: "The Conglomerate", billingRole: "headliner" }],
+        }),
+      },
+      env,
+    );
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as ApiResponse<EventDetailDTO>;
+    expect(body.data?.performance?.setlistText).toBe("The Lick");
+    expect(body.data?.acts).toEqual([
+      expect.objectContaining({ name: "The Conglomerate", billingRole: "headliner" }),
+    ]);
   });
 });

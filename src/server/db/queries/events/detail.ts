@@ -72,7 +72,8 @@ async function loadEventAggregate(
 
   const heroImageId = event.heroImageId ?? null;
   const posterId = perf?.eventPosterId ?? null;
-  const resolvedHeroId = heroImageId ?? posterId;
+  const resolvedHeroId =
+    heroImageId ?? (event.eventType === "performance" ? posterId : null);
   const placeDTO: PlaceDTO | null = place ? toPlaceDTO(place) : null;
 
   return {
@@ -95,6 +96,8 @@ function baseEventFields(
   const { event, place, perf, peopleRows, acts, sources, eventAnnotations, resolvedHeroId } =
     data;
 
+  const performanceEvent = event.eventType === "performance";
+
   return {
     id: event.id,
     slug: event.slug,
@@ -110,7 +113,7 @@ function baseEventFields(
     heroImageId: event.heroImageId ?? null,
     heroImageUrl: resolvedHeroId ? mediaDeliveryUrl(resolvedHeroId) : null,
     summary: event.summary,
-    performance: perf
+    performance: performanceEvent && perf
       ? {
           billingName: perf.billingName,
           promotionText: perf.promotionText,
@@ -127,7 +130,7 @@ function baseEventFields(
       relationshipType: person.relationshipType,
       notes: person.notes,
     })),
-    acts: acts.map((act) => ({
+    acts: (performanceEvent ? acts : []).map((act) => ({
       id: act.id,
       name: act.name,
       billingRole: act.billingRole,
@@ -161,7 +164,7 @@ export async function getEventDetail(
       video: mediaItems.some((item) => item.mediaType === "video"),
       audio: mediaItems.some((item) => item.mediaType === "audio"),
     },
-    headlined: isEventHeadlined(acts),
+    headlined: data.event.eventType === "performance" && isEventHeadlined(acts),
     placeDetail: placeDTO,
     mediaItems,
   };
