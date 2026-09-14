@@ -175,7 +175,9 @@ function EventPeopleModal({
   }, [open, event.people]);
 
   function addPerson(result: PersonAutocompleteSubmit) {
-    const relationshipType: RelationshipType = "performer";
+    const relationshipType: RelationshipType = isPerformance
+      ? "performer"
+      : "attendee";
     const candidate =
       "isNew" in result
         ? {
