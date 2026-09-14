@@ -95,7 +95,7 @@ export default function Events() {
             }))}
           />
           <Select
-            label="Personnel"
+            label="Attendees"
             placeholder="Anyone"
             value={person}
             onChange={(e) => setPerson(e.target.value)}
