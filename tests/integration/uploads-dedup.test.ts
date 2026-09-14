@@ -143,6 +143,30 @@ describe("media upload dedup", () => {
     await db.delete(users);
   });
 
+  it("defaults the captured date and precision from the event", async () => {
+    const { eventA } = await seedEvents();
+    const { res, body } = await beginUpload(
+      eventA.id,
+      "dated-photo.jpg",
+      "image/jpeg",
+      128,
+    );
+    expect(res.status).toBe(201);
+
+    const row = await getDb(env)
+      .select({
+        capturedDate: media.capturedDate,
+        datePrecision: media.datePrecision,
+      })
+      .from(media)
+      .where(eq(media.id, body.data!.mediaId))
+      .get();
+    expect(row).toEqual({
+      capturedDate: "2011-05-14",
+      datePrecision: "exact",
+    });
+  });
+
   it("rejects beginUpload when checksum already exists", async () => {
     const { eventA, eventB } = await seedEvents();
     const bytes = bytesOf("identical-photo-bytes");

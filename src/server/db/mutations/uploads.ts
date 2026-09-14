@@ -80,7 +80,11 @@ export async function beginUpload(
   const config = getConfig(env);
 
   const event = await db
-    .select({ id: events.id })
+    .select({
+      id: events.id,
+      eventDate: events.eventDate,
+      datePrecision: events.datePrecision,
+    })
     .from(events)
     .where(and(eq(events.id, input.eventId), eq(events.isDeleted, false)))
     .get();
@@ -115,6 +119,8 @@ export async function beginUpload(
       checksum: input.checksum ?? null,
       status: "uploading",
       processingProvider: category === "video" ? "stream" : null,
+      capturedDate: event.eventDate,
+      datePrecision: event.datePrecision,
       createdBy: userId,
     })
     .returning()
