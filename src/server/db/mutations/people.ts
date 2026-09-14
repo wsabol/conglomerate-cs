@@ -17,6 +17,7 @@ export async function createPerson(
     .insert(people)
     .values({
       displayName: input.displayName,
+      personType: input.personType ?? null,
       aliases: input.aliases ?? null,
       bio: input.bio ?? null,
     })
@@ -52,6 +53,7 @@ export async function createPeopleBatch(
     .values(
       [...unique.values()].map((input) => ({
         displayName: input.displayName,
+        personType: input.personType ?? null,
         aliases: input.aliases ?? null,
         bio: input.bio ?? null,
       })),
@@ -91,6 +93,9 @@ export async function updatePerson(
     .set({
       ...(input.displayName !== undefined
         ? { displayName: input.displayName }
+        : {}),
+      ...(input.personType !== undefined
+        ? { personType: input.personType }
         : {}),
       ...(input.aliases !== undefined ? { aliases: input.aliases } : {}),
       ...(input.bio !== undefined ? { bio: input.bio } : {}),

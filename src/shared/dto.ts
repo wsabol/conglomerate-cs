@@ -32,6 +32,7 @@ export interface PlaceDTO {
 export interface PersonDTO {
   id: number;
   displayName: string;
+  personType: string | null;
   aliases: string | null;
   bio: string | null;
 }

@@ -19,6 +19,7 @@ function baseRow(overrides: Partial<MediaRow> = {}): MediaRow {
     capturedDate: null,
     datePrecision: "unknown",
     description: null,
+    provenance: null,
     externalUrl: null,
     displayKey: null,
     thumbKey: null,

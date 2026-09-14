@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const personCreateSchema = z.object({
   displayName: z.string().trim().min(1).max(256),
+  personType: z.string().trim().max(128).nullable().optional(),
   aliases: z.string().trim().max(2000).nullable().optional(),
   bio: z.string().trim().max(10000).nullable().optional(),
 });

@@ -12,6 +12,7 @@ import { useAsync } from "../lib/useAsync";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 import { useFilterOptions } from "../lib/useFilterOptions";
 import { placeSelectOptions } from "../lib/places";
+import { personSelectOptions } from "../lib/people";
 import { listEvents } from "../lib/events";
 import { eventTypeLabel } from "../lib/format";
 import { useAuth } from "../lib/auth";
@@ -97,10 +98,7 @@ export default function Events() {
             placeholder="Anyone"
             value={person}
             onChange={(e) => setPerson(e.target.value)}
-            options={filters.people.map((item) => ({
-              value: String(item.id),
-              label: item.displayName,
-            }))}
+            options={personSelectOptions(filters.people)}
           />
         </div>
       </div>

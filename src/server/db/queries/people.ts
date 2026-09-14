@@ -13,6 +13,7 @@ export async function listPeople(db: Db): Promise<PersonDTO[]> {
   return rows.map((person) => ({
     id: person.id,
     displayName: person.displayName,
+    personType: person.personType,
     aliases: person.aliases,
     bio: person.bio,
   }));
@@ -32,6 +33,7 @@ export async function getPerson(
     ? {
         id: person.id,
         displayName: person.displayName,
+        personType: person.personType,
         aliases: person.aliases,
         bio: person.bio,
       }

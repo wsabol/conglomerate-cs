@@ -42,6 +42,7 @@ route.post("/", requireEditor, async (c) => {
     {
       id: inserted.id,
       displayName: inserted.displayName,
+      personType: inserted.personType,
       aliases: inserted.aliases,
       bio: inserted.bio,
     },

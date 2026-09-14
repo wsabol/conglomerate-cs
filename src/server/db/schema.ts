@@ -62,6 +62,7 @@ export const people = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     displayName: text("display_name").notNull(),
+    personType: text("person_type"),
     instrument: text("instrument"),
     aliases: text("aliases"), // comma-separated / free text
     bio: text("bio"),
@@ -228,6 +229,7 @@ export const media = sqliteTable(
       .notNull()
       .default("unknown"),
     description: text("description"),
+    provenance: text("provenance"),
     externalUrl: text("external_url"), // for media_type = link
     displayKey: text("display_key"), // derived display variant (images)
     thumbKey: text("thumb_key"), // derived thumbnail (images)

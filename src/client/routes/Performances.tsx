@@ -9,6 +9,7 @@ import { useAsync } from "../lib/useAsync";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 import { useFilterOptions } from "../lib/useFilterOptions";
 import { placeSelectOptions } from "../lib/places";
+import { personSelectOptions } from "../lib/people";
 import { listEvents } from "../lib/events";
 import type { BillingRole } from "@shared/types";
 import styles from "./Performances.module.css";
@@ -69,10 +70,7 @@ export default function Performances() {
             placeholder="Anyone"
             value={person}
             onChange={(e) => setPerson(e.target.value)}
-            options={filters.people.map((p) => ({
-              value: String(p.id),
-              label: p.displayName,
-            }))}
+            options={personSelectOptions(filters.people)}
           />
           <Select
             label="Lineup"

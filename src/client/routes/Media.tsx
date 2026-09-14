@@ -5,6 +5,7 @@ import { MediaFrame } from "../components/media/MediaFrame";
 import { MediaDetailView } from "../components/media/MediaDetailView";
 import { Pill } from "../components/ui/Pill";
 import { Select } from "../components/form";
+import { personSelectOptions } from "../lib/people";
 import { EmptyState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { useFilterOptions } from "../lib/useFilterOptions";
@@ -91,10 +92,7 @@ export default function Media() {
           onChange={(e) => setPerson(e.target.value)}
           options={[
             { value: "", label: "Anyone" },
-            ...(people.map((p) => ({
-              value: String(p.id),
-              label: p.displayName,
-            }))),
+            ...personSelectOptions(people),
           ]}
         />
       </div>
