@@ -9,6 +9,7 @@ import styles from "./shell.module.css";
 interface NavItem {
   to: string;
   label: string;
+  end?: boolean;
   editorOnly?: boolean;
   hideOnMobile?: boolean;
 }
@@ -16,7 +17,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/timeline", label: "Timeline" },
   { to: "/performances", label: "Performances" },
-  { to: "/events", label: "Events" },
+  { to: "/events", label: "Events", end: true },
   { to: "/media", label: "Media" },
   { to: "/admin", label: "Admin", editorOnly: true, hideOnMobile: true },
 ];
@@ -43,6 +44,7 @@ function Navbar() {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
               className={({ isActive }) =>
                 cn(
                   styles.link,
@@ -76,6 +78,7 @@ function Navbar() {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
               className={({ isActive }) =>
                 cn(
                   styles.mobileLink,
