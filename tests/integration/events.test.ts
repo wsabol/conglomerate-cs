@@ -871,6 +871,39 @@ describe("non-performance event invariants", () => {
     expect(performanceRows).toHaveLength(0);
   });
 
+  it("strips leftover performance details and acts from non-performance detail", async () => {
+    const db = getDb(env);
+    const event = await db
+      .insert(events)
+      .values({
+        slug: "legacy-party",
+        name: "Legacy Party",
+        eventType: "party",
+        datePrecision: "exact",
+        confidence: "medium",
+      })
+      .returning()
+      .get();
+    await db.insert(eventPerformanceDetails).values({
+      eventId: event.id,
+      billingName: "Old Billing",
+      promotionText: "Old promo",
+      setlistText: "Old setlist",
+    });
+    await db.insert(eventActs).values({
+      eventId: event.id,
+      name: "The Conglomerate",
+      billingRole: "headliner",
+    });
+
+    const res = await app.request("/api/events/legacy-party", {}, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ApiResponse<EventDetailDTO>;
+    expect(body.data?.performance).toBeNull();
+    expect(body.data?.acts).toEqual([]);
+    expect(body.data?.headlined).toBe(false);
+  });
+
   it("allows changes among non-performance types", async () => {
     const createRes = await app.request(
       "/api/events",
