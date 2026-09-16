@@ -1,3 +1,4 @@
+import { EventConfidence } from "./EventConfidence";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
@@ -228,6 +229,15 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
         eyebrow="Editors only"
         title={mode === "new" ? "New event" : "Edit event"}
       />
+
+      {eventData && (
+        <div className={styles.confidenceSection}>
+          <EventConfidence assessment={eventData.confidenceAssessment} />
+          <p className={styles.confidenceHint}>Confidence is calculated automatically from the date and supporting sources.
+            For performances, a setlist or promotional text can add support.
+            Changes are reflected after saving.</p>
+        </div>
+      )}
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <TextField

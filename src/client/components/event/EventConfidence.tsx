@@ -8,7 +8,9 @@ export function EventConfidence({ assessment }: { assessment: ConfidenceAssessme
       <MetaItem icon={`confidence-${assessment.level}`} tone={assessment.level} iconLabel="Confidence">
         {assessment.level[0].toUpperCase() + assessment.level.slice(1)} confidence
       </MetaItem>
-      <p>Automatically assessed from recorded evidence.</p>
+      <p>
+      The strength of this event's evidence is <strong>{assessment.level[0].toUpperCase() + assessment.level.slice(1)}</strong>:
+      </p>
       <ul>{assessment.reasons.map((reason) => (
         <li key={reason}>{CONFIDENCE_REASON_LABELS[reason]}</li>
       ))}</ul>
