@@ -23,7 +23,6 @@
     "media:stream-backfill": "node scripts/stream-backfill.mjs"
   },
   "dependencies": {
-    "@fontsource/bodoni-moda": "^5.2.7",
     "@fontsource/cormorant-garamond": "^5.2.11",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/inter": "^5.2.8",

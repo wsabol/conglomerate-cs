@@ -104,7 +104,7 @@ export default function Styleguide() {
 
       <Section label="Typography">
         <div className={styles.typeRow}>
-          <h1>Display heading (Bodoni Moda)</h1>
+          <h1>Display heading (Cormorant Garamond)</h1>
           <h3>Section heading</h3>
           <p>Body copy in Inter at the minimum 16px body size.</p>
           <p className="mono">Metadata in IBM Plex Mono - 5/14/2011, 9:00 PM</p>
