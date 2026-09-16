@@ -14,3 +14,10 @@ export const revisionsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 export type RevisionsQuery = z.infer<typeof revisionsQuerySchema>;
+
+export const confidenceBackfillSchema = z.object({
+  dry_run: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
+  after_id: z.coerce.number().int().nonnegative().default(0),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type ConfidenceBackfillInput = z.infer<typeof confidenceBackfillSchema>;

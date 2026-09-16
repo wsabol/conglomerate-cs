@@ -1,3 +1,4 @@
+import type { ConfidenceAssessment } from "./confidence";
 // Data-transfer shapes returned by the API and consumed by the client.
 import type {
   AnnotationType,
@@ -188,6 +189,7 @@ export interface PerformanceDetailsDTO {
 }
 
 export interface EventDetailDTO extends EventListItemDTO {
+  confidenceAssessment: ConfidenceAssessment;
   summary: string | null;
   placeDetail: PlaceDTO | null;
   performance: PerformanceDetailsDTO | null;
@@ -196,9 +198,11 @@ export interface EventDetailDTO extends EventListItemDTO {
   sources: EventSourceDTO[];
   mediaItems: MediaItemDTO[];
   annotations: AnnotationDTO[];
+  modifiedOn: string;
 }
 
 export interface EventSchemaDTO {
+  confidenceAssessment: ConfidenceAssessment;
   id: number;
   slug: string;
   name: string;
@@ -218,4 +222,10 @@ export interface EventSchemaDTO {
   sources: EventSourceDTO[];
   mediaItems: MediaItemDTO[];
   annotations: AnnotationDTO[];
+}
+
+export interface ConfidenceBackfillResult {
+  dryRun: boolean;
+  results: { eventId: number; previousLevel: Confidence; assessment: ConfidenceAssessment; changed: boolean }[];
+  nextAfterId: number | null;
 }

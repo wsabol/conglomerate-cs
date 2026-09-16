@@ -1,3 +1,5 @@
+import { assessEventConfidence } from "@shared/confidence";
+import { getEligibleConfidenceMedia } from "../confidence";
 import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../../client";
 import {
@@ -85,6 +87,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
+    eligibleMediaIds: await getEligibleConfidenceMedia(db, sources),
     resolvedHeroId,
     placeDTO,
   };
@@ -108,6 +111,7 @@ function baseEventFields(
     eventTime: event.eventTime,
     datePrecision: event.datePrecision,
     confidence: event.confidence,
+    confidenceAssessment: assessEventConfidence({ ...event, sources, performance: perf, eligibleMediaIds: data.eligibleMediaIds }),
     place: place ? { id: place.id, name: place.name } : null,
     // Raw FK — display URL still resolves hero ?? poster below.
     heroImageId: event.heroImageId ?? null,
@@ -167,6 +171,7 @@ export async function getEventDetail(
     headlined: data.event.eventType === "performance" && isEventHeadlined(acts),
     placeDetail: placeDTO,
     mediaItems,
+    modifiedOn: data.event.modifiedOn,
   };
 }
 

@@ -1,3 +1,4 @@
+import { updateMediaWithConfidence } from "../db/mutations/media-confidence";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { media } from "../db/schema";
@@ -94,13 +95,10 @@ export async function runStreamBackfill(
     }
 
     if (row.status !== "uploaded" && row.status !== "failed") {
-      await db
-        .update(media)
-        .set({
+      await updateMediaWithConfidence(db, row.id, {
           status: "uploaded",
           modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-        })
-        .where(eq(media.id, row.id));
+        });
     }
 
     const refreshed = await db

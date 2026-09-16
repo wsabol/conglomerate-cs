@@ -1,3 +1,4 @@
+import { EventConfidence } from "./EventConfidence";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
@@ -15,11 +16,9 @@ import {
   eventUpdateSchema,
 } from "@shared/schemas/event";
 import {
-  CONFIDENCE_LEVELS,
   DATE_PRECISIONS,
   EVENT_TYPES,
   NON_PERFORMANCE_EVENT_TYPES,
-  type Confidence,
   type DatePrecision,
   type EventType,
 } from "@shared/types";
@@ -34,7 +33,6 @@ type FormState = {
   datePrecision: DatePrecision;
   placeId: string;
   summary: string;
-  confidence: Confidence;
   billingName: string;
   setlistText: string;
   promotionText: string;
@@ -50,7 +48,6 @@ const ZOD_PATHS: Record<FormField, string> = {
   datePrecision: "datePrecision",
   placeId: "placeId",
   summary: "summary",
-  confidence: "confidence",
   billingName: "performance.billingName",
   setlistText: "performance.setlistText",
   promotionText: "performance.promotionText",
@@ -64,7 +61,6 @@ const emptyForm: FormState = {
   datePrecision: "exact",
   placeId: "",
   summary: "",
-  confidence: "medium",
   billingName: "",
   setlistText: "",
   promotionText: "",
@@ -79,7 +75,6 @@ function buildEventBody(form: FormState) {
     datePrecision: form.datePrecision,
     placeId: form.placeId ? Number(form.placeId) : null,
     summary: form.summary || null,
-    confidence: form.confidence,
   };
   if (form.eventType !== "performance") return common;
   return {
@@ -139,7 +134,6 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
       datePrecision: eventData.datePrecision,
       placeId: eventData.place?.id ? String(eventData.place.id) : "",
       summary: eventData.summary ?? "",
-      confidence: eventData.confidence,
       billingName: eventData.performance?.billingName ?? "",
       setlistText: eventData.performance?.setlistText ?? "",
       promotionText: eventData.performance?.promotionText ?? "",
@@ -236,6 +230,15 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
         title={mode === "new" ? "New event" : "Edit event"}
       />
 
+      {eventData && (
+        <div className={styles.confidenceSection}>
+          <EventConfidence assessment={eventData.confidenceAssessment} />
+          <p className={styles.confidenceHint}>Confidence is calculated automatically from the date and supporting sources.
+            For performances, a setlist or promotional text can add support.
+            Changes are reflected after saving.</p>
+        </div>
+      )}
+
       <form className={styles.form} onSubmit={handleSubmit}>
         <TextField
           label="Name"
@@ -289,15 +292,6 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.placeId}
           placeholder="Select a place"
           options={[{ value: "", label: "None" }, ...placeOptions]}
-        />
-        <Select
-          label="Confidence"
-          value={form.confidence}
-          onChange={(e) =>
-            updateField("confidence", e.target.value as Confidence)
-          }
-          error={fieldErrors.confidence}
-          options={CONFIDENCE_LEVELS.map((c) => ({ value: c, label: c }))}
         />
         <TextArea
           label="Summary"

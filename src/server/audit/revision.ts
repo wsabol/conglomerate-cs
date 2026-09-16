@@ -1,10 +1,11 @@
+import { SQL } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { objectRevisions } from "../db/schema";
 import type { RevisionAction, RevisionTargetType } from "@shared/types";
 
 export interface RevisionInput {
   targetType: RevisionTargetType;
-  targetId: number;
+  targetId: number | SQL;
   action: RevisionAction;
   before?: unknown;
   after?: unknown;
@@ -16,15 +17,15 @@ export function revisionValues(input: RevisionInput) {
     targetType: input.targetType,
     targetId: input.targetId,
     action: input.action,
-    beforeJson: input.before != null ? JSON.stringify(input.before) : null,
-    afterJson: input.after != null ? JSON.stringify(input.after) : null,
+    beforeJson: input.before instanceof SQL ? input.before : input.before != null ? JSON.stringify(input.before) : null,
+    afterJson: input.after instanceof SQL ? input.after : input.after != null ? JSON.stringify(input.after) : null,
     changedBy: input.changedBy ?? null,
   };
 }
 
-/** Insert an audit row. Prefer batching via `revisionStatement` with the mutation. */
-export async function recordRevision(db: Db, input: RevisionInput) {
-  await db.insert(objectRevisions).values(revisionValues(input));
+/** Await directly, or include this lazy statement in the mutation's D1 batch. */
+export function recordRevision(db: Db, input: RevisionInput) {
+  return db.insert(objectRevisions).values(revisionValues(input));
 }
 
 /** A drizzle insert statement for batching alongside the triggering mutation. */
