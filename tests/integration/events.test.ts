@@ -267,7 +267,7 @@ describe("GET /api/events/:slug", () => {
   });
 
   it("returns the full aggregate", async () => {
-    await seed();
+    const { older } = await seed();
     const res = await app.request(
       "/api/events/the-syndicate-2010-07-02",
       {},
@@ -286,6 +286,7 @@ describe("GET /api/events/:slug", () => {
     expect(detail.people[0].displayName).toBe("McIan");
     expect(detail.annotations).toEqual([]);
     expect(detail.headlined).toBe(false);
+    expect(detail.modifiedOn).toBe(older.modifiedOn);
   });
 
   it("returns 404 envelope for a missing slug", async () => {

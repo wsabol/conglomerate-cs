@@ -198,6 +198,7 @@ export interface EventDetailDTO extends EventListItemDTO {
   sources: EventSourceDTO[];
   mediaItems: MediaItemDTO[];
   annotations: AnnotationDTO[];
+  modifiedOn: string;
 }
 
 export interface EventSchemaDTO {

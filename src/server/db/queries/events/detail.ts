@@ -171,6 +171,7 @@ export async function getEventDetail(
     headlined: data.event.eventType === "performance" && isEventHeadlined(acts),
     placeDetail: placeDTO,
     mediaItems,
+    modifiedOn: data.event.modifiedOn,
   };
 }
 

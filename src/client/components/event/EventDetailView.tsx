@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { DateTime } from "luxon";
 import { EventConfidence } from "./EventConfidence";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Container, SidebarLayout } from "../layout";
@@ -36,6 +38,14 @@ function tabFromHash(
   return tabs.some((item) => item.id === id) ? id : "summary";
 }
 
+function parseModifiedOn(value: string): DateTime | null {
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const dt = DateTime.fromISO(normalized, { zone: "utc" })
+    .toLocal()
+    .setLocale("en-US");
+  return dt.isValid ? dt : null;
+}
+
 interface EventDetailViewProps {
   event: EventDetailDTO;
   onReload: () => void;
@@ -50,6 +60,13 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
   const tabs = isPerformance ? PERFORMANCE_TABS : NON_PERFORMANCE_TABS;
   const tab = tabFromHash(location.hash, tabs);
   const effectiveTab = isNarrow ? "summary" : tab;
+  const [relativeUpdatedOn, setRelativeUpdatedOn] = useState(true);
+  const modifiedAt = parseModifiedOn(event.modifiedOn);
+  const updatedOn = modifiedAt
+    ? relativeUpdatedOn
+      ? modifiedAt.toRelative()
+      : modifiedAt.toLocaleString(DateTime.DATETIME_SHORT)
+    : null;
 
   function selectTab(id: DetailTab) {
     navigate({ hash: id }, { replace: true });
@@ -86,6 +103,19 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   isPerformance={isPerformance}
                 />
                 <EventConfidence assessment={event.confidenceAssessment} />
+                {updatedOn && modifiedAt && (
+                  <button
+                    type="button"
+                    className={styles.updatedOn}
+                    onClick={() => setRelativeUpdatedOn((relative) => !relative)}
+                    aria-pressed={relativeUpdatedOn}
+                  >
+                    Updated:{" "}
+                    <time dateTime={modifiedAt.toISO() ?? event.modifiedOn}>
+                      {updatedOn}
+                    </time>
+                  </button>
+                )}
               </>
             }
           >
