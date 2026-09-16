@@ -6,7 +6,7 @@ export function EventConfidence({ assessment }: { assessment: ConfidenceAssessme
   return (
     <section className={styles.section} aria-label="Event confidence">
       <MetaItem icon={`confidence-${assessment.level}`} tone={assessment.level} iconLabel="Confidence">
-        {assessment.level[0].toUpperCase() + assessment.level.slice(1)} confidence
+        <strong>{assessment.level[0].toUpperCase() + assessment.level.slice(1)} confidence</strong>
       </MetaItem>
       <p>
       The strength of this event's evidence is <strong>{assessment.level[0].toUpperCase() + assessment.level.slice(1)}</strong>:
