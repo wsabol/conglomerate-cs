@@ -1,3 +1,4 @@
+import { EventConfidence } from "./EventConfidence";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Container, SidebarLayout } from "../layout";
 import { useAuth } from "../../lib/auth";
@@ -63,6 +64,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
           <SidebarLayout
             aside={
               <>
+                <EventConfidence assessment={event.confidenceAssessment} />
                 {isPerformance && (
                   <>
                     <OtherActsSection

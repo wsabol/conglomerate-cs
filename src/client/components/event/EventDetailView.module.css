@@ -254,6 +254,10 @@
 }
 
 @media (max-width: 767px) {
+  .editEventButton {
+    display: none;
+  }
+
   .meta {
     flex-direction: column;
     align-items: flex-start;

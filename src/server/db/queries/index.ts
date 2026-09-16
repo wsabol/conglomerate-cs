@@ -17,3 +17,5 @@ export {
   listPeople,
   listPlaces,
 } from "./people";
+
+export { getEventConfidenceContext, assessConfidenceContext, getEligibleConfidenceMedia, getEventsCitingMedia, listConfidenceBackfillIds, eventRowSnapshot, rowJson, getMediaConfidenceSnapshot, getMediaCitationSnapshot, getEventsUsingMediaRole } from "./confidence";

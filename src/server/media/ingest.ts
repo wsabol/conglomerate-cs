@@ -1,3 +1,4 @@
+import { updateMediaWithConfidence } from "../db/mutations/media-confidence";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { media } from "../db/schema";
@@ -73,15 +74,12 @@ export async function markIngestFailed(
   errorCode: string,
   errorMessage: string,
 ): Promise<void> {
-  await db
-    .update(media)
-    .set({
+  await updateMediaWithConfidence(db, mediaId, {
       status: "failed",
       processingErrorCode: errorCode,
       processingErrorMessage: errorMessage,
       modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-    })
-    .where(eq(media.id, mediaId));
+    });
 }
 
 export async function claimAndIngestVideo(

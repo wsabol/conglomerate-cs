@@ -1,3 +1,4 @@
+import { updateMediaWithConfidence } from "./media-confidence";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { events, media } from "../schema";
@@ -55,10 +56,7 @@ async function abortDuplicateUpload(
     }
   }
 
-  await db
-    .update(media)
-    .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-    .where(eq(media.id, row.id));
+  await updateMediaWithConfidence(db, row.id, { status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` });
 }
 
 function isUniqueConstraintError(err: unknown): boolean {
@@ -202,10 +200,7 @@ export async function completeUpload(
 
   const head = await env.MEDIA.head(existing.r2Key);
   if (!head) {
-    await db
-      .update(media)
-      .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-      .where(eq(media.id, id));
+    await updateMediaWithConfidence(db, id, { status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` });
     throw badRequest("Upload not found in storage.");
   }
 
@@ -217,10 +212,7 @@ export async function completeUpload(
   if (category && category !== "link") {
     const limit = config.uploadLimits[category];
     if (size > limit) {
-      await db
-        .update(media)
-        .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-        .where(eq(media.id, id));
+      await updateMediaWithConfidence(db, id, { status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` });
       throw badRequest(
         uploadSizeExceededMessage(
           category,
@@ -234,10 +226,7 @@ export async function completeUpload(
 
   const object = await env.MEDIA.get(existing.r2Key);
   if (!object) {
-    await db
-      .update(media)
-      .set({ status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-      .where(eq(media.id, id));
+    await updateMediaWithConfidence(db, id, { status: "failed", modifiedOn: sql`(CURRENT_TIMESTAMP)` });
     throw badRequest("Upload not found in storage.");
   }
 
@@ -308,9 +297,7 @@ export async function completeUpload(
 
   let updated: typeof media.$inferSelect;
   try {
-    updated = await db
-      .update(media)
-      .set({
+    updated = await updateMediaWithConfidence(db, id, {
         status: "published",
         size,
         checksum,
@@ -318,10 +305,7 @@ export async function completeUpload(
         thumbKey,
         videoCodec,
         modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-      })
-      .where(eq(media.id, id))
-      .returning()
-      .get();
+      }, user.id, "create");
   } catch (err) {
     if (isUniqueConstraintError(err)) {
       const raced = await findPublishedMediaByChecksum(db, checksum);
@@ -340,14 +324,6 @@ export async function completeUpload(
     }
     throw err;
   }
-
-  await recordRevision(db, {
-    targetType: "media",
-    targetId: id,
-    action: "create",
-    after: updated,
-    changedBy: user.id,
-  });
 
   if (existing.eventId && updated.mediaType === "photo") {
     const event = await db

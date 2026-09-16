@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   BILLING_ROLES,
-  CONFIDENCE_LEVELS,
   DATE_PRECISIONS,
   EVENT_TYPES,
   RELATIONSHIP_TYPES,
@@ -58,7 +57,6 @@ const eventFieldsSchema = z.object({
   datePrecision: z.enum(DATE_PRECISIONS).default("exact"),
   placeId: z.number().int().positive().nullable().optional(),
   summary: z.string().trim().max(20000).nullable().optional(),
-  confidence: z.enum(CONFIDENCE_LEVELS).default("medium"),
   heroImageId: z.number().int().positive().nullable().optional(),
   performance: eventPerformanceInputSchema,
   people: z.array(eventPersonInputSchema).default([]),
@@ -105,7 +103,6 @@ export const eventUpdateSchema = eventFieldsSchema
   .omit({
     eventType: true,
     datePrecision: true,
-    confidence: true,
     people: true,
     acts: true,
     sources: true,
@@ -114,7 +111,6 @@ export const eventUpdateSchema = eventFieldsSchema
   .extend({
     eventType: z.enum(EVENT_TYPES).optional(),
     datePrecision: z.enum(DATE_PRECISIONS).optional(),
-    confidence: z.enum(CONFIDENCE_LEVELS).optional(),
     people: z.array(eventPersonInputSchema).optional(),
     acts: z.array(eventActInputSchema).optional(),
     sources: z.array(eventSourceInputSchema).optional(),

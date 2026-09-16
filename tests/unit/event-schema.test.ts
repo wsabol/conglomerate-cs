@@ -49,7 +49,7 @@ describe("eventUpdateSchema", () => {
     expect(parsed.summary).toBe("Updated summary.");
     expect(parsed.eventType).toBeUndefined();
     expect(parsed.datePrecision).toBeUndefined();
-    expect(parsed.confidence).toBeUndefined();
+    expect(parsed).not.toHaveProperty("confidence");
     expect(parsed.people).toBeUndefined();
     expect(parsed.acts).toBeUndefined();
     expect(parsed.sources).toBeUndefined();

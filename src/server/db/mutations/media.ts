@@ -1,3 +1,6 @@
+import { updateMediaWithConfidence } from "./media-confidence";
+import { eventRowSnapshot, getEventsUsingMediaRole } from "../queries";
+import type { MutationStatement } from "./confidence";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import {
@@ -111,36 +114,17 @@ export async function softDeleteMedia(
   const isEditor = user.role === "editor";
   if (!isOwner && !isEditor) throw forbidden("Not allowed to delete this media.");
 
-  if (env) {
-    await deleteStreamAndR2Assets(env, existing);
-  }
-
-  // Clear role FKs that still point at this media so soft-deleted rows
-  // do not keep driving hero/poster display.
-  await db
-    .update(events)
-    .set({
-      heroImageId: null,
-      modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-    })
-    .where(eq(events.heroImageId, id));
-
-  await db
-    .update(eventPerformanceDetails)
-    .set({ eventPosterId: null })
-    .where(eq(eventPerformanceDetails.eventPosterId, id));
-
-  await db
-    .update(media)
-    .set({ isDeleted: true, modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-    .where(eq(media.id, id));
-
-  await recordRevision(db, {
-    targetType: "media",
-    targetId: id,
-    action: "delete",
-    before: existing,
-    changedBy: user.id,
-  });
+  const roleEvents = await getEventsUsingMediaRole(db, id);
+  const additional: MutationStatement[] = [
+    db.update(events).set({ heroImageId: null, modifiedOn: sql`(CURRENT_TIMESTAMP)` })
+      .where(eq(events.heroImageId, id)),
+    db.update(eventPerformanceDetails).set({ eventPosterId: null })
+      .where(eq(eventPerformanceDetails.eventPosterId, id)),
+    ...roleEvents.map((event) => recordRevision(db, { targetType: "event", targetId: event.id,
+      action: "update", before: event, after: eventRowSnapshot(event.id), changedBy: user.id })),
+  ];
+  await updateMediaWithConfidence(db, id,
+    { isDeleted: true, modifiedOn: sql`(CURRENT_TIMESTAMP)` }, user.id, "delete", additional);
+  if (env) await deleteStreamAndR2Assets(env, existing);
   return true;
 }

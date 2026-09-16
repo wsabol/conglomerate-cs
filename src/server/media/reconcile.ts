@@ -1,3 +1,4 @@
+import { updateMediaWithConfidence } from "../db/mutations/media-confidence";
 import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { media } from "../db/schema";
@@ -55,9 +56,7 @@ export async function applyStreamWebhookEvent(
       return true;
     }
 
-    await db
-      .update(media)
-      .set({
+    await updateMediaWithConfidence(db, row.id, {
         status: "published",
         streamState: "ready",
         processedOn: nowIso(),
@@ -65,8 +64,7 @@ export async function applyStreamWebhookEvent(
         processingErrorMessage: null,
         streamLastCheckedOn: nowIso(),
         modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-      })
-      .where(eq(media.id, row.id));
+      });
 
     logProcessing({
       mediaId: row.id,
@@ -82,17 +80,14 @@ export async function applyStreamWebhookEvent(
     if (row.status === "failed") return true;
 
     const errorCode = mapStreamErrorCode(event.errorReasonCode);
-    await db
-      .update(media)
-      .set({
+    await updateMediaWithConfidence(db, row.id, {
         status: "failed",
         streamState: event.state,
         processingErrorCode: errorCode,
         processingErrorMessage: PROCESSING_FAILURE_MESSAGE,
         streamLastCheckedOn: nowIso(),
         modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-      })
-      .where(eq(media.id, row.id));
+      });
 
     logProcessing({
       mediaId: row.id,
@@ -134,9 +129,7 @@ async function reconcileProcessingRow(
     const checkedOn = nowIso();
 
     if (video.readyToStream || video.state === "ready") {
-      await db
-        .update(media)
-        .set({
+      await updateMediaWithConfidence(db, row.id, {
           status: "published",
           streamState: "ready",
           processedOn: checkedOn,
@@ -144,8 +137,7 @@ async function reconcileProcessingRow(
           processingErrorMessage: null,
           streamLastCheckedOn: checkedOn,
           modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-        })
-        .where(eq(media.id, row.id));
+        });
       logProcessing({
         mediaId: row.id,
         streamUid: row.streamUid,
@@ -158,17 +150,14 @@ async function reconcileProcessingRow(
     }
 
     if (isTerminalError(video.state ?? "", null)) {
-      await db
-        .update(media)
-        .set({
+      await updateMediaWithConfidence(db, row.id, {
           status: "failed",
           streamState: video.state,
           processingErrorCode: "STREAM_PROCESSING_FAILED",
           processingErrorMessage: PROCESSING_FAILURE_MESSAGE,
           streamLastCheckedOn: checkedOn,
           modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-        })
-        .where(eq(media.id, row.id));
+        });
       logProcessing({
         mediaId: row.id,
         streamUid: row.streamUid,
@@ -186,17 +175,14 @@ async function reconcileProcessingRow(
       row.processingStartedOn < hoursAgoIso(timeoutHours);
 
     if (timedOut) {
-      await db
-        .update(media)
-        .set({
+      await updateMediaWithConfidence(db, row.id, {
           status: "failed",
           streamState: video.state,
           processingErrorCode: "STREAM_PROCESSING_FAILED",
           processingErrorMessage: PROCESSING_FAILURE_MESSAGE,
           streamLastCheckedOn: checkedOn,
           modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-        })
-        .where(eq(media.id, row.id));
+        });
       logProcessing({
         mediaId: row.id,
         streamUid: row.streamUid,

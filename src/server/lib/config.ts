@@ -111,3 +111,5 @@ export function mediaTypeForMime(
   }
   return null;
 }
+
+export const CONFIDENCE_BACKFILL_MAX_BATCH = 25;
