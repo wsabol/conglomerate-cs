@@ -66,6 +66,10 @@
   margin-top: var(--space-5);
 }
 
+.summaryRegion { position: relative; min-height: var(--space-8); }
+.summaryUpdating { opacity: 0.4; }
+.summaryOverlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-text); font-weight: var(--weight-semibold); }
+
 .tabList {
   display: flex;
   flex-wrap: wrap;

@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "../client";
 import {
   annotationPeople,
@@ -15,49 +15,46 @@ import type {
 import type { AnnotationTargetType } from "@shared/types";
 import type { AppUser } from "../../env";
 import { extractPeopleIds } from "@shared/mentions";
-import { recordRevision } from "../../audit/revision";
 import { getAnnotationById } from "../queries";
 import { forbidden, notFound } from "../../lib/errors";
+import { eventForAnnotation, relatedEventIds } from "../../narrative/jobs";
+
+function jobStatements(raw: D1Database, ids: number[]) {
+  return [...new Set(ids)].map((id) => raw.prepare(`INSERT INTO narrative_jobs (event_id) VALUES (?) ON CONFLICT(event_id) DO UPDATE SET requested_version = requested_version + 1, status = 'pending', attempts = 0, next_retry_on = NULL, error_code = NULL, modified_on = CURRENT_TIMESTAMP`).bind(id));
+}
+
+async function affectedEvents(db: Db, targetType: AnnotationTargetType, targetId: number) {
+  const eventId = await eventForAnnotation(db, targetType, targetId);
+  return eventId ? relatedEventIds(db, eventId) : [];
+}
 
 export async function createAnnotation(
   db: Db,
+  raw: D1Database,
   input: AnnotationCreateInput,
   user: AppUser,
 ) {
   await assertTargetExists(db, input.targetType, input.targetId);
   const authorId = await resolveUserId(db, user);
-
-  const inserted = await db
-    .insert(annotations)
-    .values({
-      targetType: input.targetType,
-      targetId: input.targetId,
-      body: input.body,
-      authorId,
-      annotationType: input.annotationType,
-      incorporatePref: input.incorporatePref,
-    })
-    .returning()
-    .get();
+  const affected = await affectedEvents(db, input.targetType, input.targetId);
+  const batch = await raw.batch([
+    raw.prepare(`INSERT INTO annotations (target_type, target_id, body, author_id, annotation_type, incorporate_pref, summary_status) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`).bind(input.targetType, input.targetId, input.body, authorId, input.annotationType, input.incorporatePref, input.incorporatePref === "separate" ? "excluded" : "pending"),
+    raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, after_json, changed_by) SELECT 'annotation', id, 'create', json_object('id', id, 'body', body, 'targetType', target_type, 'targetId', target_id, 'incorporatePref', incorporate_pref), ? FROM annotations WHERE id = last_insert_rowid()`).bind(authorId),
+    ...jobStatements(raw, affected),
+  ]);
+  const insertedId = Number((batch[0].results[0] as { id: number }).id);
 
   await setAnnotationPeople(
     db,
-    inserted.id,
+    insertedId,
     extractPeopleIds(input.body),
   );
-  await recordRevision(db, {
-    targetType: "annotation",
-    targetId: inserted.id,
-    action: "create",
-    after: inserted,
-    changedBy: authorId,
-  });
-
-  return getAnnotationById(db, inserted.id);
+  return getAnnotationById(db, insertedId);
 }
 
 export async function updateAnnotation(
   db: Db,
+  raw: D1Database,
   id: number,
   input: AnnotationUpdateInput,
   user: AppUser,
@@ -74,19 +71,12 @@ export async function updateAnnotation(
     throw forbidden("You can only edit your own memories.");
   }
 
-  await db
-    .update(annotations)
-    .set({
-      ...(input.body !== undefined ? { body: input.body } : {}),
-      ...(input.annotationType !== undefined
-        ? { annotationType: input.annotationType }
-        : {}),
-      ...(input.incorporatePref !== undefined
-        ? { incorporatePref: input.incorporatePref }
-        : {}),
-      modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-    })
-    .where(eq(annotations.id, id));
+  const affected = await affectedEvents(db, existing.targetType, existing.targetId);
+  await raw.batch([
+    raw.prepare(`UPDATE annotations SET body = ?, annotation_type = ?, incorporate_pref = ?, summary_status = ?, input_revision = input_revision + 1, modified_on = CURRENT_TIMESTAMP WHERE id = ?`).bind(input.body ?? existing.body, input.annotationType ?? existing.annotationType, input.incorporatePref ?? existing.incorporatePref, (input.incorporatePref ?? existing.incorporatePref) === "separate" ? "excluded" : "pending", id),
+    raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, before_json, after_json, changed_by) VALUES ('annotation', ?, 'update', ?, ?, ?)`).bind(id, JSON.stringify(existing), JSON.stringify({ ...existing, ...input }), userId),
+    ...jobStatements(raw, affected),
+  ]);
 
   if (input.body !== undefined) {
     await db
@@ -95,20 +85,12 @@ export async function updateAnnotation(
     await setAnnotationPeople(db, id, extractPeopleIds(input.body));
   }
 
-  await recordRevision(db, {
-    targetType: "annotation",
-    targetId: id,
-    action: "update",
-    before: existing,
-    after: { ...existing, ...input },
-    changedBy: userId,
-  });
-
   return getAnnotationById(db, id);
 }
 
 export async function softDeleteAnnotation(
   db: Db,
+  raw: D1Database,
   id: number,
   user: AppUser,
 ): Promise<boolean> {
@@ -124,18 +106,12 @@ export async function softDeleteAnnotation(
     throw forbidden("You can only delete your own memories.");
   }
 
-  await db
-    .update(annotations)
-    .set({ isDeleted: true, modifiedOn: sql`(CURRENT_TIMESTAMP)` })
-    .where(eq(annotations.id, id));
-
-  await recordRevision(db, {
-    targetType: "annotation",
-    targetId: id,
-    action: "delete",
-    before: existing,
-    changedBy: userId,
-  });
+  const affected = await affectedEvents(db, existing.targetType, existing.targetId);
+  await raw.batch([
+    raw.prepare(`UPDATE annotations SET is_deleted = 1, summary_status = 'excluded', input_revision = input_revision + 1, modified_on = CURRENT_TIMESTAMP WHERE id = ?`).bind(id),
+    raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, before_json, changed_by) VALUES ('annotation', ?, 'delete', ?, ?)`).bind(id, JSON.stringify(existing), userId),
+    ...jobStatements(raw, affected),
+  ]);
   return true;
 }
 

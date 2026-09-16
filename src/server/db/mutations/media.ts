@@ -14,6 +14,7 @@ import { getMediaItemById } from "../queries";
 import { badRequest, forbidden } from "../../lib/errors";
 import type { Env } from "../../env";
 import { deleteStreamAndR2Assets } from "../../media/retry";
+import { invalidateAround } from "../../narrative/jobs";
 
 export async function updateMedia(
   db: Db,
@@ -91,6 +92,11 @@ export async function updateMedia(
     changedBy: user.id,
   });
 
+  if (input.eventId !== undefined && input.eventId !== existing.eventId) {
+    await invalidateAround(db, existing.eventId);
+    await invalidateAround(db, input.eventId);
+  }
+
   return getMediaItemById(db, id);
 }
 
@@ -142,5 +148,6 @@ export async function softDeleteMedia(
     before: existing,
     changedBy: user.id,
   });
+  await invalidateAround(db, existing.eventId);
   return true;
 }

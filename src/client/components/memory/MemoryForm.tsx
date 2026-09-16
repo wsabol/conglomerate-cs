@@ -7,7 +7,7 @@ import {
   memoryFormSchema,
   type MemoryFormValue,
 } from "@shared/schemas/annotation";
-import { ANNOTATION_TYPES } from "@shared/types";
+import { ANNOTATION_TYPES, type IncorporatePref } from "@shared/types";
 import { cn } from "../../lib/cn";
 import { zodFieldErrors } from "../../lib/zodErrors";
 import styles from "./MemoriesSection.module.css";
@@ -27,7 +27,7 @@ const TYPE_OPTIONS = ANNOTATION_TYPES.map((value) => ({
 }));
 
 interface MemoryFormProps {
-  initial?: Partial<MemoryFormValue>;
+  initial?: Partial<Omit<MemoryFormValue, "incorporatePref">> & { incorporatePref?: IncorporatePref };
   submitLabel: string;
   title?: string;
   inModal?: boolean;
@@ -56,7 +56,7 @@ export function MemoryForm({
     initial?.annotationType ?? "personal_memory",
   );
   const [incorporatePref, setIncorporatePref] = useState(
-    initial?.incorporatePref ?? "no_pref",
+    initial?.incorporatePref === "separate" ? "separate" : "yes",
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -104,6 +104,11 @@ export function MemoryForm({
         options={TYPE_OPTIONS}
         compact={inModal}
       />
+
+      <label className={styles.incorporateToggle}>
+        <input type="checkbox" checked={incorporatePref !== "separate"} onChange={(e) => setIncorporatePref(e.target.checked ? "yes" : "separate")} />
+        Include this memory in the event summary
+      </label>
 
       {(validationError || error) && (
         <p className={errorClass} role="alert">

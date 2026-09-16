@@ -2,12 +2,15 @@ import type { UserRole } from "@shared/types";
 
 /** Bindings & vars available on the Worker (see wrangler.toml). */
 export interface Env {
+  AI?: { run(model: string, input: { messages: { role: string; content: string }[]; max_tokens: number }): Promise<unknown> };
   DB: D1Database;
   MEDIA: R2Bucket;
   STREAM: StreamBinding;
   ASSETS: Fetcher;
 
   ENVIRONMENT: string;
+  NARRATIVES_ENABLED?: string;
+  NARRATIVE_MODEL?: string;
 
   // Authentication perimeter (Cloudflare Access).
   ACCESS_ENFORCED?: string;

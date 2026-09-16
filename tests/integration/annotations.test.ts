@@ -7,6 +7,8 @@ import {
   annotationPeople,
   annotations,
   events,
+  narrativeJobs,
+  objectRevisions,
   people,
   users,
 } from "../../src/server/db/schema";
@@ -69,6 +71,11 @@ describe("annotation @mentions", () => {
     expect(payload.data?.people).toEqual([
       { id: person.id, displayName: "McIan" },
     ]);
+    expect(payload.data?.incorporatePref).toBe("yes");
+    const db = getDb(env);
+    const revision = await db.select().from(objectRevisions).where(eq(objectRevisions.targetId, payload.data!.id)).get();
+    expect(revision?.targetType).toBe("annotation");
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.status).toBe("pending");
   });
 
   it("updates annotation_people when mention tokens are removed", async () => {

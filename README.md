@@ -165,6 +165,22 @@ Manual production deploy:
 npm run build:prod && npm run deploy:prod
 ```
 
+### Living narratives rollout
+
+Migration `0006_dusty_mongu.sql` preserves each current summary in
+`editorial_summary` and queues events with existing eligible memories. Apply it
+before deploying this Worker. Production starts with `NARRATIVES_ENABLED =
+"false"`; after verifying the `AI` binding and the migrated data, set that
+production variable to `"true"` and deploy again. The existing 15-minute cron
+processes up to ten queued events per run, so the backfill proceeds gradually.
+Local development has generation enabled; tests use `wrangler.test.toml` to
+avoid a remote AI session.
+
+Monitor `narrative_jobs` for pending/failed counts, oldest `modified_on`,
+`attempts`, and `error_code`. Failed jobs keep the last displayed summary and
+retry automatically. Set the production variable back to `"false"` to pause
+generation without discarding queued work.
+
 ### Cloudflare Workers Builds (GitHub)
 
 Workers Builds runs **build command** then **deploy command**. A failing build
@@ -198,4 +214,4 @@ tests/      Vitest unit + integration
 ## TODO
 
 - [ ] Wire src/client/routes/SignIn.tsx to redirect to Access login URLs (Milestone 4 in your implementation plan).
-- [ ] 
+- [ ]

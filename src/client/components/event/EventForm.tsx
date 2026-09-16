@@ -49,7 +49,7 @@ const ZOD_PATHS: Record<FormField, string> = {
   eventTime: "eventTime",
   datePrecision: "datePrecision",
   placeId: "placeId",
-  summary: "summary",
+  summary: "editorialSummary",
   confidence: "confidence",
   billingName: "performance.billingName",
   setlistText: "performance.setlistText",
@@ -78,7 +78,7 @@ function buildEventBody(form: FormState) {
     eventTime: form.eventTime || null,
     datePrecision: form.datePrecision,
     placeId: form.placeId ? Number(form.placeId) : null,
-    summary: form.summary || null,
+    editorialSummary: form.summary || null,
     confidence: form.confidence,
   };
   if (form.eventType !== "performance") return common;
@@ -138,7 +138,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
       eventTime: eventData.eventTime ?? "",
       datePrecision: eventData.datePrecision,
       placeId: eventData.place?.id ? String(eventData.place.id) : "",
-      summary: eventData.summary ?? "",
+      summary: eventData.editorialSummary ?? "",
       confidence: eventData.confidence,
       billingName: eventData.performance?.billingName ?? "",
       setlistText: eventData.performance?.setlistText ?? "",
@@ -300,7 +300,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           options={CONFIDENCE_LEVELS.map((c) => ({ value: c, label: c }))}
         />
         <TextArea
-          label="Summary"
+          label="Editorial narrative"
           value={form.summary}
           onChange={(e) => updateField("summary", e.target.value)}
           error={fieldErrors.summary}

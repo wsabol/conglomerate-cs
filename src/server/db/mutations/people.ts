@@ -7,6 +7,7 @@ import type {
 } from "@shared/schemas/person";
 import { recordRevision } from "../../audit/revision";
 import { getPerson } from "../queries";
+import { invalidateForPerson } from "../../narrative/jobs";
 
 export async function createPerson(
   db: Db,
@@ -114,6 +115,8 @@ export async function updatePerson(
     changedBy,
   });
 
+  if (input.displayName !== undefined && input.displayName !== existing.displayName) await invalidateForPerson(db, id);
+
   return getPerson(db, id);
 }
 
@@ -141,5 +144,6 @@ export async function softDeletePerson(
     before: existing,
     changedBy,
   });
+  await invalidateForPerson(db, id);
   return true;
 }

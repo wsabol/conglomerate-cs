@@ -434,6 +434,8 @@ describe("PATCH /api/events/:slug performance", () => {
         eventDate: "2010-07-02",
         datePrecision: "exact",
         confidence: "medium",
+        summary: "Original copy",
+        editorialSummary: "Original copy",
       })
       .returning()
       .get();
@@ -464,7 +466,8 @@ describe("PATCH /api/events/:slug performance", () => {
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as ApiResponse<EventDetailDTO>;
-    expect(body.data?.summary).toBe("Updated summary");
+    expect(body.data?.summary).toBe("Original copy");
+    expect(body.data?.editorialSummary).toBe("Updated summary");
     expect(body.data?.performance?.eventPosterId).toBe(42);
 
     const row = await db

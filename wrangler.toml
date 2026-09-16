@@ -30,8 +30,12 @@ bucket_name = "conglomerate-media"
 [stream]
 binding = "STREAM"
 
+[ai]
+binding = "AI"
+
 [vars]
 ENVIRONMENT = "development"
+NARRATIVES_ENABLED = "true"
 # Local-only identity override (Cloudflare Access cannot run in `wrangler dev`).
 # MUST be empty / disabled in production (see [env.production]).
 DEV_USER_EMAIL = "dev@theconglomerate.local"
@@ -70,6 +74,7 @@ crons = ["*/15 * * * *"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+NARRATIVES_ENABLED = "false"
 DEV_USER_EMAIL = ""
 DEV_USER_ROLE = ""
 ACCESS_ENFORCED = "true"
@@ -95,3 +100,6 @@ bucket_name = "conglomerate-media"
 
 [env.production.stream]
 binding = "STREAM"
+
+[env.production.ai]
+binding = "AI"

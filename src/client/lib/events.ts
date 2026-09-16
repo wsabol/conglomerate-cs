@@ -1,5 +1,5 @@
 import { apiFetch, toQuery } from "./api";
-import type { EventDetailDTO, EventListItemDTO, EventSourceDTO } from "@shared/dto";
+import type { EventDetailDTO, EventListItemDTO, EventSourceDTO, NarrativeJobDTO } from "@shared/dto";
 import {
   eventCreateSchema,
   eventUpdateSchema,
@@ -32,6 +32,10 @@ export function listEvents(params: ListEventsParams = {}) {
 
 export function getEvent(slug: string) {
   return apiFetch<EventDetailDTO>(`/api/events/${slug}`);
+}
+
+export function getSummaryStatus(slug: string) {
+  return apiFetch<{ summary: string | null; job: NarrativeJobDTO | null }>(`/api/events/${slug}/summary-status`);
 }
 
 export function createEvent(body: EventCreateBody) {

@@ -15,6 +15,14 @@ import { ANNOTATION_TARGET_TYPES, type AnnotationTargetType } from "@shared/type
 import { requireUser } from "../middleware/auth";
 import { ok, okList } from "../lib/response";
 import { badRequest, notFound } from "../lib/errors";
+import { eventForAnnotation } from "../narrative/jobs";
+import { processNarrative } from "../narrative/worker";
+
+function startNarrative(c: { env: AppEnv["Bindings"]; executionCtx: { waitUntil(promise: Promise<unknown>): void } }, eventId: number | null) {
+  if (!eventId) return;
+  try { c.executionCtx.waitUntil(processNarrative(c.env, eventId, 25_000)); }
+  catch { /* app.request() tests have no execution context; cron still owns the job */ }
+}
 
 const route = new Hono<AppEnv>();
 
@@ -41,7 +49,8 @@ route.post("/", requireUser, async (c) => {
   const input = annotationCreateSchema.parse(await c.req.json());
   const db = getDb(c.env);
 
-  const dto = await createAnnotation(db, input, user);
+  const dto = await createAnnotation(db, c.env.DB, input, user);
+  startNarrative(c, await eventForAnnotation(db, dto!.targetType, dto!.targetId));
   return ok(c, dto, "Memory added", 201);
 });
 
@@ -52,8 +61,9 @@ route.patch("/:id", requireUser, async (c) => {
   const input = annotationUpdateSchema.parse(await c.req.json());
   const db = getDb(c.env);
 
-  const dto = await updateAnnotation(db, id, input, user);
+  const dto = await updateAnnotation(db, c.env.DB, id, input, user);
   if (!dto) throw notFound("Memory not found.");
+  startNarrative(c, await eventForAnnotation(db, dto.targetType, dto.targetId));
   return ok(c, dto, "Memory updated");
 });
 
@@ -62,9 +72,11 @@ route.delete("/:id", requireUser, async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id)) throw badRequest("Invalid memory id.");
   const db = getDb(c.env);
+  const existing = await getAnnotationById(db, id);
 
-  const deleted = await softDeleteAnnotation(db, id, user);
+  const deleted = await softDeleteAnnotation(db, c.env.DB, id, user);
   if (!deleted) throw notFound("Memory not found.");
+  if (existing) startNarrative(c, await eventForAnnotation(db, existing.targetType, existing.targetId));
   return ok(c, { id }, "Memory deleted");
 });
 

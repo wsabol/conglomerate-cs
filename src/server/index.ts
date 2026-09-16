@@ -2,6 +2,7 @@ import { app } from "./app";
 import type { Env } from "./env";
 import { getDb } from "./db/client";
 import { reconcileStreamProcessing } from "./media/reconcile";
+import { processDueNarratives } from "./narrative/worker";
 
 // The Worker runs first (run_worker_first). It owns the API and media routes
 // and hands everything else to the static assets binding (SPA fallback).
@@ -23,5 +24,6 @@ export default {
     ctx: ExecutionContext,
   ): Promise<void> {
     ctx.waitUntil(reconcileStreamProcessing(env, getDb(env)));
+    ctx.waitUntil(processDueNarratives(env));
   },
 } satisfies ExportedHandler<Env>;

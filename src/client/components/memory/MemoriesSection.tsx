@@ -26,6 +26,7 @@ interface MemoriesSectionProps {
   addLabel?: string;
   emptyTitle?: string;
   loading?: boolean;
+  onChanged?: () => void;
 }
 
 export function MemoriesSection({
@@ -37,6 +38,7 @@ export function MemoriesSection({
   addLabel = "Add membery",
   emptyTitle = "No memberies yet",
   loading = false,
+  onChanged,
 }: MemoriesSectionProps) {
   const { user, isEditor, loading: authLoading } = useAuth();
   const [items, setItems] = useState<AnnotationDTO[]>(initial);
@@ -80,6 +82,7 @@ export function MemoriesSection({
       const created = await createAnnotation({ targetType, targetId, ...value });
       setItems((cur) => [created, ...cur]);
       setAdding(false);
+      onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save your memory.");
     } finally {
@@ -95,6 +98,7 @@ export function MemoriesSection({
       const updated = await updateAnnotation(editing.id, value);
       setItems((cur) => cur.map((a) => (a.id === updated.id ? updated : a)));
       setEditing(null);
+      onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not update your memory.");
     } finally {
@@ -110,6 +114,7 @@ export function MemoriesSection({
       await deleteAnnotation(a.id);
       setItems((cur) => cur.filter((x) => x.id !== a.id));
       setEditing(null);
+      onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not delete that memory.");
     } finally {

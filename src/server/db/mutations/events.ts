@@ -15,6 +15,7 @@ import { recordRevision } from "../../audit/revision";
 import { getEventDetail } from "../queries/events";
 import { createPeopleBatch } from "./people";
 import type { EventPersonInput } from "@shared/schemas/event";
+import { invalidateAround, invalidateNarratives, relatedEventIds } from "../../narrative/jobs";
 
 function isPerformance(type: EventType): boolean {
   return type === "performance";
@@ -76,7 +77,9 @@ export async function createEvent(
       eventTime: input.eventTime ?? null,
       datePrecision: input.datePrecision,
       placeId: input.placeId ?? null,
-      summary: input.summary ?? null,
+      // Initial projection of the editorial baseline until the first rebuild.
+      summary: input.editorialSummary ?? input.summary ?? null,
+      editorialSummary: input.editorialSummary ?? input.summary ?? null,
       confidence: input.confidence,
       heroImageId: input.heroImageId ?? null,
     })
@@ -91,6 +94,8 @@ export async function createEvent(
     after: inserted,
     changedBy,
   });
+
+  await invalidateAround(db, inserted.id);
 
   return getEventDetail(db, slug);
 }
@@ -107,6 +112,7 @@ export async function updateEventBySlug(
     .where(and(eq(events.slug, slug), eq(events.isDeleted, false)))
     .get();
   if (!existing) return null;
+  const oldNeighbors = await relatedEventIds(db, existing.id);
 
   const nextEventType = input.eventType ?? existing.eventType;
   if (isPerformance(nextEventType) !== isPerformance(existing.eventType)) {
@@ -135,7 +141,7 @@ export async function updateEventBySlug(
         ? { datePrecision: input.datePrecision }
         : {}),
       ...(input.placeId !== undefined ? { placeId: input.placeId } : {}),
-      ...(input.summary !== undefined ? { summary: input.summary } : {}),
+      ...(input.editorialSummary !== undefined ? { editorialSummary: input.editorialSummary } : input.summary !== undefined ? { editorialSummary: input.summary } : {}),
       ...(input.confidence !== undefined ? { confidence: input.confidence } : {}),
       ...(input.heroImageId !== undefined
         ? { heroImageId: input.heroImageId }
@@ -178,6 +184,8 @@ export async function updateEventBySlug(
     after: updated,
     changedBy,
   });
+
+  await invalidateNarratives(db, [...oldNeighbors, ...await relatedEventIds(db, existing.id)]);
 
   return getEventDetail(db, newSlug);
 }

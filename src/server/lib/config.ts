@@ -23,6 +23,11 @@ export interface UploadLimits {
 }
 
 export interface AppConfig {
+  narrativesEnabled?: boolean;
+  narrativeModel?: string;
+  narrativeInputMaxBytes?: number;
+  narrativeOutputMaxChars?: number;
+  narrativeOutputTokens?: number;
   /** Calendar years the band was publicly active (home page stats). */
   archiveYearsActive: { start: number; end: number };
   accessEnforced: boolean;
@@ -52,6 +57,12 @@ export interface AppConfig {
 
 export function getConfig(env: Env): AppConfig {
   return {
+    narrativesEnabled: env.NARRATIVES_ENABLED === "true",
+    narrativeModel: env.NARRATIVE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    // UTF-8 bytes conservatively bound tokens below the model's 24k context.
+    narrativeInputMaxBytes: 16_000,
+    narrativeOutputMaxChars: 20_000,
+    narrativeOutputTokens: 1_800,
     archiveYearsActive: { start: 2009, end: 2016 },
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",

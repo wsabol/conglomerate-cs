@@ -172,6 +172,7 @@ export interface AnnotationDTO {
   body: string;
   annotationType: AnnotationType;
   incorporatePref: IncorporatePref;
+  summaryStatus: "pending" | "processing" | "incorporated" | "excluded" | "failed";
   authorId: number | null;
   authorName: string;
   createdOn: string;
@@ -188,7 +189,10 @@ export interface PerformanceDetailsDTO {
 }
 
 export interface EventDetailDTO extends EventListItemDTO {
+  narrativesEnabled: boolean;
   summary: string | null;
+  editorialSummary: string | null;
+  summaryJob: NarrativeJobDTO | null;
   placeDetail: PlaceDTO | null;
   performance: PerformanceDetailsDTO | null;
   people: EventPersonDTO[];
@@ -212,10 +216,18 @@ export interface EventSchemaDTO {
   heroImageId: number | null;
   heroImageUrl: string | null;
   summary: string | null;
+  editorialSummary: string | null;
+  summaryJob: NarrativeJobDTO | null;
   performance: PerformanceDetailsDTO | null;
   people: EventPersonDTO[];
   acts: EventActDTO[];
   sources: EventSourceDTO[];
   mediaItems: MediaItemDTO[];
   annotations: AnnotationDTO[];
+}
+
+export interface NarrativeJobDTO {
+  status: "pending" | "processing" | "failed" | "complete";
+  requestedVersion: number;
+  completedVersion: number;
 }

@@ -6,6 +6,7 @@ import {
   eventPerformanceDetails,
   eventSources,
   events,
+  narrativeJobs,
   people,
   places,
 } from "../../schema";
@@ -38,6 +39,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
+    summaryJob,
   ] = await Promise.all([
     event.placeId
       ? db
@@ -68,6 +70,7 @@ async function loadEventAggregate(
     db.select().from(eventSources).where(eq(eventSources.eventId, event.id)),
     listMediaForEvent(db, event.id, bucket),
     getAnnotations(db, "event", event.id),
+    db.select({ status: narrativeJobs.status, requestedVersion: narrativeJobs.requestedVersion, completedVersion: narrativeJobs.completedVersion }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get(),
   ]);
 
   const heroImageId = event.heroImageId ?? null;
@@ -85,6 +88,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
+    summaryJob: summaryJob ?? null,
     resolvedHeroId,
     placeDTO,
   };
@@ -93,7 +97,7 @@ async function loadEventAggregate(
 function baseEventFields(
   data: NonNullable<Awaited<ReturnType<typeof loadEventAggregate>>>,
 ) {
-  const { event, place, perf, peopleRows, acts, sources, eventAnnotations, resolvedHeroId } =
+  const { event, place, perf, peopleRows, acts, sources, eventAnnotations, summaryJob, resolvedHeroId } =
     data;
 
   const performanceEvent = event.eventType === "performance";
@@ -113,6 +117,8 @@ function baseEventFields(
     heroImageId: event.heroImageId ?? null,
     heroImageUrl: resolvedHeroId ? mediaDeliveryUrl(resolvedHeroId) : null,
     summary: event.summary,
+    editorialSummary: event.editorialSummary,
+    summaryJob,
     performance: performanceEvent && perf
       ? {
           billingName: perf.billingName,
@@ -160,6 +166,7 @@ export async function getEventDetail(
 
   return {
     ...baseEventFields(data),
+    narrativesEnabled: false,
     media: {
       video: mediaItems.some((item) => item.mediaType === "video"),
       audio: mediaItems.some((item) => item.mediaType === "audio"),

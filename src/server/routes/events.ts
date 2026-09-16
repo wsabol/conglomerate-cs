@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
 import type { AppEnv } from "../env";
 import { getDb } from "../db/client";
-import { events } from "../db/schema";
+import { events, narrativeJobs } from "../db/schema";
 import { getEventDetail, listEvents, listEventsDetailed } from "../db/queries";
 import {
   createEvent,
@@ -18,8 +18,17 @@ import {
 import { requireEditor } from "../middleware/auth";
 import { ok, okList } from "../lib/response";
 import { notFound } from "../lib/errors";
+import { getConfig } from "../lib/config";
 
 const route = new Hono<AppEnv>();
+
+route.get("/:slug/summary-status", async (c) => {
+  const db = getDb(c.env);
+  const event = await db.select({ id: events.id, summary: events.summary }).from(events).where(and(eq(events.slug, c.req.param("slug")), eq(events.isDeleted, false))).get();
+  if (!event) throw notFound("Event not found.");
+  const job = await db.select({ status: narrativeJobs.status, requestedVersion: narrativeJobs.requestedVersion, completedVersion: narrativeJobs.completedVersion }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+  return ok(c, { summary: event.summary, job: getConfig(c.env).narrativesEnabled ? job ?? null : null }, "Returned summary status");
+});
 
 route.get("/", async (c) => {
   const query = eventsQuerySchema.parse(c.req.query());
@@ -35,7 +44,7 @@ route.get("/", async (c) => {
 route.get("/:slug", async (c) => {
   const detail = await getEventDetail(getDb(c.env), c.req.param("slug"), c.env.MEDIA);
   if (!detail) throw notFound("Event not found.");
-  return ok(c, detail, "Returned event");
+  return ok(c, { ...detail, narrativesEnabled: !!getConfig(c.env).narrativesEnabled, summaryJob: getConfig(c.env).narrativesEnabled ? detail.summaryJob : null }, "Returned event");
 });
 
 route.post("/", requireEditor, async (c) => {
