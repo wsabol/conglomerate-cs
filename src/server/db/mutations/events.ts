@@ -55,22 +55,32 @@ function relationStatements(db: Db, eventId: number | SQL, input: Partial<EventC
     statements.push(db.delete(eventPeople).where(eq(eventPeople.eventId, eventId)));
     const created = new Map<string, SQL<number>>();
     for (const person of input.people) {
-      let personId: number | SQL<number> | undefined = person.personId;
-      if (personId == null) {
-        const name = person.displayName!.trim();
-        const key = name.toLowerCase();
-        personId = created.get(key);
-        if (personId == null) {
-          // The batch is isolated: the newest exact-name row is the one just inserted.
-          personId = sql<number>`(SELECT id FROM people WHERE display_name = ${name} ORDER BY id DESC LIMIT 1)`;
-          created.set(key, personId);
-          statements.push(db.insert(people).values({ displayName: name }),
-            recordRevision(db, { targetType: "people", targetId: personId, action: "create", changedBy,
-              after: sql`(SELECT ${rowJson(people)} FROM ${people} WHERE ${people.id} = ${personId})` }));
-        }
+      const link = {
+        eventId,
+        relationshipType: person.relationshipType,
+        notes: person.notes ?? null,
+      };
+      if (person.personId != null) {
+        statements.push(db.insert(eventPeople).values({ ...link, personId: person.personId }));
+        continue;
       }
-      statements.push(db.insert(eventPeople).values({ eventId, personId,
-        relationshipType: person.relationshipType, notes: person.notes ?? null }));
+      const name = person.displayName!.trim();
+      const key = name.toLowerCase();
+      const reusedId = created.get(key);
+      if (reusedId) {
+        statements.push(db.insert(eventPeople).values({ ...link, personId: reusedId }));
+        continue;
+      }
+      // last_insert_rowid() must be read in the immediately following statement.
+      statements.push(db.insert(people).values({ displayName: name }));
+      statements.push(db.insert(eventPeople).values({ ...link, personId: sql<number>`last_insert_rowid()` }));
+      const insertedId = sql<number>`(SELECT ${eventPeople.personId} FROM ${eventPeople} WHERE ${eventPeople.id} = last_insert_rowid())`;
+      created.set(key, sql<number>`(SELECT ${eventPeople.personId} FROM ${eventPeople}
+        INNER JOIN ${people} ON ${people.id} = ${eventPeople.personId}
+        WHERE ${eventPeople.eventId} = ${eventId} AND ${people.displayName} = ${name}
+        ORDER BY ${eventPeople.id} ASC LIMIT 1)`);
+      statements.push(recordRevision(db, { targetType: "people", targetId: insertedId, action: "create", changedBy,
+        after: sql`(SELECT ${rowJson(people)} FROM ${people} WHERE ${people.id} = ${insertedId})` }));
     }
   }
   if (input.acts !== undefined) {

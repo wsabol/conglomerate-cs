@@ -69,7 +69,10 @@ describe("automatic confidence", () => {
 
   it("explains missing evidence and supporting facts", () => {
     expect(assess({ eventDate: null }).reasons).toEqual([
-      "needs_exact_date", "needs_url_or_media_source", "needs_second_source_or_performance_details",
+      "needs_exact_date", "needs_url_or_media_source",
+    ]);
+    expect(assess({ sources: [first] }).reasons).toEqual([
+      "exact_date", "url_or_media_source", "needs_second_source_or_performance_details",
     ]);
     expect(assess({ sources: [first, second] })).toEqual({ level: "high", reasons: ["exact_date", "url_or_media_source", "multiple_sources"] });
     expect(assess({ sources: [first], eventType: "party" }).reasons).toContain("needs_second_source");

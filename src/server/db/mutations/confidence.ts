@@ -2,7 +2,7 @@ import { CONFIDENCE_BACKFILL_MAX_BATCH } from "../../lib/config";
 import { eq, sql, type SQL } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../client";
-import { events } from "../schema";
+import { events, confidenceSnapshotGuardRow } from "../schema";
 import { recordRevision } from "../../audit/revision";
 import { conflict } from "../../lib/errors";
 import { getEventConfidenceContext, assessConfidenceContext, getEventsCitingMedia, listConfidenceBackfillIds, eventRowSnapshot, getMediaCitationSnapshot } from "../queries";
@@ -11,24 +11,45 @@ import type { ConfidenceBackfillInput } from "@shared/schemas/admin";
 
 export type MutationStatement = BatchItem<"sqlite">;
 
+function errorText(error: unknown): string {
+  const chunks: string[] = [];
+  const visit = (value: unknown, depth: number) => {
+    if (value == null || depth > 6) return;
+    if (typeof value === "string") {
+      chunks.push(value);
+      return;
+    }
+    if (typeof value !== "object") return;
+    if (value instanceof Error) {
+      chunks.push(value.message, value.name, value.stack ?? "");
+      visit(value.cause, depth + 1);
+      return;
+    }
+    for (const nested of Object.values(value)) visit(nested, depth + 1);
+  };
+  visit(error, 0);
+  return chunks.join("\n");
+}
+
+function isStaleConfidenceSnapshotError(error: unknown): boolean {
+  return errorText(error).includes("stale_confidence_snapshot");
+}
+
 /** Fail the whole D1 batch if evidence changed after the evaluator read it. */
 export function confidenceSnapshotGuard(db: Db, expression: SQL, expected: string) {
-  return db.select({ checked: sql`json(CASE WHEN ${expression} = ${expected}
-    THEN 'null' ELSE 'stale_confidence_snapshot' END)` }).from(sql`(SELECT 1)`);
+  // Setting ok=0 violates named CHECK stale_confidence_snapshot and aborts the
+  // transaction. json() / missing functions either collide with other errors or fail at prepare.
+  return db.update(confidenceSnapshotGuardRow)
+    .set({ ok: sql`CASE WHEN ${expression} = ${expected} THEN 1 ELSE 0 END` })
+    .where(eq(confidenceSnapshotGuardRow.id, 1));
 }
 
 export async function commitConfidenceBatch(db: Db, statements: [MutationStatement, ...MutationStatement[]]) {
   try {
     return await db.batch(statements);
   } catch (error) {
-    // SQLite evaluates json() only on the selected CASE branch. A stale read
-    // aborts the transaction rather than persisting a score for different facts.
-    let cause: unknown = error;
-    while (cause instanceof Error) {
-      if (cause.message.includes("malformed JSON")) {
-        throw conflict("The event or its evidence changed while saving. Please reload and try again.");
-      }
-      cause = cause.cause;
+    if (isStaleConfidenceSnapshotError(error)) {
+      throw conflict("The event or its evidence changed while saving. Please reload and try again.");
     }
     throw error;
   }

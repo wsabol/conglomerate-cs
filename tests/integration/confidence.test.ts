@@ -120,6 +120,28 @@ describe("confidence event writes", () => {
     ])).rejects.toMatchObject({ status: 409 });
     expect((await stored(event.id)).confidence).toBe("low");
   });
+
+  it("does not treat unrelated malformed JSON as a stale snapshot", async () => {
+    await expect(commitConfidenceBatch(db, [
+      db.select({ checked: sql`json('{')` }).from(sql`(SELECT 1)`),
+    ])).rejects.not.toMatchObject({ status: 409 });
+  });
+
+  it("links inline people to the inserted row, not a pre-existing namesake", async () => {
+    const namesake = await db.insert(people).values({ displayName: "New person" }).returning().get();
+    const event = await create({
+      people: [
+        { displayName: "New person", relationshipType: "performer" },
+        { displayName: "new person", relationshipType: "organizer" },
+      ],
+    });
+    const linked = await db.select().from(eventPeople).where(eq(eventPeople.eventId, event.id)).orderBy(eventPeople.id);
+    expect(linked).toHaveLength(2);
+    expect(linked[0].personId).toBe(linked[1].personId);
+    expect(linked[0].personId).not.toBe(namesake.id);
+    const created = await db.select().from(people).where(eq(people.id, linked[0].personId)).get();
+    expect(created?.displayName).toBe("New person");
+  });
 });
 
 describe("media eligibility and confidence", () => {
@@ -176,6 +198,14 @@ describe("media eligibility and confidence", () => {
       expect((await stored(event.id)).confidence).toBe("medium");
       expect((await db.select().from(media).where(eq(media.id, 1)).get())!.status).toBe("uploading");
     } finally { await db.run(sql`DROP TRIGGER fail_media_audit`); }
+  });
+
+  it("does not audit unpublished processing-state updates", async () => {
+    await db.insert(media).values({ id: 1, mediaType: "video", status: "processing", createdBy: 1 });
+    const before = await db.select().from(objectRevisions);
+    await updateMediaWithConfidence(db, 1, { status: "failed" });
+    expect((await db.select().from(media).where(eq(media.id, 1)).get())!.status).toBe("failed");
+    expect(await db.select().from(objectRevisions)).toHaveLength(before.length);
   });
 
   it("rejects evidence changes between preparing and publishing media", async () => {

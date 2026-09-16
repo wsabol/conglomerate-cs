@@ -77,7 +77,7 @@ export function assessEventConfidence(input: ConfidenceInput): ConfidenceAssessm
   if (texts.size >= 2) reasons.push("multiple_text_sources");
   if (!exact) reasons.push("needs_exact_date");
   if (sourceCount === 0) reasons.push("needs_url_or_media_source");
-  if (!secondSignal) reasons.push(input.eventType === "performance"
+  else if (!secondSignal) reasons.push(input.eventType === "performance"
     ? "needs_second_source_or_performance_details" : "needs_second_source");
   return { level, reasons };
 }
