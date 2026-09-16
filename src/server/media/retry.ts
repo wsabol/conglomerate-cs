@@ -1,3 +1,4 @@
+import { updateMediaWithConfidence } from "../db/mutations/media-confidence";
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { media } from "../db/schema";
@@ -57,15 +58,12 @@ export async function retryVideoProcessing(
   }
 
   if (row.status !== "uploaded") {
-    await db
-      .update(media)
-      .set({
+    await updateMediaWithConfidence(db, id, {
         status: "uploaded",
         processingErrorCode: null,
         processingErrorMessage: null,
         modifiedOn: sql`(CURRENT_TIMESTAMP)`,
-      })
-      .where(eq(media.id, id));
+      }, user.id);
   } else {
     await db
       .update(media)

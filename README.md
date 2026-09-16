@@ -214,4 +214,36 @@ tests/      Vitest unit + integration
 ## TODO
 
 - [ ] Wire src/client/routes/SignIn.tsx to redirect to Access login URLs (Milestone 4 in your implementation plan).
-- [ ]
+
+## Automatic event confidence
+
+Confidence is calculated from recorded evidence; editors cannot set it directly.
+High requires a valid exact date, one URL/published media citation, and either a
+second distinct URL/media citation or (for performances) a setlist/promotional
+text. One URL/media citation or two distinct text sources earns medium; all other
+cases are low. Missing/imprecise dates cap confidence at medium. Memories and
+uncited attachments do not affect it. Sources are not fetched or fact-checked.
+
+Event saves, media eligibility transitions, confidence changes, and their audit
+revisions commit together. Concurrent evidence changes return a conflict rather
+than saving a stale score. Detail/export responses include `confidenceAssessment`
+with a level and stable reason codes. The existing `confidence` field remains in
+list, detail, and export responses and in D1.
+
+For the first release, run `npm run build:prod`, deploy, then backfill before
+considering rollout complete. Supply `APP_BASE_URL` and an editor's existing
+Cloudflare Access session as `CF_ACCESS_JWT` through the environment for production.
+Local development uses the existing development identity and needs no session.
+
+```sh
+npm run events:confidence-backfill -- --dry-run
+npm run events:confidence-backfill -- --apply
+npm run events:confidence-backfill -- --dry-run
+```
+
+The default is dry-run. The command pages through active events and prints IDs,
+old/new levels, and explanation codes without source URLs or authentication data.
+Inspect the fresh production dry-run before applying; historical manual labels
+are not required outputs. Application writes use a null (system) audit actor and
+preserve editorial `modified_on` timestamps. Repeating the apply is safe: unchanged
+levels produce no writes or revisions. The final dry-run should report zero changes.

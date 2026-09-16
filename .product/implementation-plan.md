@@ -134,7 +134,7 @@ type ApiResponse<T> = { data: T | null; message: string };
    - Spacing, radii (4–8px), shadows (minimal), z-index, motion.
    - Exposed as CSS variables + a typed TS token object.
 2. **Typography & fonts**
-   - Display: Bodoni Moda; UI/body: Inter (or Manrope); mono: IBM Plex Mono. Self-host or use a compliant font-loading strategy; define type scale with a design-system **minimum body size** (no tiny text — PRD §Patterns to Avoid).
+   - Display: Cormorant Garamond; UI/body: Inter (or Manrope); mono: IBM Plex Mono. Self-host or use a compliant font-loading strategy; define type scale with a design-system **minimum body size** (no tiny text — PRD §Patterns to Avoid).
 3. **Responsive breakpoints & layout primitives**
    - Breakpoint tokens; `Container`, `Stack`, `Grid`, `Sidebar` (sidebars reflow into content flow on mobile, never horizontally compressed — PRD §Responsive Rules).
 4. **App shell & navigation**

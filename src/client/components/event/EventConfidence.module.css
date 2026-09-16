@@ -1,0 +1,21 @@
+.section {
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.section p {
+  margin-top: var(--space-2);
+}
+
+.section ul {
+  padding-left: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.section li + li {
+  margin-top: var(--space-1);
+}

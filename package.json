@@ -20,10 +20,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote --env production",
-    "media:stream-backfill": "node scripts/stream-backfill.mjs"
+    "media:stream-backfill": "node scripts/stream-backfill.mjs",
+    "events:confidence-backfill": "node scripts/confidence-backfill.mjs"
   },
   "dependencies": {
-    "@fontsource/bodoni-moda": "^5.2.7",
     "@fontsource/cormorant-garamond": "^5.2.11",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/inter": "^5.2.8",

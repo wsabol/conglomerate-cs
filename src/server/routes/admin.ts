@@ -1,3 +1,6 @@
+import { confidenceBackfillSchema } from "@shared/schemas/admin";
+import { runConfidenceBackfill } from "../db/mutations/confidence";
+import { CONFIDENCE_BACKFILL_MAX_BATCH } from "../lib/config";
 import { Hono } from "hono";
 import { eq, sql } from "drizzle-orm";
 import type { AppEnv } from "../env";
@@ -119,6 +122,12 @@ route.get("/media/:id/processing-diagnostics", requireEditor, async (c) => {
     id,
   );
   return ok(c, diagnostics, "Media processing diagnostics");
+});
+
+route.post("/events/confidence-backfill", requireEditor, async (c) => {
+  const input = confidenceBackfillSchema.parse(c.req.query());
+  if (input.limit !== undefined && input.limit > CONFIDENCE_BACKFILL_MAX_BATCH) throw badRequest("Confidence backfill batch is too large.");
+  return ok(c, await runConfidenceBackfill(getDb(c.env), input), "Event confidence assessed");
 });
 
 export default route;
