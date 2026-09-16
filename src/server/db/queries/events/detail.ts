@@ -87,7 +87,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
-    eligibleMediaIds: (await getEligibleConfidenceMedia(db, sources)).ids,
+    eligibleMediaIds: await getEligibleConfidenceMedia(db, sources),
     resolvedHeroId,
     placeDTO,
   };

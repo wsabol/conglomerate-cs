@@ -5,8 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
 import { events, eventSources, eventPerformanceDetails, eventPeople, eventActs, people, media, users, objectRevisions, annotations } from "../../src/server/db/schema";
-import { getEventConfidenceContext } from "../../src/server/db/queries";
-import { commitConfidenceBatch, confidenceSnapshotGuard, confidenceStatementsForMedia, runConfidenceBackfill } from "../../src/server/db/mutations/confidence";
+import { runConfidenceBackfill } from "../../src/server/db/mutations/confidence";
 import { updateMediaWithConfidence } from "../../src/server/db/mutations/media-confidence";
 import { softDeleteMedia } from "../../src/server/db/mutations/media";
 import { applyStreamWebhookEvent } from "../../src/server/media/reconcile";
@@ -110,23 +109,6 @@ describe("confidence event writes", () => {
     } finally { await db.run(sql`DROP TRIGGER fail_confidence_audit`); }
   });
 
-  it("rejects a stale snapshot without partially updating", async () => {
-    const event = await create();
-    const context = (await getEventConfidenceContext(db, event.id))!;
-    await patch(event, { sources: [] });
-    await expect(commitConfidenceBatch(db, [
-      confidenceSnapshotGuard(db, context.expression, context.snapshot),
-      db.update(events).set({ confidence: "high" }).where(eq(events.id, event.id)),
-    ])).rejects.toMatchObject({ status: 409 });
-    expect((await stored(event.id)).confidence).toBe("low");
-  });
-
-  it("does not treat unrelated malformed JSON as a stale snapshot", async () => {
-    await expect(commitConfidenceBatch(db, [
-      db.select({ checked: sql`json('{')` }).from(sql`(SELECT 1)`),
-    ])).rejects.not.toMatchObject({ status: 409 });
-  });
-
   it("links inline people to the inserted row, not a pre-existing namesake", async () => {
     const namesake = await db.insert(people).values({ displayName: "New person" }).returning().get();
     const event = await create({
@@ -206,16 +188,6 @@ describe("media eligibility and confidence", () => {
     await updateMediaWithConfidence(db, 1, { status: "failed" });
     expect((await db.select().from(media).where(eq(media.id, 1)).get())!.status).toBe("failed");
     expect(await db.select().from(objectRevisions)).toHaveLength(before.length);
-  });
-
-  it("rejects evidence changes between preparing and publishing media", async () => {
-    await db.insert(media).values({ id: 1, mediaType: "photo", status: "uploading", createdBy: 1 });
-    const event = await create({ sources: [source, { sourceType: "media", mediaId: 1 }] });
-    const statements = await confidenceStatementsForMedia(db, 1, true, null);
-    await patch(event, { sources: [] });
-    await expect(commitConfidenceBatch(db, [statements[0], ...statements.slice(1),
-      db.update(media).set({ status: "published" }).where(eq(media.id, 1))])).rejects.toMatchObject({ status: 409 });
-    expect((await stored(event.id)).confidence).toBe("low");
   });
 });
 

@@ -8,7 +8,7 @@ import { eventSlug } from "../../lib/slug";
 import { badRequest } from "../../lib/errors";
 import { recordRevision } from "../../audit/revision";
 import { getEventDetail, getEventConfidenceContext, getEligibleConfidenceMedia, eventRowSnapshot, rowJson } from "../queries";
-import { commitConfidenceBatch, confidenceSnapshotGuard, type MutationStatement } from "./confidence";
+import { commitConfidenceBatch, type MutationStatement } from "./confidence";
 
 function isPerformance(type: EventType): boolean { return type === "performance"; }
 
@@ -100,13 +100,12 @@ function relationStatements(db: Db, eventId: number | SQL, input: Partial<EventC
 export async function createEvent(db: Db, input: EventCreateInput, changedBy: number) {
   validateTypeSpecificInput(input.eventType, input);
   const slug = await uniqueEventSlug(db, input.name, input.eventDate);
-  const eligible = await getEligibleConfidenceMedia(db, input.sources);
-  const assessment = assessEventConfidence({ ...input, eligibleMediaIds: eligible.ids });
+  const eligibleMediaIds = await getEligibleConfidenceMedia(db, input.sources);
+  const assessment = assessEventConfidence({ ...input, eligibleMediaIds });
   // Resolve the generated ID inside the same batch, without relying on last_insert_rowid
   // after relation or revision inserts have changed it.
   const eventId = sql<number>`(SELECT id FROM events WHERE slug = ${slug})`;
   await commitConfidenceBatch(db, [
-    confidenceSnapshotGuard(db, eligible.expression, eligible.snapshot),
     db.insert(events).values({ slug, name: input.name, eventType: input.eventType,
       eventDate: input.eventDate ?? null, eventTime: input.eventTime ?? null,
       datePrecision: input.datePrecision, placeId: input.placeId ?? null,
@@ -135,14 +134,12 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
   const nextSources = sources ?? context.sources;
   const nextPerformance = { ...context.performance,
     ...Object.fromEntries(Object.entries(performance ?? {}).filter(([, value]) => value !== undefined)) };
-  const eligible = await getEligibleConfidenceMedia(db, nextSources);
+  const eligibleMediaIds = await getEligibleConfidenceMedia(db, nextSources);
   const assessment = assessEventConfidence({ ...next, sources: nextSources,
-    performance: nextPerformance, eligibleMediaIds: eligible.ids });
+    performance: nextPerformance, eligibleMediaIds });
   const newSlug = input.name !== undefined || input.eventDate !== undefined
     ? await uniqueEventSlug(db, next.name, next.eventDate, existing.id) : existing.slug;
   await commitConfidenceBatch(db, [
-    confidenceSnapshotGuard(db, context.expression, context.snapshot),
-    confidenceSnapshotGuard(db, eligible.expression, eligible.snapshot),
     db.update(events).set({ ...scalarFields, slug: newSlug, confidence: assessment.level,
       modifiedOn: sql`(CURRENT_TIMESTAMP)` }).where(eq(events.id, existing.id)),
     ...relationStatements(db, existing.id, { performance, sources, people: peopleInput, acts }, changedBy),

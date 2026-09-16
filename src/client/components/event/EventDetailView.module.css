@@ -171,11 +171,6 @@
   cursor: pointer;
 }
 
-.updatedOn:hover,
-.updatedOn:focus-visible {
-  color: var(--color-text);
-}
-
 .sectionInfoFooter {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);

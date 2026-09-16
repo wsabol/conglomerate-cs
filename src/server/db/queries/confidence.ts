@@ -33,13 +33,12 @@ export interface EventConfidenceContext {
 }
 
 export async function getEventConfidenceContext(db: Db, id: number) {
-  const expression = eventConfidenceSnapshot(id);
-  const row = await db.select({ snapshot: expression }).from(sql`(SELECT 1)`).get();
+  const row = await db.select({ snapshot: eventConfidenceSnapshot(id) }).from(sql`(SELECT 1)`).get();
   const context = JSON.parse(row!.snapshot) as EventConfidenceContext | { event: null };
   if (!context.event) return null;
   const value = context as EventConfidenceContext;
   value.event.isDeleted = Boolean(value.event.isDeleted);
-  return { ...value, snapshot: row!.snapshot, expression };
+  return value;
 }
 
 export function assessConfidenceContext(context: EventConfidenceContext) {
@@ -54,11 +53,10 @@ export function assessConfidenceContext(context: EventConfidenceContext) {
 export async function getEligibleConfidenceMedia(db: Db, sources: ConfidenceInput["sources"]) {
   const ids = [...new Set(sources.filter((s) => s.sourceType === "media" && s.mediaId != null).map((s) => s.mediaId!))];
   // A single JSON parameter keeps large source sets below D1's bind limit.
-  const expression = sql<string>`(SELECT json_group_array(id) FROM (SELECT ${media.id} AS id FROM ${media}
+  const row = await db.select({ snapshot: sql<string>`(SELECT json_group_array(id) FROM (SELECT ${media.id} AS id FROM ${media}
     WHERE ${media.status} = 'published' AND ${media.isDeleted} = 0
-    AND ${media.id} IN (SELECT value FROM json_each(${JSON.stringify(ids)})) ORDER BY ${media.id}))`;
-  const row = await db.select({ snapshot: expression }).from(sql`(SELECT 1)`).get();
-  return { ids: JSON.parse(row!.snapshot) as number[], expression, snapshot: row!.snapshot };
+    AND ${media.id} IN (SELECT value FROM json_each(${JSON.stringify(ids)})) ORDER BY ${media.id}))` }).from(sql`(SELECT 1)`).get();
+  return JSON.parse(row!.snapshot) as number[];
 }
 
 export async function getEventsCitingMedia(db: Db, mediaId: number) {
@@ -75,17 +73,8 @@ export async function listConfidenceBackfillIds(db: Db, afterId: number, limit: 
     .orderBy(events.id).limit(limit);
 }
 
-export async function getMediaConfidenceSnapshot(db: Db, id: number) {
-  const expression = sql<string>`(SELECT ${rowJson(media)} FROM ${media} WHERE ${media.id} = ${id})`;
-  const snapshot = await db.select({ value: expression }).from(sql`(SELECT 1)`).get();
-  return { expression, snapshot: snapshot?.value ?? null };
-}
-
-export async function getMediaCitationSnapshot(db: Db, id: number) {
-  const expression = sql<string>`(SELECT json_group_array(event_id) FROM
-    (SELECT DISTINCT event_id FROM event_sources WHERE source_type = 'media' AND media_id = ${id} ORDER BY event_id))`;
-  const row = await db.select({ snapshot: expression }).from(sql`(SELECT 1)`).get();
-  return { expression, snapshot: row!.snapshot };
+export function mediaRowSnapshot(id: number | SQL): SQL<string> {
+  return sql<string>`(SELECT ${rowJson(media)} FROM ${media} WHERE ${media.id} = ${id})`;
 }
 
 export async function getEventsUsingMediaRole(db: Db, id: number) {
