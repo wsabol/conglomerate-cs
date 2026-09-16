@@ -1,4 +1,3 @@
-import { EventConfidence } from "./EventConfidence";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
@@ -284,12 +283,6 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           placeholder="Select a place"
           options={[{ value: "", label: "None" }, ...placeOptions]}
         />
-        <div>
-          {eventData && <EventConfidence assessment={eventData.confidenceAssessment} />}
-          <p>Confidence is calculated automatically from the date and supporting sources.
-            For performances, a setlist or promotional text can add support.
-            Changes are reflected after saving.</p>
-        </div>
         <TextArea
           label="Summary"
           value={form.summary}

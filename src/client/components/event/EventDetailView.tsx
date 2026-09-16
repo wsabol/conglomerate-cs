@@ -64,7 +64,6 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
           <SidebarLayout
             aside={
               <>
-                <EventConfidence assessment={event.confidenceAssessment} />
                 {isPerformance && (
                   <>
                     <OtherActsSection
@@ -86,6 +85,7 @@ export function EventDetailView({ event, onReload }: EventDetailViewProps) {
                   onReload={onReload}
                   isPerformance={isPerformance}
                 />
+                <EventConfidence assessment={event.confidenceAssessment} />
               </>
             }
           >
