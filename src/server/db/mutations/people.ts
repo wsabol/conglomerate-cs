@@ -89,6 +89,10 @@ export async function updatePerson(
     .get();
   if (!existing) return null;
 
+  const changed = Object.entries(input).some(([key, value]) =>
+    value !== undefined && (value ?? null) !== (existing[key as keyof typeof existing] ?? null));
+  if (!changed) return getPerson(db, id);
+
   await db
     .update(people)
     .set({

@@ -36,7 +36,7 @@ export async function createAnnotation(
 ) {
   await assertTargetExists(db, input.targetType, input.targetId);
   const authorId = await resolveUserId(db, user);
-  const affected = await affectedEvents(db, input.targetType, input.targetId);
+  const affected = input.incorporatePref === "separate" ? [] : await affectedEvents(db, input.targetType, input.targetId);
   const batch = await raw.batch([
     raw.prepare(`INSERT INTO annotations (target_type, target_id, body, author_id, annotation_type, incorporate_pref, summary_status) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`).bind(input.targetType, input.targetId, input.body, authorId, input.annotationType, input.incorporatePref, input.incorporatePref === "separate" ? "excluded" : "pending"),
     raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, after_json, changed_by) SELECT 'annotation', id, 'create', json_object('id', id, 'body', body, 'targetType', target_type, 'targetId', target_id, 'incorporatePref', incorporate_pref), ? FROM annotations WHERE id = last_insert_rowid()`).bind(authorId),
@@ -71,21 +71,27 @@ export async function updateAnnotation(
     throw forbidden("You can only edit your own memories.");
   }
 
-  const affected = await affectedEvents(db, existing.targetType, existing.targetId);
+  const body = input.body ?? existing.body;
+  const annotationType = input.annotationType ?? existing.annotationType;
+  const incorporatePref = input.incorporatePref ?? existing.incorporatePref;
+  const changed = body !== existing.body || annotationType !== existing.annotationType || incorporatePref !== existing.incorporatePref;
+  if (!changed) return { annotation: await getAnnotationById(db, id), narrativeChanged: false };
+  const affectsNarrative = existing.incorporatePref !== "separate" || incorporatePref !== "separate";
+  const affected = affectsNarrative ? await affectedEvents(db, existing.targetType, existing.targetId) : [];
   await raw.batch([
-    raw.prepare(`UPDATE annotations SET body = ?, annotation_type = ?, incorporate_pref = ?, summary_status = ?, input_revision = input_revision + 1, modified_on = CURRENT_TIMESTAMP WHERE id = ?`).bind(input.body ?? existing.body, input.annotationType ?? existing.annotationType, input.incorporatePref ?? existing.incorporatePref, (input.incorporatePref ?? existing.incorporatePref) === "separate" ? "excluded" : "pending", id),
-    raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, before_json, after_json, changed_by) VALUES ('annotation', ?, 'update', ?, ?, ?)`).bind(id, JSON.stringify(existing), JSON.stringify({ ...existing, ...input }), userId),
+    raw.prepare(`UPDATE annotations SET body = ?, annotation_type = ?, incorporate_pref = ?, summary_status = ?, input_revision = input_revision + 1, modified_on = CURRENT_TIMESTAMP WHERE id = ?`).bind(body, annotationType, incorporatePref, incorporatePref === "separate" ? "excluded" : "pending", id),
+    raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, before_json, after_json, changed_by) VALUES ('annotation', ?, 'update', ?, ?, ?)`).bind(id, JSON.stringify(existing), JSON.stringify({ ...existing, body, annotationType, incorporatePref, summaryStatus: incorporatePref === "separate" ? "excluded" : "pending", inputRevision: existing.inputRevision + 1 }), userId),
     ...jobStatements(raw, affected),
   ]);
 
-  if (input.body !== undefined) {
+  if (body !== existing.body) {
     await db
       .delete(annotationPeople)
       .where(eq(annotationPeople.annotationId, id));
-    await setAnnotationPeople(db, id, extractPeopleIds(input.body));
+    await setAnnotationPeople(db, id, extractPeopleIds(body));
   }
 
-  return getAnnotationById(db, id);
+  return { annotation: await getAnnotationById(db, id), narrativeChanged: affectsNarrative };
 }
 
 export async function softDeleteAnnotation(
@@ -106,7 +112,7 @@ export async function softDeleteAnnotation(
     throw forbidden("You can only delete your own memories.");
   }
 
-  const affected = await affectedEvents(db, existing.targetType, existing.targetId);
+  const affected = existing.incorporatePref === "separate" ? [] : await affectedEvents(db, existing.targetType, existing.targetId);
   await raw.batch([
     raw.prepare(`UPDATE annotations SET is_deleted = 1, summary_status = 'excluded', input_revision = input_revision + 1, modified_on = CURRENT_TIMESTAMP WHERE id = ?`).bind(id),
     raw.prepare(`INSERT INTO object_revisions (target_type, target_id, action, before_json, changed_by) VALUES ('annotation', ?, 'delete', ?, ?)`).bind(id, JSON.stringify(existing), userId),

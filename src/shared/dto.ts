@@ -193,7 +193,6 @@ export interface EventDetailDTO extends EventListItemDTO {
   narrativesEnabled: boolean;
   confidenceAssessment: ConfidenceAssessment;
   summary: string | null;
-  editorialSummary: string | null;
   summaryJob: NarrativeJobDTO | null;
   placeDetail: PlaceDTO | null;
   performance: PerformanceDetailsDTO | null;
@@ -220,7 +219,6 @@ export interface EventSchemaDTO {
   heroImageId: number | null;
   heroImageUrl: string | null;
   summary: string | null;
-  editorialSummary: string | null;
   summaryJob: NarrativeJobDTO | null;
   performance: PerformanceDetailsDTO | null;
   people: EventPersonDTO[];
@@ -234,6 +232,7 @@ export interface NarrativeJobDTO {
   status: "pending" | "processing" | "failed" | "complete";
   requestedVersion: number;
   completedVersion: number;
+  errorCode: string | null;
 }
 
 export interface ConfidenceBackfillResult {

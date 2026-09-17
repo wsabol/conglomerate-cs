@@ -1,6 +1,30 @@
 import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { annotations, eventActs, eventPeople, events, media, narrativeJobs } from "../db/schema";
+import { NARRATIVE_PENDING_TTL_MS } from "../lib/config";
+import type { NarrativeJobDTO } from "@shared/dto";
+
+type JobStatusRow = Pick<typeof narrativeJobs.$inferSelect,
+  "status" | "requestedVersion" | "completedVersion" | "errorCode" | "modifiedOn">;
+
+export function publicNarrativeJob(job: JobStatusRow | null | undefined, now = Date.now()): NarrativeJobDTO | null {
+  if (!job) return null;
+  const timestamp = Date.parse(job.modifiedOn.includes("T") ? job.modifiedOn : `${job.modifiedOn.replace(" ", "T")}Z`);
+  const expired = job.status === "pending" && Number.isFinite(timestamp) && now - timestamp >= NARRATIVE_PENDING_TTL_MS;
+  return {
+    status: expired ? "failed" : job.status,
+    requestedVersion: job.requestedVersion,
+    completedVersion: job.completedVersion,
+    errorCode: expired ? "QUEUE_EXPIRED" : job.errorCode,
+  };
+}
+
+export async function expirePendingNarratives(db: Db, now = new Date()): Promise<void> {
+  const cutoff = new Date(now.getTime() - NARRATIVE_PENDING_TTL_MS).toISOString().replace("T", " ").slice(0, 19);
+  await db.update(narrativeJobs).set({ status: "failed", errorCode: "QUEUE_EXPIRED", nextRetryOn: null,
+    leaseToken: null, leaseUntil: null, modifiedOn: sql`CURRENT_TIMESTAMP` })
+    .where(and(eq(narrativeJobs.status, "pending"), lte(narrativeJobs.modifiedOn, cutoff)));
+}
 
 /** Only exact dates support a relative-day claim. */
 export async function relatedEventIds(db: Db, eventId: number): Promise<number[]> {

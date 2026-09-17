@@ -38,6 +38,12 @@ export function getSummaryStatus(slug: string) {
   return apiFetch<{ summary: string | null; job: NarrativeJobDTO | null }>(`/api/events/${slug}/summary-status`);
 }
 
+export function retrySummary(slug: string) {
+  return apiFetch<{ summary: string | null; job: NarrativeJobDTO | null }>(`/api/events/${slug}/summary-retry`, {
+    method: "POST",
+  });
+}
+
 export function createEvent(body: EventCreateBody) {
   return apiFetch<EventDetailDTO>("/api/events", {
     method: "POST",

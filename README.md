@@ -167,9 +167,17 @@ npm run build:prod && npm run deploy:prod
 
 ### Living narratives rollout
 
-Migration `0006_dusty_mongu.sql` preserves each current summary in
-`editorial_summary` and queues events with existing eligible memories. Apply it
-before deploying this Worker. Production starts with `NARRATIVES_ENABLED =
+Events have one summary, directly editable by editors and incrementally updated
+by AI whenever eligible memories change. Human edits never disable automation.
+Updates preserve unaffected prose; changed or removed memories trigger targeted
+corrections. Source snapshots in `narrative_jobs` track memory evidence, not a
+second summary. No-op updates preserve the summary and its revision history.
+Concurrent editorial changes invalidate in-flight generation, which retries
+against the latest summary.
+
+Apply migrations through `0007_illegal_deadpool.sql` before deploying this Worker.
+This migration keeps displayed summaries, archives legacy editorial baselines in
+revision history, and drops the separate `editorial_summary` column. Production starts with `NARRATIVES_ENABLED =
 "false"`; after verifying the `AI` binding and the migrated data, set that
 production variable to `"true"` and deploy again. The existing 15-minute cron
 processes up to ten queued events per run, so the backfill proceeds gradually.
@@ -177,9 +185,13 @@ Local development has generation enabled; tests use `wrangler.test.toml` to
 avoid a remote AI session.
 
 Monitor `narrative_jobs` for pending/failed counts, oldest `modified_on`,
-`attempts`, and `error_code`. Failed jobs keep the last displayed summary and
-retry automatically. Set the production variable back to `"false"` to pause
-generation without discarding queued work.
+`attempts`, and `error_code`. New writes replace older pending work for the same
+event, and a processing lease prevents stale output from being saved. Pending
+jobs expire after 24 hours without being picked up. The event page shows the
+`QUEUE_EXPIRED` failure and lets an editor retry; eligible memories remain
+saved. AI failures keep the last displayed summary and retry automatically.
+Set the production variable back to `"false"` to pause generation without
+discarding queued work.
 
 ### Cloudflare Workers Builds (GitHub)
 

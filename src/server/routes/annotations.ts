@@ -50,7 +50,7 @@ route.post("/", requireUser, async (c) => {
   const db = getDb(c.env);
 
   const dto = await createAnnotation(db, c.env.DB, input, user);
-  startNarrative(c, await eventForAnnotation(db, dto!.targetType, dto!.targetId));
+  if (input.incorporatePref !== "separate") startNarrative(c, await eventForAnnotation(db, dto!.targetType, dto!.targetId));
   return ok(c, dto, "Memory added", 201);
 });
 
@@ -61,10 +61,10 @@ route.patch("/:id", requireUser, async (c) => {
   const input = annotationUpdateSchema.parse(await c.req.json());
   const db = getDb(c.env);
 
-  const dto = await updateAnnotation(db, c.env.DB, id, input, user);
-  if (!dto) throw notFound("Memory not found.");
-  startNarrative(c, await eventForAnnotation(db, dto.targetType, dto.targetId));
-  return ok(c, dto, "Memory updated");
+  const result = await updateAnnotation(db, c.env.DB, id, input, user);
+  if (!result?.annotation) throw notFound("Memory not found.");
+  if (result.narrativeChanged) startNarrative(c, await eventForAnnotation(db, result.annotation.targetType, result.annotation.targetId));
+  return ok(c, result.annotation, "Memory updated");
 });
 
 route.delete("/:id", requireUser, async (c) => {
@@ -76,7 +76,7 @@ route.delete("/:id", requireUser, async (c) => {
 
   const deleted = await softDeleteAnnotation(db, c.env.DB, id, user);
   if (!deleted) throw notFound("Memory not found.");
-  if (existing) startNarrative(c, await eventForAnnotation(db, existing.targetType, existing.targetId));
+  if (existing && existing.incorporatePref !== "separate") startNarrative(c, await eventForAnnotation(db, existing.targetType, existing.targetId));
   return ok(c, { id }, "Memory deleted");
 });
 

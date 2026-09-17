@@ -57,7 +57,6 @@ const eventFieldsSchema = z.object({
   datePrecision: z.enum(DATE_PRECISIONS).default("exact"),
   placeId: z.number().int().positive().nullable().optional(),
   summary: z.string().trim().max(20000).nullable().optional(),
-  editorialSummary: z.string().trim().max(20000).nullable().optional(),
   heroImageId: z.number().int().positive().nullable().optional(),
   performance: eventPerformanceInputSchema,
   people: z.array(eventPersonInputSchema).default([]),

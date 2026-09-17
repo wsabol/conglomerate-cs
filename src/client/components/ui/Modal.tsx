@@ -8,14 +8,17 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   context?: string;
+  initialFocusSelector?: string;
   children: ReactNode;
 }
 
 const FOCUSABLE =
-  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+  ':is(a[href], button:not([disabled]), textarea, input, select, [contenteditable="true"], [tabindex]):not([tabindex="-1"])';
 
-export function Modal({ open, onClose, title, context, children }: ModalProps) {
+export function Modal({ open, onClose, title, context, initialFocusSelector, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const titleId = useId();
 
   useEffect(() => {
@@ -26,13 +29,15 @@ export function Modal({ open, onClose, title, context, children }: ModalProps) {
     const prevOverflow = body.style.overflow;
     body.style.overflow = "hidden";
 
-    // Focus the first focusable element in the dialog.
-    const first = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+    // Some dialogs start with a close button; let forms choose their editor.
+    const first = (initialFocusSelector
+      ? dialogRef.current?.querySelector<HTMLElement>(initialFocusSelector)
+      : null) ?? dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
     first?.focus();
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab" && dialogRef.current) {
@@ -58,7 +63,7 @@ export function Modal({ open, onClose, title, context, children }: ModalProps) {
       body.style.overflow = prevOverflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open, initialFocusSelector]);
 
   if (!open) return null;
 
@@ -88,6 +93,7 @@ export function Modal({ open, onClose, title, context, children }: ModalProps) {
             className={styles.close}
             onClick={onClose}
             aria-label="Close dialog"
+            tabIndex={-1}
           >
             <Icon name="close" />
           </button>

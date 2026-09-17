@@ -19,6 +19,8 @@ import { requireEditor } from "../middleware/auth";
 import { ok, okList } from "../lib/response";
 import { notFound } from "../lib/errors";
 import { getConfig } from "../lib/config";
+import { invalidateNarratives, publicNarrativeJob } from "../narrative/jobs";
+import { processNarrative } from "../narrative/worker";
 
 const route = new Hono<AppEnv>();
 
@@ -29,9 +31,28 @@ route.get("/:slug/summary-status", async (c) => {
   const job = await db.select({
     status: narrativeJobs.status,
     requestedVersion: narrativeJobs.requestedVersion,
-    completedVersion: narrativeJobs.completedVersion
+    completedVersion: narrativeJobs.completedVersion,
+    errorCode: narrativeJobs.errorCode,
+    modifiedOn: narrativeJobs.modifiedOn,
   }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
-  return ok(c, { summary: event.summary, job: getConfig(c.env).narrativesEnabled ? job ?? null : null }, "Returned summary status");
+  return ok(c, { summary: event.summary, job: getConfig(c.env).narrativesEnabled ? publicNarrativeJob(job) : null }, "Returned summary status");
+});
+
+route.post("/:slug/summary-retry", requireEditor, async (c) => {
+  const db = getDb(c.env);
+  const event = await db.select({ id: events.id, summary: events.summary }).from(events)
+    .where(and(eq(events.slug, c.req.param("slug")), eq(events.isDeleted, false))).get();
+  if (!event) throw notFound("Event not found.");
+  const job = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+  if (!job || publicNarrativeJob(job)?.status !== "failed") return ok(c,
+    { summary: event.summary, job: publicNarrativeJob(job) }, "Summary update is not awaiting a retry");
+  await invalidateNarratives(db, [event.id]);
+  if (getConfig(c.env).narrativesEnabled) {
+    try { c.executionCtx.waitUntil(processNarrative(c.env, event.id, 25_000)); }
+    catch { /* The scheduled worker still owns the queued retry. */ }
+  }
+  const queued = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+  return ok(c, { summary: event.summary, job: publicNarrativeJob(queued) }, "Summary update queued");
 });
 
 route.get("/", async (c) => {

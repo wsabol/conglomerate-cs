@@ -26,6 +26,7 @@ export interface AppConfig {
   narrativesEnabled?: boolean;
   narrativeModel?: string;
   narrativeInputMaxBytes?: number;
+  narrativeEvidenceMaxBytes?: number;
   narrativeOutputMaxChars?: number;
   narrativeOutputTokens?: number;
   /** Calendar years the band was publicly active (home page stats). */
@@ -55,14 +56,18 @@ export interface AppConfig {
   inlinePlayback: { audio: string[]; video: string[] };
 }
 
+/** Pending narrative work is abandoned after a day without a worker picking it up. */
+export const NARRATIVE_PENDING_TTL_MS = 24 * 60 * 60 * 1000;
+
 export function getConfig(env: Env): AppConfig {
   return {
     narrativesEnabled: env.NARRATIVES_ENABLED === "true",
     narrativeModel: env.NARRATIVE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    // UTF-8 bytes conservatively bound tokens below the model's 24k context.
-    narrativeInputMaxBytes: 16_000,
+    // Bound inputs; condense evidence separately so the editing target stays intact.
+    narrativeInputMaxBytes: 32_000,
+    narrativeEvidenceMaxBytes: 16_000,
     narrativeOutputMaxChars: 20_000,
-    narrativeOutputTokens: 1_800,
+    narrativeOutputTokens: 8_000,
     archiveYearsActive: { start: 2009, end: 2016 },
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",

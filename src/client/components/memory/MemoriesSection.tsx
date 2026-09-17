@@ -82,7 +82,7 @@ export function MemoriesSection({
       const created = await createAnnotation({ targetType, targetId, ...value });
       setItems((cur) => [created, ...cur]);
       setAdding(false);
-      onChanged?.();
+      if (created.incorporatePref !== "separate") onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save your memory.");
     } finally {
@@ -92,13 +92,17 @@ export function MemoriesSection({
 
   async function handleUpdate(value: MemoryFormValue) {
     if (!editing) return;
+    if (value.body === editing.body && value.annotationType === editing.annotationType && value.incorporatePref === editing.incorporatePref) {
+      setEditing(null);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const updated = await updateAnnotation(editing.id, value);
       setItems((cur) => cur.map((a) => (a.id === updated.id ? updated : a)));
       setEditing(null);
-      onChanged?.();
+      if (editing.incorporatePref !== "separate" || updated.incorporatePref !== "separate") onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not update your memory.");
     } finally {
@@ -114,7 +118,7 @@ export function MemoriesSection({
       await deleteAnnotation(a.id);
       setItems((cur) => cur.filter((x) => x.id !== a.id));
       setEditing(null);
-      onChanged?.();
+      if (a.incorporatePref !== "separate") onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not delete that memory.");
     } finally {
@@ -174,6 +178,7 @@ export function MemoriesSection({
         onClose={closeAdd}
         title={addLabel}
         context={contextLabel}
+        initialFocusSelector='[role="textbox"]'
       >
         <MemoryForm
           key="add"

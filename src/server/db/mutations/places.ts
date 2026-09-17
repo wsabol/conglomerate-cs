@@ -49,6 +49,10 @@ export async function updatePlace(
     .get();
   if (!existing) return null;
 
+  const changed = Object.entries(input).some(([key, value]) =>
+    value !== undefined && (value ?? null) !== (existing[key as keyof typeof existing] ?? null));
+  if (!changed) return getPlace(db, id);
+
   await db
     .update(places)
     .set({

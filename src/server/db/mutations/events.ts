@@ -1,6 +1,6 @@
 import { and, eq, ne, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../client";
-import { eventActs, eventPeople, eventPerformanceDetails, eventSources, events, people } from "../schema";
+import { eventActs, eventPeople, eventPerformanceDetails, eventSources, events, narrativeJobs, people } from "../schema";
 import type { EventCreateInput, EventUpdateInput } from "@shared/schemas/event";
 import type { EventType } from "@shared/types";
 import { assessEventConfidence } from "@shared/confidence";
@@ -9,9 +9,17 @@ import { badRequest } from "../../lib/errors";
 import { recordRevision } from "../../audit/revision";
 import { getEventDetail, getEventConfidenceContext, getEligibleConfidenceMedia, eventRowSnapshot, rowJson } from "../queries";
 import { commitConfidenceBatch, type MutationStatement } from "./confidence";
-import { invalidateAround, invalidateNarratives, relatedEventIds } from "../../narrative/jobs";
+import { invalidateNarratives, relatedEventIds } from "../../narrative/jobs";
 
 function isPerformance(type: EventType): boolean { return type === "performance"; }
+
+function sameValues(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function sameUnordered(a: unknown[], b: unknown[]): boolean {
+  return sameValues(a.map((v) => JSON.stringify(v)).sort(), b.map((v) => JSON.stringify(v)).sort());
+}
 
 function validateTypeSpecificInput(eventType: EventType, input: Partial<Pick<EventCreateInput, "performance" | "acts">>) {
   if (isPerformance(eventType)) return;
@@ -101,7 +109,6 @@ function relationStatements(db: Db, eventId: number | SQL, input: Partial<EventC
 export async function createEvent(db: Db, input: EventCreateInput, changedBy: number) {
   validateTypeSpecificInput(input.eventType, input);
   const slug = await uniqueEventSlug(db, input.name, input.eventDate);
-  const baseline = input.editorialSummary ?? input.summary ?? null;
   const eligibleMediaIds = await getEligibleConfidenceMedia(db, input.sources);
   const assessment = assessEventConfidence({ ...input, eligibleMediaIds });
   // Resolve the generated ID inside the same batch, without relying on last_insert_rowid
@@ -111,13 +118,16 @@ export async function createEvent(db: Db, input: EventCreateInput, changedBy: nu
     db.insert(events).values({ slug, name: input.name, eventType: input.eventType,
       eventDate: input.eventDate ?? null, eventTime: input.eventTime ?? null,
       datePrecision: input.datePrecision, placeId: input.placeId ?? null,
-      summary: baseline, editorialSummary: baseline,
+      summary: input.summary ?? null,
       confidence: assessment.level, heroImageId: input.heroImageId ?? null }),
     ...relationStatements(db, eventId, input, changedBy),
     recordRevision(db, { targetType: "event", targetId: eventId, action: "create", after: eventRowSnapshot(eventId), changedBy }),
   ]);
   const inserted = await db.select({ id: events.id }).from(events).where(eq(events.slug, slug)).get();
-  if (inserted) await invalidateAround(db, inserted.id);
+  // A new event has no memories to incorporate. Its facts can still affect
+  // existing related narratives, but it needs no narrative job of its own.
+  if (inserted) await invalidateNarratives(db,
+    (await relatedEventIds(db, inserted.id)).filter((id) => id !== inserted.id));
   return getEventDetail(db, slug);
 }
 
@@ -134,12 +144,58 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
   }
   validateTypeSpecificInput(nextEventType, input);
   // Omitted fields retain their values; explicit null and [] clear them.
-  const { performance, sources, people: peopleInput, acts, summary, editorialSummary, ...fields } = input;
-  const baseline = editorialSummary !== undefined ? editorialSummary : summary;
+  const { performance, sources, people: peopleInput, acts, ...fields } = input;
   const scalarFields = {
     ...Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)),
-    ...(baseline !== undefined ? { editorialSummary: baseline } : {}),
   };
+  const beforeChange: Record<string, unknown> = {};
+  const afterChange: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(scalarFields)) {
+    const oldValue = existing[key as keyof typeof existing];
+    if ((value ?? null) !== (oldValue ?? null)) {
+      beforeChange[key] = oldValue;
+      afterChange[key] = value;
+    }
+  }
+  const performanceChanges = Object.fromEntries(Object.entries(performance ?? {}).filter(([, value]) => value !== undefined));
+  for (const [key, value] of Object.entries(performanceChanges)) {
+    const oldValue = context.performance?.[key as keyof NonNullable<typeof context.performance>] ?? null;
+    if ((value ?? null) !== oldValue) {
+      beforeChange[`performance.${key}`] = oldValue;
+      afterChange[`performance.${key}`] = value;
+    }
+  }
+  const normalizeSources = (rows: typeof context.sources) => rows.map((s) => ({
+    sourceType: s.sourceType, description: s.description ?? null, url: s.url || null, mediaId: s.mediaId ?? null,
+  }));
+  if (sources !== undefined) {
+    const oldSources = normalizeSources(context.sources);
+    const newSources = normalizeSources(sources as typeof context.sources);
+    if (!sameUnordered(oldSources, newSources)) {
+      beforeChange.sources = oldSources;
+      afterChange.sources = newSources;
+    }
+  }
+  if (peopleInput !== undefined) {
+    const oldPeople = await db.select({ personId: eventPeople.personId, relationshipType: eventPeople.relationshipType, notes: eventPeople.notes })
+      .from(eventPeople).where(and(eq(eventPeople.eventId, existing.id), eq(eventPeople.isDeleted, false)));
+    const newPeople = peopleInput.map((p) => ({ personId: p.personId ?? null, relationshipType: p.relationshipType, notes: p.notes ?? null,
+      ...(p.personId == null && p.displayName ? { displayName: p.displayName } : {}) }));
+    if (!sameUnordered(oldPeople, newPeople)) {
+      beforeChange.people = oldPeople;
+      afterChange.people = newPeople;
+    }
+  }
+  if (acts !== undefined) {
+    const oldActs = await db.select({ name: eventActs.name, billingRole: eventActs.billingRole })
+      .from(eventActs).where(eq(eventActs.eventId, existing.id));
+    const newActs = acts.map((a) => ({ name: a.name, billingRole: a.billingRole }));
+    if (!sameUnordered(oldActs, newActs)) {
+      beforeChange.acts = oldActs;
+      afterChange.acts = newActs;
+    }
+  }
+  if (!Object.keys(afterChange).length) return getEventDetail(db, existing.slug);
   const next = { ...existing, ...scalarFields };
   const nextSources = sources ?? context.sources;
   const nextPerformance = { ...context.performance,
@@ -147,16 +203,33 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
   const eligibleMediaIds = await getEligibleConfidenceMedia(db, nextSources);
   const assessment = assessEventConfidence({ ...next, sources: nextSources,
     performance: nextPerformance, eligibleMediaIds });
+  if (assessment.level !== existing.confidence) {
+    beforeChange.confidence = existing.confidence;
+    afterChange.confidence = assessment.level;
+  }
   const newSlug = input.name !== undefined || input.eventDate !== undefined
     ? await uniqueEventSlug(db, next.name, next.eventDate, existing.id) : existing.slug;
+  const narrativeChanged = Object.keys(afterChange).some((key) =>
+    ["name", "eventType", "eventDate", "eventTime", "datePrecision", "placeId",
+      "people", "acts", "performance.promotionText"].includes(key)
+  );
   await commitConfidenceBatch(db, [
     db.update(events).set({ ...scalarFields, slug: newSlug, confidence: assessment.level,
       modifiedOn: sql`(CURRENT_TIMESTAMP)` }).where(eq(events.id, existing.id)),
-    ...relationStatements(db, existing.id, { performance, sources, people: peopleInput, acts }, changedBy),
+    ...(narrativeChanged ? [db.insert(narrativeJobs).values({ eventId: existing.id }).onConflictDoUpdate({
+      target: narrativeJobs.eventId,
+      set: { requestedVersion: sql`${narrativeJobs.requestedVersion} + 1`, status: "pending", attempts: 0, nextRetryOn: null, errorCode: null, modifiedOn: sql`CURRENT_TIMESTAMP` },
+    })] : []),
+    ...relationStatements(db, existing.id, {
+      performance: Object.keys(performanceChanges).some((key) => `performance.${key}` in afterChange) ? performance : undefined,
+      sources: "sources" in afterChange ? sources : undefined,
+      people: "people" in afterChange ? peopleInput : undefined,
+      acts: "acts" in afterChange ? acts : undefined,
+    }, changedBy),
     recordRevision(db, { targetType: "event", targetId: existing.id, action: "update",
-      before: existing, after: eventRowSnapshot(existing.id), changedBy }),
+      before: beforeChange, after: afterChange, changedBy }),
   ]);
-  await invalidateNarratives(db, [...oldNeighbors, ...await relatedEventIds(db, existing.id)]);
+  if (narrativeChanged) await invalidateNarratives(db, [...oldNeighbors, ...await relatedEventIds(db, existing.id)].filter((id) => id !== existing.id));
   return getEventDetail(db, newSlug);
 }
 

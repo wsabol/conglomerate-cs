@@ -108,7 +108,6 @@ export const events = sqliteTable(
       .default("exact"),
     placeId: integer("place_id").references(() => places.id),
     summary: text("summary"),
-    editorialSummary: text("editorial_summary"),
     confidence: text("confidence", { enum: CONFIDENCE_LEVELS })
       .notNull()
       .default("medium"),
@@ -311,6 +310,7 @@ export const narrativeJobs = sqliteTable("narrative_jobs", {
   eventId: integer("event_id").primaryKey().references(() => events.id, { onDelete: "cascade" }),
   requestedVersion: integer("requested_version").notNull().default(1),
   completedVersion: integer("completed_version").notNull().default(0),
+  sourceSnapshot: text("source_snapshot").notNull().default("[]"),
   status: text("status", { enum: ["pending", "processing", "failed", "complete"] }).notNull().default("pending"),
   leaseToken: text("lease_token"),
   leaseUntil: text("lease_until"),

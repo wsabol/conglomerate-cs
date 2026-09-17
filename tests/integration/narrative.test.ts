@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { getDb } from "../../src/server/db/client";
-import { annotations, eventActs, eventPeople, eventPerformanceDetails, eventSources, events, media, narrativeJobs, people, places } from "../../src/server/db/schema";
+import { app } from "../../src/server/app";
+import { annotations, eventActs, eventPeople, eventPerformanceDetails, eventSources, events, media, narrativeJobs, objectRevisions, people, places } from "../../src/server/db/schema";
 import { annotationCreateSchema, annotationUpdateSchema } from "../../src/shared/schemas/annotation";
-import { invalidateAround, relatedEventIds } from "../../src/server/narrative/jobs";
-import { processNarrative } from "../../src/server/narrative/worker";
+import { invalidateAround, publicNarrativeJob, relatedEventIds } from "../../src/server/narrative/jobs";
+import { processDueNarratives, processNarrative } from "../../src/server/narrative/worker";
+import { updateEventBySlug } from "../../src/server/db/mutations/events";
 import type { Env } from "../../src/server/env";
 
 function aiEnv(run: NonNullable<Env["AI"]>["run"]): Env {
@@ -39,16 +41,82 @@ describe("living narratives", () => {
     expect(await relatedEventIds(db, rows[0].id)).toEqual([rows[0].id, rows[1].id]);
   });
 
-  it("copies the human baseline without AI when only promotion and event metadata exist", async () => {
+  it("opening an event and polling its status do not run or requeue generation", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "human-copy", name: "Human Copy", summary: "The editor's exact copy: contact me@example.com", editorialSummary: "The editor's exact copy: contact me@example.com" }).returning().get();
+    const event = await db.insert(events).values({ slug: "read-only", name: "Read Only", summary: "Stable prose." }).returning().get();
+    await invalidateAround(db, event.id);
+    const initial = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    let calls = 0;
+    const enabled = aiEnv(async () => { calls++; return { response: "Unexpected rewrite." }; });
+
+    for (let visit = 0; visit < 2; visit++) {
+      expect((await app.request(`/api/events/${event.slug}`, { method: "GET" }, enabled)).status).toBe(200);
+      expect((await app.request(`/api/events/${event.slug}/summary-status`, { method: "GET" }, enabled)).status).toBe(200);
+    }
+
+    const after = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(calls).toBe(0);
+    expect(after?.requestedVersion).toBe(initial?.requestedVersion);
+    expect(after?.status).toBe(initial?.status);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("Stable prose.");
+  });
+
+  it("does not queue a new event with no memories for a summary rewrite", async () => {
+    const created = await app.request("/api/events", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "New Archive Entry", summary: "An editor's first account." }),
+    }, env);
+    expect(created.status).toBe(201);
+    const db = getDb(env);
+    const event = await db.select().from(events).where(eq(events.name, "New Archive Entry")).get();
+    expect(event?.summary).toBe("An editor's first account.");
+    expect(await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event!.id))).toHaveLength(0);
+  });
+
+  it("expires old pending work, leaves memories intact, and lets an editor retry it", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "old-queue", name: "Old Queue", summary: "Original account." }).returning().get();
+    const memory = await db.insert(annotations).values({ targetType: "event", targetId: event.id,
+      body: "We played an encore.", incorporatePref: "yes" }).returning().get();
+    await invalidateAround(db, event.id);
+    await db.update(narrativeJobs).set({ modifiedOn: "2000-01-01 00:00:00" }).where(eq(narrativeJobs.eventId, event.id));
+    const stale = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(publicNarrativeJob(stale)?.errorCode).toBe("QUEUE_EXPIRED");
+    const statusResponse = await app.request(`/api/events/${event.slug}/summary-status`, {}, aiEnv(async () => {
+      throw new Error("An event GET must not use AI.");
+    }));
+    expect(((await statusResponse.json()) as { data: { job: { status: string } } }).data.job.status).toBe("failed");
+
+    let calls = 0;
+    const enabled = aiEnv(async () => { calls++; return { response: "Should not be called." }; });
+    expect(await processNarrative(enabled, event.id, 25_000)).toBe(false);
+    await processDueNarratives(enabled);
+    expect(calls).toBe(0);
+    const expired = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(expired?.status).toBe("failed");
+    expect(expired?.errorCode).toBe("QUEUE_EXPIRED");
+    expect(expired?.nextRetryOn).toBeNull();
+    expect((await db.select().from(annotations).where(eq(annotations.id, memory.id)).get())?.body).toBe("We played an encore.");
+
+    const retried = await app.request(`/api/events/${event.slug}/summary-retry`, { method: "POST" }, env);
+    expect(retried.status).toBe(200);
+    const queued = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(queued?.status).toBe("pending");
+    expect(queued?.errorCode).toBeNull();
+    expect(queued?.requestedVersion).toBe((stale?.requestedVersion ?? 0) + 1);
+    expect(await processNarrative(aiEnv(async () => ({ response: "The band played an encore." })), event.id, 25_000)).toBe(true);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("The band played an encore.");
+  });
+
+  it("preserves the current summary without AI when only promotion and event metadata exist", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "human-copy", name: "Human Copy", summary: "The editor's exact copy: contact me@example.com" }).returning().get();
     await db.insert(eventPerformanceDetails).values({ eventId: event.id, promotionText: "An advertised party." });
     await invalidateAround(db, event.id);
     let calls = 0;
     expect(await processNarrative(aiEnv(async () => { calls++; return { response: "Unwanted AI text" }; }), event.id, 25_000)).toBe(true);
     expect(calls).toBe(0);
     const saved = await db.select().from(events).where(eq(events.id, event.id)).get();
-    expect(saved?.summary).toBe(saved?.editorialSummary);
     expect(saved?.summary).toBe("The editor's exact copy: contact me@example.com");
   });
 
@@ -63,9 +131,9 @@ describe("living narratives", () => {
     const place = await db.insert(places).values({ name: "The Room" }).returning().get();
     const otherPlace = await db.insert(places).values({ name: "The Hall" }).returning().get();
     const [focal, nearby] = await db.insert(events).values([
-      { slug: "focal-night", name: "Focal Night", eventDate: "2011-05-14", datePrecision: "exact", placeId: place.id, editorialSummary: "The focal editorial." },
-      { slug: "other-bill", name: "Other Bill", eventDate: "2011-05-14", datePrecision: "exact", placeId: otherPlace.id, editorialSummary: "FORBIDDEN NEARBY EDITORIAL" },
-      { slug: "next-night", name: "Next Night", eventDate: "2011-05-15", datePrecision: "exact", placeId: place.id, editorialSummary: "FORBIDDEN NEXT DAY" },
+      { slug: "focal-night", name: "Focal Night", eventDate: "2011-05-14", datePrecision: "exact", placeId: place.id, summary: "The focal editorial." },
+      { slug: "other-bill", name: "Other Bill", eventDate: "2011-05-14", datePrecision: "exact", placeId: otherPlace.id, summary: "FORBIDDEN NEARBY EDITORIAL" },
+      { slug: "next-night", name: "Next Night", eventDate: "2011-05-15", datePrecision: "exact", placeId: place.id, summary: "FORBIDDEN NEXT DAY" },
     ]).returning();
     await db.insert(eventActs).values({ eventId: nearby.id, name: "Opening Act" });
     await db.insert(annotations).values([
@@ -86,7 +154,7 @@ describe("living narratives", () => {
     const db = getDb(env);
     const place = await db.insert(places).values({ name: "The Room" }).returning().get();
     const person = await db.insert(people).values({ displayName: "Real Name" }).returning().get();
-    const event = await db.insert(events).values({ slug: "allowlist", name: "Allowlist", eventDate: "2011-05-01", datePrecision: "month", placeId: place.id, editorialSummary: "An important rehearsal." }).returning().get();
+    const event = await db.insert(events).values({ slug: "allowlist", name: "Allowlist", eventDate: "2011-05-01", datePrecision: "month", placeId: place.id, summary: "An important rehearsal." }).returning().get();
     await db.insert(eventPeople).values({ eventId: event.id, personId: person.id, relationshipType: "performer" });
     await db.insert(eventActs).values({ eventId: event.id, name: "The Act" });
     await db.insert(eventPerformanceDetails).values({ eventId: event.id, promotionText: "Advertised for local fans.", setlistText: "FORBIDDEN SETLIST" });
@@ -105,7 +173,7 @@ describe("living narratives", () => {
 
   it("bounds each model input when long eligible memories require chunking", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "long-story", name: "Long Story", editorialSummary: "A long night." }).returning().get();
+    const event = await db.insert(events).values({ slug: "long-story", name: "Long Story", summary: "A long night." }).returning().get();
     await db.insert(annotations).values([1, 2, 3].map((n) => ({ targetType: "event" as const, targetId: event.id, body: `Memory ${n}: ${"rain and music. ".repeat(550)}`, incorporatePref: "yes" as const })));
     await invalidateAround(db, event.id);
     const sizes: number[] = [];
@@ -115,9 +183,9 @@ describe("living narratives", () => {
     expect(Math.max(...sizes)).toBeLessThanOrEqual(16_000);
   });
 
-  it("uses editorial and advertised context and records incorporated revisions", async () => {
+  it("uses the current summary and advertised context and records incorporated revisions", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "story", name: "Story", editorialSummary: "An early show." }).returning().get();
+    const event = await db.insert(events).values({ slug: "story", name: "Story", summary: "An early show." }).returning().get();
     await db.insert(eventPerformanceDetails).values({ eventId: event.id, promotionText: "Advertised as an all-night party." });
     const memory = await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "We loaded in after dinner.", incorporatePref: "yes" }).returning().get();
     await invalidateAround(db, event.id);
@@ -138,7 +206,7 @@ describe("living narratives", () => {
 
   it("discards generated prose when inputs change during inference", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "changing", name: "Changing", summary: "Original", editorialSummary: "Original" }).returning().get();
+    const event = await db.insert(events).values({ slug: "changing", name: "Changing", summary: "Original" }).returning().get();
     await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "First version", incorporatePref: "yes" });
     await invalidateAround(db, event.id);
     const result = await processNarrative(aiEnv(async () => {
@@ -152,14 +220,14 @@ describe("living narratives", () => {
 
   it("uses linked media memories and removes excluded memories on rebuild", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "media-story", name: "Media Story", editorialSummary: "The show began late." }).returning().get();
+    const event = await db.insert(events).values({ slug: "media-story", name: "Media Story", summary: "The show began late." }).returning().get();
     const photo = await db.insert(media).values({ eventId: event.id, mediaType: "photo", status: "published" }).returning().get();
     const included = await db.insert(annotations).values({ targetType: "media", targetId: photo.id, body: "We waited outside in the rain.", incorporatePref: "yes" }).returning().get();
     const legacy = await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "Legacy recollection.", incorporatePref: "no_pref" }).returning().get();
     await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "Private detail", incorporatePref: "separate", summaryStatus: "excluded" });
     await invalidateAround(db, event.id);
     const prompts: string[] = [];
-    const fake = aiEnv(async (_model, input) => { prompts.push(input.messages[1].content); return { response: "The audience waited in the rain before the late show." }; });
+    const fake = aiEnv(async (_model, input) => { prompts.push(input.messages[1].content); return { response: prompts.length === 1 ? "The audience waited in the rain before the late show." : "The show began late." }; });
     expect(await processNarrative(fake, event.id, 25_000)).toBe(true);
     expect(prompts[0]).toContain("We waited outside in the rain.");
     expect(prompts[0]).toContain("Legacy recollection.");
@@ -173,7 +241,7 @@ describe("living narratives", () => {
 
   it("keeps the last narrative and retries a failed AI call", async () => {
     const db = getDb(env);
-    const event = await db.insert(events).values({ slug: "retry-story", name: "Retry Story", summary: "Existing text", editorialSummary: "Existing text" }).returning().get();
+    const event = await db.insert(events).values({ slug: "retry-story", name: "Retry Story", summary: "Existing text" }).returning().get();
     await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "The amp failed.", incorporatePref: "yes" });
     await invalidateAround(db, event.id);
     expect(await processNarrative(aiEnv(async () => { throw new Error("provider unavailable"); }), event.id, 25_000)).toBe(false);
@@ -185,4 +253,119 @@ describe("living narratives", () => {
     expect(await processNarrative(aiEnv(async () => ({ response: "The amp failed during the show." })), event.id, 25_000)).toBe(true);
     expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("The amp failed during the show.");
   });
+
+  it("uses editor changes as the next editing target and continues automatic updates", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "editable", name: "Editable", summary: "Original prose." }).returning().get();
+    await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "We arrived late.", incorporatePref: "yes" });
+    await invalidateAround(db, event.id);
+    await processNarrative(aiEnv(async () => ({ response: "Original prose. We arrived late." })), event.id, 25_000);
+    await updateEventBySlug(db, event.slug, { summary: "The editor's chosen opening. We arrived late." }, 0);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("The editor's chosen opening. We arrived late.");
+    const added = await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "The amplifier broke.", incorporatePref: "yes" }).returning().get();
+    await invalidateAround(db, event.id);
+    let payload: any;
+    const result = await processNarrative(aiEnv(async (_model, input) => {
+      payload = JSON.parse(input.messages[1].content);
+      expect(input.messages[0].content).toContain("Do not rewrite the story");
+      return { response: "The editor's chosen opening. We arrived late. The amplifier broke." };
+    }), event.id, 25_000);
+    expect(result).toBe(true);
+    expect(payload.currentNarrative).toBe("The editor's chosen opening. We arrived late.");
+    expect(payload.changes.added.map((m: { id: number }) => m.id)).toEqual([added.id]);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toContain("The amplifier broke.");
+  });
+
+  it("retries against a human edit made during inference without saving a stale revision", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "race", name: "Race", summary: "Old wording." }).returning().get();
+    await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "An encore.", incorporatePref: "yes" });
+    await invalidateAround(db, event.id);
+    expect(await processNarrative(aiEnv(async () => {
+      await updateEventBySlug(db, event.slug, { summary: "Human correction." }, 0);
+      return { response: "Stale AI wording." };
+    }), event.id, 25_000)).toBe(false);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("Human correction.");
+    const revisions = await db.select().from(objectRevisions).where(eq(objectRevisions.targetId, event.id));
+    expect(revisions.some((r) => r.afterJson?.includes("Stale AI wording."))).toBe(false);
+    expect(await processNarrative(aiEnv(async (_model, input) => {
+      expect(JSON.parse(input.messages[1].content).currentNarrative).toBe("Human correction.");
+      return { response: "Human correction. An encore followed." };
+    }), event.id, 25_000)).toBe(true);
+  });
+
+  it("keeps exact prose and avoids audit churn for a no-change response", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "no-change", name: "No Change", summary: "Exact prose.\n\nSecond paragraph.", modifiedOn: "2001-01-01 00:00:00" }).returning().get();
+    await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "Great night!", incorporatePref: "yes" });
+    await invalidateAround(db, event.id);
+    const prior = await db.select().from(objectRevisions);
+    expect(await processNarrative(aiEnv(async () => ({ response: "NO_CHANGE" })), event.id, 25_000)).toBe(true);
+    const saved = await db.select().from(events).where(eq(events.id, event.id)).get();
+    expect(saved?.summary).toBe(event.summary);
+    expect(saved?.modifiedOn).toBe(event.modifiedOn);
+    expect(await db.select().from(objectRevisions)).toHaveLength(prior.length);
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.status).toBe("complete");
+  });
+
+  it("identifies changed evidence and retracts the last deleted memory", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "correction", name: "Correction" }).returning().get();
+    const memory = await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "We played Friday.", incorporatePref: "yes" }).returning().get();
+    await invalidateAround(db, event.id);
+    await processNarrative(aiEnv(async () => ({ response: "The band played Friday." })), event.id, 25_000);
+    await db.update(annotations).set({ body: "We played Saturday.", inputRevision: 2, summaryStatus: "pending" }).where(eq(annotations.id, memory.id));
+    await invalidateAround(db, event.id);
+    expect(await processNarrative(aiEnv(async (_model, input) => {
+      const payload = JSON.parse(input.messages[1].content);
+      expect(payload.changes.changed[0].before.text).toBe("We played Friday.");
+      expect(payload.changes.changed[0].after.text).toBe("We played Saturday.");
+      return { response: "The band played Saturday." };
+    }), event.id, 25_000)).toBe(true);
+    await db.update(annotations).set({ isDeleted: true, inputRevision: 3, summaryStatus: "excluded" }).where(eq(annotations.id, memory.id));
+    await invalidateAround(db, event.id);
+    expect(await processNarrative(aiEnv(async (_model, input) => {
+      const payload = JSON.parse(input.messages[1].content);
+      expect(payload.evidence[0].memories).toEqual([]);
+      expect(payload.changes.removed[0].text).toBe("We played Saturday.");
+      return { response: "EMPTY_SUMMARY" };
+    }), event.id, 25_000)).toBe(true);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBeNull();
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.sourceSnapshot).toBe("[]");
+  });
+
+  it("preserves the complete editing target when evidence must be condensed", async () => {
+    const db = getDb(env);
+    const summary = "An editor's carefully worded paragraph. ".repeat(450);
+    const event = await db.insert(events).values({ slug: "long-edit", name: "Long Edit", summary }).returning().get();
+    await db.insert(annotations).values([1, 2, 3].map((n) => ({ targetType: "event" as const, targetId: event.id, body: `Memory ${n}: ${"rain and music. ".repeat(550)}`, incorporatePref: "yes" as const })));
+    await invalidateAround(db, event.id);
+    let sawTarget = false;
+    expect(await processNarrative(aiEnv(async (_model, input) => {
+      if (input.messages[1].content.startsWith('{"currentNarrative"')) {
+        expect(JSON.parse(input.messages[1].content).currentNarrative).toBe(summary);
+        sawTarget = true;
+        return { response: "NO_CHANGE" };
+      }
+      return { response: "Current memories describe rain and music." };
+    }), event.id, 25_000)).toBe(true);
+    expect(sawTarget).toBe(true);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe(summary);
+  });
+
+
+  it("rejects an expired worker even after its replacement completes with no change", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({ slug: "expired-worker", name: "Expired Worker", summary: "Keep this wording." }).returning().get();
+    await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "A memory.", incorporatePref: "yes" });
+    await invalidateAround(db, event.id);
+    expect(await processNarrative(aiEnv(async () => {
+      await db.update(narrativeJobs).set({ leaseUntil: "2000-01-01T00:00:00.000Z" }).where(eq(narrativeJobs.eventId, event.id));
+      expect(await processNarrative(aiEnv(async () => ({ response: "NO_CHANGE" })), event.id, 25_000)).toBe(true);
+      return { response: "Stale worker's prose." };
+    }), event.id, 25_000)).toBe(false);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("Keep this wording.");
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.status).toBe("complete");
+  });
+
 });
