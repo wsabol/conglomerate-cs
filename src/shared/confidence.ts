@@ -89,7 +89,7 @@ export const CONFIDENCE_REASON_LABELS: Record<ConfidenceReason, string> = {
   performance_details: "A setlist or promotional text provides additional support.",
   multiple_text_sources: "At least two distinct text sources are recorded.",
   needs_exact_date: "Add an exact date to reach high confidence.",
-  needs_url_or_media_source: "Add a supporting URL or media source.",
-  needs_second_source: "Add a second distinct URL or media source to reach high confidence.",
-  needs_second_source_or_performance_details: "Add another URL or media source, a setlist, or promotional text to reach high confidence.",
+  needs_url_or_media_source: "Missing a supporting URL or media source.",
+  needs_second_source: "Missing a second distinct URL or media source to reach high confidence.",
+  needs_second_source_or_performance_details: "Missing another URL or media source, a setlist, or promotional text to reach high confidence.",
 };

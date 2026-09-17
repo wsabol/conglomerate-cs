@@ -58,6 +58,30 @@ describe("living narratives", () => {
     expect(annotationUpdateSchema.safeParse({ incorporatePref: "no_pref" }).success).toBe(false);
   });
 
+  it("includes same-day nearby events with name, place, and billed acts only", async () => {
+    const db = getDb(env);
+    const place = await db.insert(places).values({ name: "The Room" }).returning().get();
+    const otherPlace = await db.insert(places).values({ name: "The Hall" }).returning().get();
+    const [focal, nearby] = await db.insert(events).values([
+      { slug: "focal-night", name: "Focal Night", eventDate: "2011-05-14", datePrecision: "exact", placeId: place.id, editorialSummary: "The focal editorial." },
+      { slug: "other-bill", name: "Other Bill", eventDate: "2011-05-14", datePrecision: "exact", placeId: otherPlace.id, editorialSummary: "FORBIDDEN NEARBY EDITORIAL" },
+      { slug: "next-night", name: "Next Night", eventDate: "2011-05-15", datePrecision: "exact", placeId: place.id, editorialSummary: "FORBIDDEN NEXT DAY" },
+    ]).returning();
+    await db.insert(eventActs).values({ eventId: nearby.id, name: "Opening Act" });
+    await db.insert(annotations).values([
+      { targetType: "event", targetId: focal.id, body: "We played until sunrise.", incorporatePref: "yes" },
+      { targetType: "event", targetId: nearby.id, body: "FORBIDDEN NEARBY MEMORY", incorporatePref: "yes" },
+    ]);
+    await invalidateAround(db, focal.id);
+    let prompt = "";
+    await processNarrative(aiEnv(async (_model, input) => { prompt = input.messages[1].content; return { response: "The band played until sunrise." }; }), focal.id, 25_000);
+    expect(prompt).toContain("Other Bill");
+    expect(prompt).toContain("The Hall");
+    expect(prompt).toContain("Opening Act");
+    expect(prompt).toContain('"role":"nearby"');
+    for (const forbidden of ["FORBIDDEN NEARBY EDITORIAL", "FORBIDDEN NEARBY MEMORY", "Next Night", "FORBIDDEN NEXT DAY"]) expect(prompt).not.toContain(forbidden);
+  });
+
   it("sends only whitelisted facts with precise date labels and redacts sensitive text", async () => {
     const db = getDb(env);
     const place = await db.insert(places).values({ name: "The Room" }).returning().get();

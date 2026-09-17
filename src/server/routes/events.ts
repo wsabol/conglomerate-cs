@@ -26,7 +26,11 @@ route.get("/:slug/summary-status", async (c) => {
   const db = getDb(c.env);
   const event = await db.select({ id: events.id, summary: events.summary }).from(events).where(and(eq(events.slug, c.req.param("slug")), eq(events.isDeleted, false))).get();
   if (!event) throw notFound("Event not found.");
-  const job = await db.select({ status: narrativeJobs.status, requestedVersion: narrativeJobs.requestedVersion, completedVersion: narrativeJobs.completedVersion }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+  const job = await db.select({
+    status: narrativeJobs.status,
+    requestedVersion: narrativeJobs.requestedVersion,
+    completedVersion: narrativeJobs.completedVersion
+  }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
   return ok(c, { summary: event.summary, job: getConfig(c.env).narrativesEnabled ? job ?? null : null }, "Returned summary status");
 });
 
