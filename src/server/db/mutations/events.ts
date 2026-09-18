@@ -1,6 +1,6 @@
-import { and, eq, ne, sql, type SQL } from "drizzle-orm";
+import { and, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../client";
-import { eventActs, eventPeople, eventPerformanceDetails, eventSources, events, narrativeJobs, people } from "../schema";
+import { annotations, eventActs, eventPeople, eventPerformanceDetails, eventSources, events, narrativeJobs, people } from "../schema";
 import type { EventCreateInput, EventUpdateInput } from "@shared/schemas/event";
 import type { EventType } from "@shared/types";
 import { assessEventConfidence } from "@shared/confidence";
@@ -10,6 +10,8 @@ import { recordRevision } from "../../audit/revision";
 import { getEventDetail, getEventConfidenceContext, getEligibleConfidenceMedia, eventRowSnapshot, rowJson } from "../queries";
 import { commitConfidenceBatch, type MutationStatement } from "./confidence";
 import { invalidateNarratives, relatedEventIds } from "../../narrative/jobs";
+import { draftEvidence } from "../../narrative/draft";
+import { conflict } from "../../lib/errors";
 
 function isPerformance(type: EventType): boolean { return type === "performance"; }
 
@@ -144,7 +146,13 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
   }
   validateTypeSpecificInput(nextEventType, input);
   // Omitted fields retain their values; explicit null and [] clear them.
-  const { performance, sources, people: peopleInput, acts, ...fields } = input;
+  const { performance, sources, people: peopleInput, acts, summaryDraftBasis, ...fields } = input;
+  const draftAccepted = !!summaryDraftBasis && !!input.summary?.trim();
+  if (summaryDraftBasis) {
+    if (!draftAccepted) throw badRequest("A generated draft must have a nonempty summary.");
+    if ((await draftEvidence(db, existing.id)).basis !== summaryDraftBasis)
+      throw conflict("Event evidence changed since this draft was generated. Generate a fresh summary before saving.");
+  }
   const scalarFields = {
     ...Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)),
   };
@@ -195,7 +203,7 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
       afterChange.acts = newActs;
     }
   }
-  if (!Object.keys(afterChange).length) return getEventDetail(db, existing.slug);
+  if (!Object.keys(afterChange).length && !draftAccepted) return getEventDetail(db, existing.slug);
   const next = { ...existing, ...scalarFields };
   const nextSources = sources ?? context.sources;
   const nextPerformance = { ...context.performance,
@@ -213,21 +221,38 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
     ["name", "eventType", "eventDate", "eventTime", "datePrecision", "placeId",
       "people", "acts", "performance.promotionText"].includes(key)
   );
+  const draftMemories = draftAccepted
+    ? (await draftEvidence(db, existing.id)).context.find((item) => item.role === "focal")?.memories ?? []
+    : [];
+  const draftMemoryIds = draftMemories.map((memory) => memory.id);
   await commitConfidenceBatch(db, [
-    db.update(events).set({ ...scalarFields, slug: newSlug, confidence: assessment.level,
-      modifiedOn: sql`(CURRENT_TIMESTAMP)` }).where(eq(events.id, existing.id)),
-    ...(narrativeChanged ? [db.insert(narrativeJobs).values({ eventId: existing.id }).onConflictDoUpdate({
+    db.update(events).set(Object.keys(afterChange).length
+      ? { ...scalarFields, slug: newSlug, confidence: assessment.level, modifiedOn: sql`(CURRENT_TIMESTAMP)` }
+      : { summary: existing.summary }).where(eq(events.id, existing.id)),
+    ...(draftAccepted ? [db.insert(narrativeJobs).values({ eventId: existing.id, status: "complete", completedVersion: 1,
+      hasGeneratedSummary: true, sourceSnapshot: JSON.stringify(draftMemories) }).onConflictDoUpdate({
+      target: narrativeJobs.eventId,
+      set: { requestedVersion: sql`${narrativeJobs.requestedVersion} + 1`,
+        completedVersion: sql`${narrativeJobs.requestedVersion} + 1`, status: "complete",
+        hasGeneratedSummary: true, sourceSnapshot: JSON.stringify(draftMemories),
+        leaseToken: null, leaseUntil: null, attempts: 0, nextRetryOn: null, errorCode: null,
+        modifiedOn: sql`CURRENT_TIMESTAMP` },
+    })] : []),
+    ...(narrativeChanged && !draftAccepted ? [db.insert(narrativeJobs).values({ eventId: existing.id }).onConflictDoUpdate({
       target: narrativeJobs.eventId,
       set: { requestedVersion: sql`${narrativeJobs.requestedVersion} + 1`, status: "pending", attempts: 0, nextRetryOn: null, errorCode: null, modifiedOn: sql`CURRENT_TIMESTAMP` },
     })] : []),
+    ...(draftMemoryIds.length ? [db.update(annotations).set({ summaryStatus: "incorporated", processedRevision: sql`${annotations.inputRevision}` })
+      .where(inArray(annotations.id, draftMemoryIds))] : []),
     ...relationStatements(db, existing.id, {
       performance: Object.keys(performanceChanges).some((key) => `performance.${key}` in afterChange) ? performance : undefined,
       sources: "sources" in afterChange ? sources : undefined,
       people: "people" in afterChange ? peopleInput : undefined,
       acts: "acts" in afterChange ? acts : undefined,
     }, changedBy),
-    recordRevision(db, { targetType: "event", targetId: existing.id, action: "update",
+    ...(Object.keys(afterChange).length ? [recordRevision(db, { targetType: "event", targetId: existing.id, action: "update",
       before: beforeChange, after: afterChange, changedBy }),
+    ] : []),
   ]);
   if (narrativeChanged) await invalidateNarratives(db, [...oldNeighbors, ...await relatedEventIds(db, existing.id)].filter((id) => id !== existing.id));
   return getEventDetail(db, newSlug);

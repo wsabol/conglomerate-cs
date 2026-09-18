@@ -14,15 +14,30 @@ import { eventsQuerySchema } from "@shared/schemas/query";
 import {
   eventCreateSchema,
   eventUpdateSchema,
+  eventSummaryDraftSchema,
 } from "@shared/schemas/event";
 import { requireEditor } from "../middleware/auth";
 import { ok, okList } from "../lib/response";
-import { notFound } from "../lib/errors";
+import { ApiError, badGateway, notFound } from "../lib/errors";
 import { getConfig } from "../lib/config";
 import { invalidateNarratives, publicNarrativeJob } from "../narrative/jobs";
 import { processNarrative } from "../narrative/worker";
+import { generateSummaryDraft } from "../narrative/draft";
 
 const route = new Hono<AppEnv>();
+
+route.post("/:slug/summary-draft", requireEditor, async (c) => {
+  const input = eventSummaryDraftSchema.parse(await c.req.json());
+  const event = await getDb(c.env).select({ id: events.id }).from(events)
+    .where(and(eq(events.slug, c.req.param("slug")), eq(events.isDeleted, false))).get();
+  if (!event) throw notFound("Event not found.");
+  try {
+    return ok(c, await generateSummaryDraft(c.env, event.id, input), "Generated summary draft");
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw badGateway("Could not generate a summary draft. Try again.");
+  }
+});
 
 route.get("/:slug/summary-status", async (c) => {
   const db = getDb(c.env);

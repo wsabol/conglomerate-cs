@@ -311,6 +311,7 @@ export const narrativeJobs = sqliteTable("narrative_jobs", {
   requestedVersion: integer("requested_version").notNull().default(1),
   completedVersion: integer("completed_version").notNull().default(0),
   sourceSnapshot: text("source_snapshot").notNull().default("[]"),
+  hasGeneratedSummary: integer("has_generated_summary", { mode: "boolean" }).notNull().default(false),
   status: text("status", { enum: ["pending", "processing", "failed", "complete"] }).notNull().default("pending"),
   leaseToken: text("lease_token"),
   leaseUntil: text("lease_until"),
