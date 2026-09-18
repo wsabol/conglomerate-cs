@@ -1,6 +1,8 @@
 export { getAnnotations, getAnnotationById, toAnnotationDTO } from "./annotations";
 export { getArchiveStats } from "./stats";
+export { getRecentActivity } from "./activity";
 export { listRevisions, listUsers } from "./admin";
+export { getFeedbackById, listFeedback } from "./feedback";
 export {
   getInviteById,
   getUserByEmail,

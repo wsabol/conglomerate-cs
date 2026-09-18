@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { RadioGroup } from "../components/form";
 import { Button } from "../components/ui/Button";
@@ -12,6 +12,18 @@ export default function Welcome() {
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [quizError, setQuizError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+
+  useEffect(() => {
+    // The local Worker already authenticates DEV_USER_EMAIL. Skip the quiz and
+    // Access round trip when this public endpoint reports that override.
+    void getAccessLogin(searchParams.get("next"))
+      .then(({ url, localDevAuth }) => {
+        if (localDevAuth) window.location.replace(url);
+      })
+      .catch(() => {
+        // Keep the normal sign-in screen available if the probe fails.
+      });
+  }, [searchParams]);
 
   async function handleContinue() {
     if (selectedAnswer === quiz.correctValue) {

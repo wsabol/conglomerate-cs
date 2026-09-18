@@ -56,7 +56,7 @@
 }
 
 .sidebarLink:hover {
-  color: var(--color-text);
+  color: var(--color-emerald-hover);
 }
 
 .sidebarActions {

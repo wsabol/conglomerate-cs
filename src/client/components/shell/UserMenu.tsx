@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 import { useAuth } from "../../lib/auth";
 import { Icon } from "../ui/Icon";
+import { FeedbackModal } from "./FeedbackModal";
 import styles from "./shell.module.css";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function UserMenu() {
   const label = user.instrument?.trim() || "Member";
 
   return (
+    <>
     <div className={styles.userMenuRoot} ref={rootRef}>
       <button
         type="button"
@@ -58,6 +61,15 @@ export function UserMenu() {
             type="button"
             className={styles.userDropdownAction}
             role="menuitem"
+            onClick={() => { setOpen(false); setFeedbackOpen(true); }}
+          >
+            <Icon name="help" size={16} />
+            Give feedback
+          </button>
+          <button
+            type="button"
+            className={styles.userDropdownAction}
+            role="menuitem"
             onClick={logout}
           >
             <Icon name="log-out" size={16} />
@@ -66,5 +78,7 @@ export function UserMenu() {
         </div>
       )}
     </div>
+    <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+    </>
   );
 }

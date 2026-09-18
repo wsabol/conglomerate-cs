@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BILLING_ROLES, EVENT_GROUPS, EVENT_TYPES, MEDIA_TYPES } from "../types";
+import { BILLING_ROLES, CONFIDENCE_LEVELS, EVENT_GROUPS, EVENT_TYPES, MEDIA_TYPES } from "../types";
 
 export const eventsQuerySchema = z
   .object({
@@ -10,7 +10,8 @@ export const eventsQuerySchema = z
     place: z.coerce.number().int().optional(),
     q: z.string().trim().min(1).optional(),
     lineup: z.enum(BILLING_ROLES).optional(),
-    sort: z.enum(["modified", "date"]).default("modified"),
+    sort: z.enum(["modified", "date", "popular"]).default("modified"),
+    confidence: z.enum(CONFIDENCE_LEVELS).optional(),
     limit: z.coerce.number().int().min(1).max(500).optional(),
     detailed: z
       .string()

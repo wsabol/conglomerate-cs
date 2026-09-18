@@ -72,7 +72,6 @@
 }
 
 .userMenuRoot {
-  display: none;
   position: relative;
 }
 
@@ -174,10 +173,9 @@
   background: color-mix(in srgb, var(--color-surface) 6%, transparent);
 }
 
-@media (min-width: 768px) {
-  .userMenuRoot {
-    display: block;
-  }
+@media (max-width: 767px) {
+  .userToggleName, .userToggleChevron { display: none; }
+  .userToggle { padding: var(--space-2); }
 }
 
 .hamburger {

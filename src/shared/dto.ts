@@ -1,4 +1,5 @@
 import type { ConfidenceAssessment } from "./confidence";
+import type { FEEDBACK_CATEGORIES, FEEDBACK_ISSUE_STATUSES, FEEDBACK_NOTIFICATION_STATUSES, FEEDBACK_REVIEW_STATUSES } from "./schemas/feedback";
 // Data-transfer shapes returned by the API and consumed by the client.
 import type {
   AnnotationType,
@@ -20,6 +21,15 @@ export interface ArchiveStatsDTO {
   yearsActive: { start: number; end: number };
   venueCount: number;
   actCount: number;
+}
+
+export interface RecentActivityDTO {
+  id: number;
+  kind: "annotation" | "event";
+  actorName: string;
+  eventName: string;
+  eventSlug: string;
+  changedAt: string;
 }
 
 export interface PlaceDTO {
@@ -149,8 +159,28 @@ export interface InviteDTO {
   createdOn: string;
 }
 
+export interface FeedbackDTO {
+  id: number;
+  category: (typeof FEEDBACK_CATEGORIES)[number];
+  message: string;
+  whatHappened: string | null;
+  reproductionSteps: string | null;
+  pagePath: string;
+  submitterEmail: string;
+  notificationStatus: (typeof FEEDBACK_NOTIFICATION_STATUSES)[number];
+  reviewStatus: (typeof FEEDBACK_REVIEW_STATUSES)[number];
+  issueStatus: (typeof FEEDBACK_ISSUE_STATUSES)[number];
+  issueUrl: string | null;
+  createdOn: string;
+}
+
+export interface FeedbackSubmissionDTO {
+  id: number;
+}
+
 export interface AccessLoginDTO {
   url: string;
+  localDevAuth: boolean;
 }
 
 export interface RevisionDTO {

@@ -8,13 +8,16 @@ import { Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listUsers, listRevisions, setUserRole, setUserDisabled } from "../lib/admin";
 import { InviteSection } from "../components/admin/InviteSection";
+import { FeedbackSection } from "../components/admin/FeedbackSection";
 import { REVISION_TARGET_TYPES, type RevisionTargetType, type UserRole } from "@shared/types";
 import styles from "./Admin.module.css";
 
-type Tab = "users" | "history" | "invites";
+type Tab = "users" | "history" | "invites" | "feedback";
 
 export default function Admin() {
-  const [tab, setTab] = useState<Tab>("users");
+  const [tab, setTab] = useState<Tab>(
+    new URLSearchParams(window.location.search).get("tab") === "feedback" ? "feedback" : "users",
+  );
   const [targetType, setTargetType] = useState<RevisionTargetType | "">("");
 
   const { data: users, loading: usersLoading, reload: reloadUsers } = useAsync(
@@ -43,7 +46,7 @@ export default function Admin() {
       <PageHeader
         eyebrow="Editors only"
         title="Admin"
-        subtitle="User management, invites, and change history."
+        subtitle="User management, invites, feedback, and change history."
       />
 
       <div className={styles.tabs}>
@@ -55,6 +58,9 @@ export default function Admin() {
         </Pill>
         <Pill active={tab === "invites"} onClick={() => setTab("invites")}>
           Invites
+        </Pill>
+        <Pill active={tab === "feedback"} onClick={() => setTab("feedback")}>
+          Feedback
         </Pill>
       </div>
 
@@ -112,6 +118,7 @@ export default function Admin() {
       )}
 
       {tab === "invites" && <InviteSection />}
+      {tab === "feedback" && <FeedbackSection />}
 
       {tab === "history" && (
         <section className={styles.section}>

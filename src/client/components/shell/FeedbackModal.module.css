@@ -1,0 +1,5 @@
+.form { display: flex; flex-direction: column; gap: var(--space-4); }
+.hint { margin: 0; color: var(--color-text-secondary); font-size: var(--text-sm); }
+.error { margin: 0; color: var(--color-orange); font-size: var(--text-sm); }
+.success { margin: 0; color: var(--color-emerald); }
+.actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-3); }

@@ -6,6 +6,7 @@ import { ErrorState, Spinner } from "../components/state";
 import { useAsync } from "../lib/useAsync";
 import { listEvents } from "../lib/events";
 import { getArchiveStats } from "../lib/stats";
+import { getRecentActivity } from "../lib/activity";
 import heroImage from "../../../images/hero.jpg";
 import bjbcImage from "../../../images/bjbc.jpg";
 import styles from "./Home.module.css";
@@ -13,15 +14,17 @@ import { Icon } from "@client/components/ui/Icon";
 import { cn } from "@client/lib/cn";
 import { Decor } from "@client/components/ui/Decor";
 import { MediaFrame } from "@client/components/media/MediaFrame";
+import { DateTime } from "luxon";
 
 export default function Home() {
   const { data, loading, error, reload } = useAsync(
-    () => listEvents({ sort: "modified", limit: 4 }),
+    () => listEvents({ sort: "popular", confidence: "high", limit: 4 }),
     [],
   );
   const { data: stats } = useAsync(() => getArchiveStats(), []);
+  const { data: activity, loading: activityLoading, error: activityError, reload: reloadActivity } = useAsync(getRecentActivity, []);
 
-  const recent = data?.results ?? [];
+  const featured = data?.results ?? [];
 
   return (
     <>
@@ -107,15 +110,40 @@ export default function Home() {
             </Link>
           </div>
           {loading ? (
-            <Spinner label="Loading recent additions" />
+            <Spinner label="Loading featured events" />
           ) : error ? (
             <ErrorState message={error.message} onRetry={reload} />
           ) : (
             <Grid min={240}>
-              {recent.map((event) => (
+              {featured.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </Grid>
+          )}
+        </Container>
+      </section>
+
+      <section className={cn(styles.section, styles.sectionBordered)}>
+        <Container>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>Recent activity</h2>
+          </div>
+          {activityLoading ? (
+            <Spinner label="Loading recent activity" />
+          ) : activityError ? (
+            <ErrorState message={activityError.message} onRetry={reloadActivity} />
+          ) : activity?.length ? (
+            <ul className={styles.activityList}>
+              {activity.map((item) => (
+                <li key={item.id} className={styles.activityItem}>
+                  <span>{item.actorName} {item.kind === "annotation" ? "commented on" : "added new event:"} </span>
+                  <Link to={`/events/${item.eventSlug}`} className={styles.activityLink}>{item.eventName}</Link>
+                  <span className={styles.activityTime}>{" · " + DateTime.fromSQL(item.changedAt).toRelative({ style: "narrow" })}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.activityEmpty}>No recent activity yet.</p>
           )}
         </Container>
       </section>

@@ -59,6 +59,12 @@ export interface AppConfig {
   appBaseUrl: string;
   inviteFromEmail: string;
   inviteThrottleHours: number;
+  feedbackToEmail: string;
+  feedbackFromEmail: string;
+  githubIssuesRepo: string;
+  feedbackMessageMaxChars: number;
+  feedbackDetailMaxChars: number;
+  feedbackPagePathMaxChars: number;
   uploadLimits: UploadLimits;
   presignTtlSeconds: number;
   /** Canonical origin used when a single value is required. */
@@ -106,6 +112,12 @@ export function getConfig(env: Env): AppConfig {
     appAllowedOrigins,
     inviteFromEmail: env.INVITE_FROM_EMAIL ?? "invites@theconglomerate.local",
     inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),
+    feedbackToEmail: env.FEEDBACK_TO_EMAIL ?? "support@funkafterdeath.institute",
+    feedbackFromEmail: env.FEEDBACK_FROM_EMAIL ?? env.INVITE_FROM_EMAIL ?? "invites@funkafterdeath.institute",
+    githubIssuesRepo: env.GITHUB_ISSUES_REPO ?? "wsabol/conglomerate-cs",
+    feedbackMessageMaxChars: 5000,
+    feedbackDetailMaxChars: 2000,
+    feedbackPagePathMaxChars: 500,
     uploadLimits: {
       photo: num(env.UPLOAD_MAX_PHOTO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.photo),
       audio: num(env.UPLOAD_MAX_AUDIO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.audio),
@@ -153,3 +165,4 @@ export function mediaTypeForMime(
 }
 
 export const CONFIDENCE_BACKFILL_MAX_BATCH = 25;
+export const HOME_ACTIVITY_LIMIT = 8;

@@ -20,7 +20,7 @@
 }
 
 .metaItem[data-tone="low"] {
-  color: var(--color-violet);
+  color: var(--color-orange);
 }
 
 .metaItem[data-tone] .metaIcon {

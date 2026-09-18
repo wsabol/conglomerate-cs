@@ -13,7 +13,8 @@ export type EventUpdateBody = z.input<typeof eventUpdateSchema>;
 export type EventSummaryDraftBody = z.input<typeof eventSummaryDraftSchema>;
 
 export interface ListEventsParams {
-  sort?: "date" | "modified";
+  sort?: "date" | "modified" | "popular";
+  confidence?: EventListItemDTO["confidence"];
   limit?: number;
   event_type?: EventType;
   event_group?: EventGroup;

@@ -30,6 +30,12 @@ describe("GET /api/me", () => {
     expect(body.data?.logoutUrl).toBeNull();
   });
 
+  it("does not trust the dev identity override in production", async () => {
+    const productionEnv = { ...env, ENVIRONMENT: "production" } as Env;
+    const response = await app.request("/api/me", {}, productionEnv);
+    expect(response.status).toBe(401);
+  });
+
   it("returns instrument from the linked person", async () => {
     const person = await getDb(env)
       .insert(people)

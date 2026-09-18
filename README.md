@@ -107,6 +107,21 @@ Production setup for invites:
 Without Resend or Access API credentials, local dev still records invites and logs the
 would-be email to the Worker console.
 
+### Feedback
+
+Members submit feedback from **UserMenu → Give feedback**. The report is saved
+in D1 before an email notification is attempted. Editors review submissions in
+**Admin → Feedback**, retry failed email notifications, and choose whether to
+create a GitHub issue. Issue bodies omit the submitter's account email.
+
+`FEEDBACK_TO_EMAIL`, `FEEDBACK_FROM_EMAIL`, and `GITHUB_ISSUES_REPO` are set in
+both Wrangler environments. Production email uses the existing `RESEND_API_KEY`
+secret. For GitHub issue creation, add `GITHUB_ISSUES_TOKEN` as a production
+Worker secret: use a fine-grained token limited to `wsabol/conglomerate-cs` with
+**Issues: write** permission. Put the same secret in `.dev.vars` to test issue
+creation locally. Without it, reports and email still work, but the issue action
+returns a configuration error. Apply the feedback D1 migration before deploying.
+
 Local dev: Access cannot run in `wrangler dev`, so the identity middleware falls
 back to `DEV_USER_EMAIL` / `DEV_USER_ROLE` (in `wrangler.toml` `[vars]`) and you
 are signed in as an editor. `ACCESS_ENFORCED=false` locally disables JWT checks.
@@ -207,7 +222,7 @@ second summary. No-op updates preserve the summary and its revision history.
 Concurrent editorial changes invalidate in-flight generation, which retries
 against the latest summary.
 
-Apply migrations through `0008_lonely_the_order.sql` before deploying this Worker.
+Apply all migrations before deploying this Worker.
 Migration `0007` keeps displayed summaries, archives legacy editorial baselines in
 revision history, and drops the separate `editorial_summary` column; `0008` tracks
 whether an AI summary has previously been generated. Generation is enabled in both local and production

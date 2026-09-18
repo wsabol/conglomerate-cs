@@ -38,6 +38,7 @@ async function resolveEmail(
   if (config.accessEnforced) {
     return verifyAccessEmail(c.req.raw, config);
   }
+  if (c.env.ENVIRONMENT === "production") return null;
   // Local/dev: trust the Access header if a proxy set it, else the override.
   const headerEmail = c.req.header("Cf-Access-Authenticated-User-Email");
   return headerEmail ?? config.devUserEmail ?? null;

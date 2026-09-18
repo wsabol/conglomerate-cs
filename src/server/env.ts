@@ -30,6 +30,10 @@ export interface Env {
   INVITE_FROM_EMAIL?: string;
   INVITE_THROTTLE_HOURS?: string;
   RESEND_API_KEY?: string;
+  FEEDBACK_TO_EMAIL?: string;
+  FEEDBACK_FROM_EMAIL?: string;
+  GITHUB_ISSUES_REPO?: string;
+  GITHUB_ISSUES_TOKEN?: string;
   CLOUDFLARE_API_TOKEN?: string;
 
   // R2 S3-compatible credentials for presigned uploads (Milestone 6).

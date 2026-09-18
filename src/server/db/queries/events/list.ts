@@ -1,10 +1,11 @@
-import { and, desc, eq, inArray, like, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import type { Db } from "../../client";
 import {
   eventActs,
   eventPeople,
   eventPerformanceDetails,
   events,
+  annotations,
   media,
   places,
 } from "../../schema";
@@ -55,6 +56,7 @@ function lineupActConditions(lineup: BillingRole) {
 export function eventListConditions(db: Db, q: EventsQuery) {
   const conds = [eq(events.isDeleted, false)];
   if (q.event_type) conds.push(eq(events.eventType, q.event_type));
+  if (q.confidence) conds.push(eq(events.confidence, q.confidence));
   if (q.event_group === "performance") {
     conds.push(eq(events.eventType, "performance"));
   }
@@ -103,6 +105,12 @@ export async function listEvents(
   q: EventsQuery,
 ): Promise<EventListItemDTO[]> {
   const conds = eventListConditions(db, q);
+  const popularity = sql<number>`(
+    (SELECT count(*) FROM ${annotations} WHERE ${annotations.targetType} = 'event'
+      AND ${annotations.targetId} = ${events.id} AND ${annotations.isDeleted} = 0)
+    + (SELECT count(*) FROM ${media} WHERE ${media.eventId} = ${events.id}
+      AND ${media.status} = 'published' AND ${media.isDeleted} = 0)
+  )`;
   const baseQuery = db
     .select({
       id: events.id,
@@ -126,7 +134,7 @@ export async function listEvents(
       eq(eventPerformanceDetails.eventId, events.id),
     )
     .where(and(...conds))
-    .orderBy(q.sort === "date" ? desc(events.eventDate) : desc(events.modifiedOn));
+    .orderBy(q.sort === "popular" ? desc(popularity) : q.sort === "date" ? desc(events.eventDate) : desc(events.modifiedOn), desc(events.id));
 
   const rows = q.limit
     ? await baseQuery.limit(q.limit)

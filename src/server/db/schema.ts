@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
 import {
+  FEEDBACK_CATEGORIES,
+  FEEDBACK_ISSUE_STATUSES,
+  FEEDBACK_NOTIFICATION_STATUSES,
+  FEEDBACK_REVIEW_STATUSES,
+} from "@shared/schemas/feedback";
+import {
   index,
   integer,
   sqliteTable,
@@ -339,6 +345,26 @@ export const annotationPeople = sqliteTable(
       t.personId,
     ),
   ],
+);
+
+// feedback --------------------------------------------------------------------
+export const feedback = sqliteTable(
+  "feedback",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    submittedBy: integer("submitted_by").notNull().references(() => users.id),
+    category: text("category", { enum: FEEDBACK_CATEGORIES }).notNull(),
+    message: text("message").notNull(),
+    whatHappened: text("what_happened"),
+    reproductionSteps: text("reproduction_steps"),
+    pagePath: text("page_path").notNull(),
+    notificationStatus: text("notification_status", { enum: FEEDBACK_NOTIFICATION_STATUSES }).notNull().default("pending"),
+    reviewStatus: text("review_status", { enum: FEEDBACK_REVIEW_STATUSES }).notNull().default("open"),
+    issueStatus: text("issue_status", { enum: FEEDBACK_ISSUE_STATUSES }).notNull().default("none"),
+    issueUrl: text("issue_url"),
+    createdOn: createdOn(),
+  },
+  (t) => [index("feedback_created_on_idx").on(t.createdOn)],
 );
 
 // invites ---------------------------------------------------------------------

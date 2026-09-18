@@ -13,6 +13,7 @@ import mediaApiRoute from "./routes/media";
 import uploadsRoute from "./routes/uploads";
 import annotationsRoute from "./routes/annotations";
 import adminRoute from "./routes/admin";
+import feedbackRoute from "./routes/feedback";
 import statsRoute from "./routes/stats";
 import mediaDeliveryRoute from "./routes/mediaDelivery";
 import streamWebhookRoute from "./routes/streamWebhook";
@@ -46,6 +47,7 @@ export function createApp() {
   authed.route("/uploads", uploadsRoute);
   authed.route("/annotations", annotationsRoute);
   authed.route("/admin", adminRoute);
+  authed.route("/feedback", feedbackRoute);
   authed.route("/stats", statsRoute);
   api.route("/", authed);
 

@@ -3,6 +3,8 @@
 
 # Invite emails (Resend) — https://resend.com/api-keys
 # RESEND_API_KEY=re_xxxxxxxx
+# GitHub fine-grained token scoped to wsabol/conglomerate-cs with Issues: write
+# GITHUB_ISSUES_TOKEN=github_pat_xxxxxxxx
 
 # Cloudflare Access allowlist updates
 # CLOUDFLARE_API_TOKEN=your_cloudflare_api_token

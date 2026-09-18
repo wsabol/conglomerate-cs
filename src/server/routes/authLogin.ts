@@ -10,10 +10,18 @@ const route = new Hono<AppEnv>();
 
 route.get("/login", (c) => {
   const { next } = accessLoginQuerySchema.parse(c.req.query());
-  const url = buildAccessLoginUrl(c.req.url, next ?? null, getConfig(c.env));
+  const config = getConfig(c.env);
+  const localDevAuth =
+    c.env.ENVIRONMENT !== "production" &&
+    !config.accessEnforced &&
+    Boolean(config.devUserEmail);
+  if (!config.accessEnforced && !localDevAuth) {
+    throw new ApiError(503, "Sign-in is unavailable.");
+  }
+  const url = buildAccessLoginUrl(c.req.url, next ?? null, config);
   if (!url) throw new ApiError(503, "Sign-in is unavailable.");
   c.header("Cache-Control", "private, no-store");
-  return ok(c, { url }, "Returned Access login URL");
+  return ok(c, { url, localDevAuth }, "Returned sign-in destination");
 });
 
 export default route;
