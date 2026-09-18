@@ -175,11 +175,12 @@ second summary. No-op updates preserve the summary and its revision history.
 Concurrent editorial changes invalidate in-flight generation, which retries
 against the latest summary.
 
-Apply migrations through `0007_illegal_deadpool.sql` before deploying this Worker.
-This migration keeps displayed summaries, archives legacy editorial baselines in
-revision history, and drops the separate `editorial_summary` column. Production starts with `NARRATIVES_ENABLED =
-"false"`; after verifying the `AI` binding and the migrated data, set that
-production variable to `"true"` and deploy again. The existing 15-minute cron
+Apply migrations through `0008_lonely_the_order.sql` before deploying this Worker.
+Migration `0007` keeps displayed summaries, archives legacy editorial baselines in
+revision history, and drops the separate `editorial_summary` column; `0008` tracks
+whether an AI summary has previously been generated. Generation is enabled in both local and production
+configuration with `NARRATIVES_ENABLED = "true"` and an `AI` binding. Setting the
+flag to `"false"` pauses generation while memories continue to queue. The existing 15-minute cron
 processes up to ten queued events per run, so the backfill proceeds gradually.
 Local development has generation enabled; tests use `wrangler.test.toml` to
 avoid a remote AI session.

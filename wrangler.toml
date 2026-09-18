@@ -74,7 +74,7 @@ crons = ["*/15 * * * *"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-NARRATIVES_ENABLED = "false"
+NARRATIVES_ENABLED = "true"
 DEV_USER_EMAIL = ""
 DEV_USER_ROLE = ""
 ACCESS_ENFORCED = "true"
