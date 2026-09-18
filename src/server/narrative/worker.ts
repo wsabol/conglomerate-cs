@@ -1,4 +1,5 @@
-import { and, asc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { getNearbyNarrativeEvents } from "../db/queries";
 import type { Env } from "../env";
 import { getDb, type Db } from "../db/client";
 import { annotations, eventActs, eventPeople, eventPerformanceDetails, events, media, narrativeJobs, people, places } from "../db/schema";
@@ -67,7 +68,7 @@ export function evidenceChunks(context: EvidenceChunk[], maxBytes: number): stri
   for (const event of context) {
     const reference = { role: event.role, name: event.name };
     if (event.role === "nearby") {
-      records.push(JSON.stringify({ ...reference, place: event.place }));
+      records.push(JSON.stringify({ ...reference, date: event.date, place: event.place }));
       for (const name of event.billedActs) records.push(JSON.stringify({ ...reference, billedAct: name }));
       continue;
     }
@@ -104,9 +105,7 @@ export function clean(text: string | null, mentionNames: Map<number, string>): s
 export async function collect(db: Db, eventId: number) {
   const focalRow = await db.select({ id: events.id, name: events.name, date: events.eventDate, time: events.eventTime, precision: events.datePrecision, type: events.eventType, place: places.name, promotion: eventPerformanceDetails.promotionText }).from(events).leftJoin(eventPerformanceDetails, eq(eventPerformanceDetails.eventId, events.id)).leftJoin(places, eq(places.id, events.placeId)).where(and(eq(events.id, eventId), eq(events.isDeleted, false))).get();
   if (!focalRow) return [];
-  const nearbyRows = focalRow.precision === "exact" && focalRow.date
-    ? await db.select({ id: events.id, name: events.name, place: places.name }).from(events).leftJoin(places, eq(places.id, events.placeId)).where(and(eq(events.isDeleted, false), eq(events.datePrecision, "exact"), eq(events.eventDate, focalRow.date), ne(events.id, eventId)))
-    : [];
+  const nearbyRows = await getNearbyNarrativeEvents(db, eventId);
   const actIds = [eventId, ...nearbyRows.map((e) => e.id)];
   const [personRows, actRows] = await Promise.all([
     db.select({ eventId: eventPeople.eventId, personId: eventPeople.personId, name: people.displayName }).from(eventPeople).innerJoin(people, eq(people.id, eventPeople.personId)).where(and(eq(eventPeople.eventId, eventId), eq(eventPeople.isDeleted, false))),
@@ -132,6 +131,7 @@ export async function collect(db: Db, eventId: number) {
     ...nearbyRows.map((e) => ({
       role: "nearby" as const,
       name: clean(e.name, mentionNames),
+      date: formatEventDate(e.date, null, "exact"),
       place: clean(e.place, mentionNames),
       billedActs: actRows.filter((a) => a.eventId === e.id).map((a) => clean(a.name, mentionNames)),
     })),

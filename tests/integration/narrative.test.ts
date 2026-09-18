@@ -6,7 +6,7 @@ import { app } from "../../src/server/app";
 import { annotations, eventActs, eventPeople, eventPerformanceDetails, eventSources, events, media, narrativeJobs, objectRevisions, people, places } from "../../src/server/db/schema";
 import { annotationCreateSchema, annotationUpdateSchema } from "../../src/shared/schemas/annotation";
 import { invalidateAround, publicNarrativeJob, relatedEventIds } from "../../src/server/narrative/jobs";
-import { processDueNarratives, processNarrative } from "../../src/server/narrative/worker";
+import { collect, evidenceChunks, processDueNarratives, processNarrative } from "../../src/server/narrative/worker";
 import { updateEventBySlug } from "../../src/server/db/mutations/events";
 import { draftEvidence } from "../../src/server/narrative/draft";
 import type { Env } from "../../src/server/env";
@@ -30,16 +30,32 @@ describe("living narratives", () => {
     await db.delete(places);
   });
 
-  it("uses only exact related events within three days", async () => {
+  it("collects same-day and next-day evidence and invalidates in reverse across a year boundary", async () => {
     const db = getDb(env);
-    const place = await db.insert(places).values({ name: "The Room" }).returning().get();
     const rows = await db.insert(events).values([
-      { slug: "focal", name: "Focal", eventDate: "2011-05-14", datePrecision: "exact", placeId: place.id },
-      { slug: "three", name: "Three", eventDate: "2011-05-17", datePrecision: "exact", placeId: place.id },
-      { slug: "four", name: "Four", eventDate: "2011-05-18", datePrecision: "exact", placeId: place.id },
-      { slug: "imprecise", name: "Imprecise", eventDate: "2011-05-15", datePrecision: "approximate", placeId: place.id },
+      { slug: "focal", name: "Focal", eventDate: "2011-12-31", datePrecision: "exact" },
+      { slug: "same", name: "Same", eventDate: "2011-12-31", datePrecision: "exact" },
+      { slug: "next", name: "Next", eventDate: "2012-01-01", datePrecision: "exact" },
+      { slug: "previous", name: "Previous", eventDate: "2011-12-30", datePrecision: "exact" },
+      { slug: "later", name: "Later", eventDate: "2012-01-02", datePrecision: "exact" },
+      { slug: "approximate", name: "Approximate", eventDate: "2012-01-01", datePrecision: "approximate" },
+      { slug: "month", name: "Month", eventDate: "2011-12-31", datePrecision: "month" },
+      { slug: "deleted", name: "Deleted", eventDate: "2011-12-31", datePrecision: "exact", isDeleted: true },
+      { slug: "undated", name: "Undated", datePrecision: "unknown" },
     ]).returning();
-    expect(await relatedEventIds(db, rows[0].id)).toEqual([rows[0].id, rows[1].id]);
+    const context = await collect(db, rows[0].id);
+    expect(context.map((event) => event.name)).toEqual(["Focal", "Same", "Next"]);
+    expect(context.slice(1).map((event) => event.date)).toEqual(["12/31/2011", "1/1/2012"]);
+    const chunked = evidenceChunks(context, 8_000).join("\n");
+    expect(chunked).toContain('"date":"1/1/2012"');
+    expect(await relatedEventIds(db, rows[0].id)).toEqual([rows[0].id, rows[3].id, rows[1].id]);
+    expect(await relatedEventIds(db, rows[2].id)).toEqual([rows[2].id, rows[0].id, rows[1].id]);
+    for (const row of [rows[5], rows[6], rows[8]]) {
+      expect((await collect(db, row.id)).map((event) => event.name)).toEqual([row.name]);
+      expect(await relatedEventIds(db, row.id)).toEqual([row.id]);
+    }
+    expect(await collect(db, rows[7].id)).toEqual([]);
+    expect(await relatedEventIds(db, rows[7].id)).toEqual([]);
   });
 
   it("opening an event and polling its status do not run or requeue generation", async () => {
@@ -283,7 +299,7 @@ describe("living narratives", () => {
     expect(annotationUpdateSchema.safeParse({ incorporatePref: "no_pref" }).success).toBe(false);
   });
 
-  it("includes same-day nearby events with name, place, and billed acts only", async () => {
+  it("includes same-day and next-day nearby dates, names, places, and billed acts only", async () => {
     const db = getDb(env);
     const place = await db.insert(places).values({ name: "The Room" }).returning().get();
     const otherPlace = await db.insert(places).values({ name: "The Hall" }).returning().get();
@@ -301,10 +317,12 @@ describe("living narratives", () => {
     let prompt = "";
     await processNarrative(aiEnv(async (_model, input) => { prompt = input.messages[1].content; return { response: "The band played until sunrise." }; }), focal.id, 25_000);
     expect(prompt).toContain("Other Bill");
+    expect(prompt).toContain("Next Night");
+    expect(prompt).toContain("5/15/2011");
     expect(prompt).toContain("The Hall");
     expect(prompt).toContain("Opening Act");
     expect(prompt).toContain('"role":"nearby"');
-    for (const forbidden of ["FORBIDDEN NEARBY EDITORIAL", "FORBIDDEN NEARBY MEMORY", "Next Night", "FORBIDDEN NEXT DAY"]) expect(prompt).not.toContain(forbidden);
+    for (const forbidden of ["FORBIDDEN NEARBY EDITORIAL", "FORBIDDEN NEARBY MEMORY", "FORBIDDEN NEXT DAY"]) expect(prompt).not.toContain(forbidden);
   });
 
   it("sends only whitelisted facts with precise date labels and redacts sensitive text", async () => {
