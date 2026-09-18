@@ -15,6 +15,7 @@ export interface Env {
   // Authentication perimeter (Cloudflare Access).
   ACCESS_ENFORCED?: string;
   ACCESS_TEAM_DOMAIN?: string;
+  /** Comma-separated Access application AUDs (production, preview, …). */
   ACCESS_AUD?: string;
   ACCESS_ACCOUNT_ID?: string;
   ACCESS_POLICY_ID?: string;

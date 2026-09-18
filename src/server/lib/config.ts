@@ -15,6 +15,21 @@ function num(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+/** Split a comma-separated env var, ignoring empty segments. */
+export function parseCsv(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function parseAppAllowedOrigins(env: Env): string[] {
+  const origins = parseCsv(env.APP_ALLOWED_ORIGIN);
+  if (origins.length > 0) return origins;
+  return parseCsv(env.APP_BASE_URL ?? "http://localhost:5173");
+}
+
 export interface UploadLimits {
   photo: number;
   audio: number;
@@ -33,7 +48,8 @@ export interface AppConfig {
   archiveYearsActive: { start: number; end: number };
   accessEnforced: boolean;
   accessTeamDomain: string;
-  accessAud: string;
+  /** Accepted Access application AUDs (preview and production may differ). */
+  accessAuds: string[];
   accessAccountId: string;
   accessPolicyId: string;
   devUserEmail: string | null;
@@ -44,7 +60,10 @@ export interface AppConfig {
   inviteThrottleHours: number;
   uploadLimits: UploadLimits;
   presignTtlSeconds: number;
+  /** Canonical origin used when a single value is required. */
   appAllowedOrigin: string;
+  /** All browser origins that may play Stream video or upload to R2. */
+  appAllowedOrigins: string[];
   streamIngestPresignTtlSeconds: number;
   streamPlaybackTokenTtlSeconds: number;
   streamProcessingMaxAttempts: number;
@@ -57,6 +76,7 @@ export interface AppConfig {
 }
 
 export function getConfig(env: Env): AppConfig {
+  const appAllowedOrigins = parseAppAllowedOrigins(env);
   return {
     narrativesEnabled: env.NARRATIVES_ENABLED === "true",
     narrativeModel: env.NARRATIVE_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
@@ -68,14 +88,14 @@ export function getConfig(env: Env): AppConfig {
     archiveYearsActive: { start: 2009, end: 2016 },
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",
-    accessAud: env.ACCESS_AUD ?? "",
+    accessAuds: parseCsv(env.ACCESS_AUD),
     accessAccountId: env.ACCESS_ACCOUNT_ID ?? "",
     accessPolicyId: env.ACCESS_POLICY_ID ?? "",
     devUserEmail: env.DEV_USER_EMAIL || null,
     devUserRole: env.DEV_USER_ROLE || null,
     appBaseUrl: env.APP_BASE_URL ?? "http://localhost:5173",
-    appAllowedOrigin:
-      env.APP_ALLOWED_ORIGIN ?? env.APP_BASE_URL ?? "http://localhost:5173",
+    appAllowedOrigin: appAllowedOrigins[0] ?? "http://localhost:5173",
+    appAllowedOrigins,
     inviteFromEmail: env.INVITE_FROM_EMAIL ?? "invites@theconglomerate.local",
     inviteTokenTtlDays: num(env.INVITE_TOKEN_TTL_DAYS, 7),
     inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),

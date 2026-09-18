@@ -3,6 +3,8 @@
     {
       "allowed": {
         "origins": [
+          "https://www.funkafterdeath.institute",
+          "https://funkafterdeath.institute",
           "https://conglomerate-cs.wsabol39.workers.dev",
           "http://localhost:5173",
           "http://localhost:8787"

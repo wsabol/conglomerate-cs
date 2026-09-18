@@ -52,9 +52,11 @@ maps the verified email to an application role stored in D1 (`member` or
 Production configuration:
 
 - Set `ACCESS_ENFORCED=true`, `ACCESS_TEAM_DOMAIN` (e.g. `your-team.cloudflareaccess.com`),
-  and `ACCESS_AUD` (the Access application AUD tag) in the `[env.production]` vars.
-- Create a self-hosted Access application in Cloudflare covering the deployed
-  domain, with an allowlist policy (Google + one-time PIN).
+  and `ACCESS_AUD` (comma-separated Access application AUD tags for production and
+  preview) in the `[env.production]` vars.
+- Create self-hosted Access applications covering `www.funkafterdeath.institute` and
+  the `workers.dev` preview hostname, each with its own allowlist. `APP_BASE_URL`
+  should be the canonical production origin.
 - Promote an editor:
   `wrangler d1 execute DB --remote --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
 
@@ -143,7 +145,9 @@ D1, R2). Top-level `[vars]` is local dev only.
    (edit `r2-cors.json` origins if your production URL changes).
 3. **Access:** Create a self-hosted Access application for your domain with an
    email allowlist policy (Google + one-time PIN). `ACCESS_ENFORCED`,
-   `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` are in `[env.production.vars]`.
+   `ACCESS_TEAM_DOMAIN`, and `ACCESS_AUD` (comma-separated production and preview
+   AUDs) are in `[env.production.vars]`. Production `APP_BASE_URL` should be
+   `https://www.funkafterdeath.institute`.
    For in-app invites, also set `ACCESS_ACCOUNT_ID`, `ACCESS_POLICY_ID`, and
    `APP_BASE_URL`, then add secrets `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN`.
 4. **Promote an editor:**

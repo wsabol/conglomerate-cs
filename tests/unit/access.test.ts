@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { verifyAccessEmail } from "../../src/server/auth/access";
-import type { AppConfig } from "../../src/server/lib/config";
+import {
+  tokenAudienceAllowed,
+  verifyAccessEmail,
+} from "../../src/server/auth/access";
+import { parseCsv, type AppConfig } from "../../src/server/lib/config";
 
 function b64url(value: unknown): string {
   return btoa(JSON.stringify(value))
@@ -22,13 +25,14 @@ const config: AppConfig = {
   archiveYearsActive: { start: 2009, end: 2016 },
   accessEnforced: true,
   accessTeamDomain: "team.cloudflareaccess.com",
-  accessAud: "aud-tag",
+  accessAuds: ["aud-tag"],
   accessAccountId: "",
   accessPolicyId: "",
   devUserEmail: null,
   devUserRole: null,
   appBaseUrl: "https://archive.test",
   appAllowedOrigin: "https://archive.test",
+  appAllowedOrigins: ["https://archive.test"],
   inviteFromEmail: "invites@archive.test",
   inviteTokenTtlDays: 7,
   inviteThrottleHours: 24,
@@ -105,3 +109,39 @@ describe("verifyAccessEmail", () => {
     expect(fetches).toBe(1);
   });
 });
+
+describe("tokenAudienceAllowed", () => {
+  const production =
+    "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a";
+  const preview =
+    "00b6c453c4565e39b1ab376759e0f2816a0fe849f3aa6e7f7a9662bbd857c284";
+
+  it("accepts either configured Access application AUD", () => {
+    expect(tokenAudienceAllowed(production, [production, preview])).toBe(true);
+    expect(tokenAudienceAllowed(preview, [production, preview])).toBe(true);
+  });
+
+  it("rejects an unknown AUD", () => {
+    expect(tokenAudienceAllowed("other-app", [production, preview])).toBe(
+      false,
+    );
+  });
+
+  it("allows any audience when none are configured", () => {
+    expect(tokenAudienceAllowed("anything", [])).toBe(true);
+  });
+});
+
+describe("parseCsv", () => {
+  it("splits comma-separated Access AUDs", () => {
+    expect(
+      parseCsv(
+        "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a, 00b6c453c4565e39b1ab376759e0f2816a0fe849f3aa6e7f7a9662bbd857c284",
+      ),
+    ).toEqual([
+      "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a",
+      "00b6c453c4565e39b1ab376759e0f2816a0fe849f3aa6e7f7a9662bbd857c284",
+    ]);
+  });
+});
+

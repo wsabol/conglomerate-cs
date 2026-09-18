@@ -8,7 +8,7 @@ import {
   sanitizeIngestErrorText,
   type StreamIngestMethod,
 } from "./ingestErrors";
-import { normalizeStreamAllowedOrigin } from "./stream";
+import { streamAllowedOrigins } from "./stream";
 import { notFound } from "../lib/errors";
 
 export interface MediaProcessingDiagnostics {
@@ -81,7 +81,7 @@ export async function getMediaProcessingDiagnostics(
       await env.STREAM.createDirectUpload({
         maxDurationSeconds: 60,
         requireSignedURLs: true,
-        allowedOrigins: [normalizeStreamAllowedOrigin(config.appAllowedOrigin)],
+        allowedOrigins: streamAllowedOrigins(config.appAllowedOrigins),
       });
       probe = "ok";
     } catch (err) {

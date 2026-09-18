@@ -24,6 +24,15 @@ interface AccessClaims {
 const JWKS_TTL_SECONDS = 60 * 60;
 const keyCache = new Map<string, { keys: Jwk[]; fetchedAt: number }>();
 
+export function tokenAudienceAllowed(
+  claimAud: string | string[] | undefined,
+  expectedAuds: string[],
+): boolean {
+  if (expectedAuds.length === 0) return true;
+  const aud = Array.isArray(claimAud) ? claimAud : [claimAud];
+  return expectedAuds.some((expected) => aud.includes(expected));
+}
+
 export async function verifyAccessEmail(
   request: Request,
   config: AppConfig,
@@ -90,10 +99,7 @@ async function verifyToken(
   const expectedIss = `https://${config.accessTeamDomain}`;
   if (claims.iss && claims.iss !== expectedIss) return null;
 
-  if (config.accessAud) {
-    const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-    if (!aud.includes(config.accessAud)) return null;
-  }
+  if (!tokenAudienceAllowed(claims.aud, config.accessAuds)) return null;
 
   return claims;
 }
