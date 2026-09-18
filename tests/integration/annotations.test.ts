@@ -7,6 +7,8 @@ import {
   annotationPeople,
   annotations,
   events,
+  narrativeJobs,
+  objectRevisions,
   people,
   users,
 } from "../../src/server/db/schema";
@@ -69,6 +71,11 @@ describe("annotation @mentions", () => {
     expect(payload.data?.people).toEqual([
       { id: person.id, displayName: "McIan" },
     ]);
+    expect(payload.data?.incorporatePref).toBe("yes");
+    const db = getDb(env);
+    const revision = await db.select().from(objectRevisions).where(eq(objectRevisions.targetId, payload.data!.id)).get();
+    expect(revision?.targetType).toBe("annotation");
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.status).toBe("pending");
   });
 
   it("updates annotation_people when mention tokens are removed", async () => {
@@ -109,6 +116,41 @@ describe("annotation @mentions", () => {
       .from(annotationPeople)
       .where(eq(annotationPeople.annotationId, id));
     expect(links).toEqual([]);
+  });
+
+  it("does not revise or queue an unchanged memory", async () => {
+    const { event } = await seed();
+    const created = await app.request("/api/annotations", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetType: "event", targetId: event.id, body: "The amp failed." }),
+    }, env);
+    expect(created.status).toBe(201);
+    const { data: memory } = await created.json() as ApiResponse<AnnotationDTO>;
+    const db = getDb(env);
+    const before = await db.select().from(annotations).where(eq(annotations.id, memory!.id)).get();
+    const job = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    const history = () => db.select().from(objectRevisions).where(eq(objectRevisions.targetId, memory!.id));
+    const count = (await history()).length;
+
+    const saved = await app.request(`/api/annotations/${memory!.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: memory!.body, annotationType: memory!.annotationType,
+        incorporatePref: memory!.incorporatePref }),
+    }, env);
+    expect(saved.status).toBe(200);
+    expect((await db.select().from(annotations).where(eq(annotations.id, memory!.id)).get())?.inputRevision).toBe(before?.inputRevision);
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.requestedVersion).toBe(job?.requestedVersion);
+    expect(await history()).toHaveLength(count);
+
+    const changed = await app.request(`/api/annotations/${memory!.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: "The amp failed during the encore." }),
+    }, env);
+    expect(changed.status).toBe(200);
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.requestedVersion).toBe((job?.requestedVersion ?? 0) + 1);
+    const revisions = await history();
+    expect(revisions).toHaveLength(count + 1);
+    expect(revisions.at(-1)?.beforeJson).not.toBe(revisions.at(-1)?.afterJson);
   });
 
   it("ignores invalid person IDs in mention tokens", async () => {

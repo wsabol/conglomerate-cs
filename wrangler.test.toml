@@ -1,0 +1,24 @@
+name = "conglomerate-cs-test"
+main = "src/server/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "conglomerate-test"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "conglomerate-media-test"
+
+[stream]
+binding = "STREAM"
+
+[vars]
+ENVIRONMENT = "test"
+NARRATIVES_ENABLED = "false"
+DEV_USER_EMAIL = "dev@theconglomerate.local"
+DEV_USER_ROLE = "editor"
+ACCESS_ENFORCED = "false"

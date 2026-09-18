@@ -96,6 +96,12 @@ export const eventCreateSchema = eventFieldsSchema.superRefine(
 );
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
 
+export const eventSummaryDraftSchema = eventFieldsSchema.pick({
+  name: true, eventType: true, eventDate: true, eventTime: true,
+  datePrecision: true, placeId: true, performance: true,
+}).superRefine(validateTypeSpecificFields);
+export type EventSummaryDraftInput = z.infer<typeof eventSummaryDraftSchema>;
+
 // Omit fields with create-time defaults, then re-add as optional without defaults.
 // Otherwise Zod fills omitted PATCH keys (e.g. sources: []) and syncEventRelations
 // wipes relations that were not in the request body.
@@ -114,6 +120,7 @@ export const eventUpdateSchema = eventFieldsSchema
     people: z.array(eventPersonInputSchema).optional(),
     acts: z.array(eventActInputSchema).optional(),
     sources: z.array(eventSourceInputSchema).optional(),
+    summaryDraftBasis: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "Nothing to update." })
   .superRefine(validateTypeSpecificFields);

@@ -165,6 +165,37 @@ Manual production deploy:
 npm run build:prod && npm run deploy:prod
 ```
 
+### Living narratives rollout
+
+Events have one summary, directly editable by editors and incrementally updated
+by AI whenever eligible memories change. Human edits never disable automation.
+Updates preserve unaffected prose; changed or removed memories trigger targeted
+corrections. Source snapshots in `narrative_jobs` track memory evidence, not a
+second summary. No-op updates preserve the summary and its revision history.
+Concurrent editorial changes invalidate in-flight generation, which retries
+against the latest summary.
+
+Apply migrations through `0007_illegal_deadpool.sql` before deploying this Worker.
+This migration keeps displayed summaries, archives legacy editorial baselines in
+revision history, and drops the separate `editorial_summary` column. Production starts with `NARRATIVES_ENABLED =
+"false"`; after verifying the `AI` binding and the migrated data, set that
+production variable to `"true"` and deploy again. The existing 15-minute cron
+processes up to ten queued events per run, so the backfill proceeds gradually.
+Local development has generation enabled; tests use `wrangler.test.toml` to
+avoid a remote AI session.
+
+Monitor `narrative_jobs` for pending/failed counts, oldest `modified_on`,
+`attempts`, and `error_code`. New writes replace older pending work for the same
+event, and a processing lease prevents stale output from being saved. Pending
+jobs remain queued until processed, including across pauses in generation.
+Previously expired `QUEUE_EXPIRED` jobs are automatically requeued when generation
+runs. The event page ends the foreground overlay after 30 seconds independently
+of status polling; work continues in the background. Expired processing leases
+show a delayed status and can be reclaimed by cron. AI failures keep the last
+displayed summary and retry automatically.
+Set the production variable back to `"false"` to pause generation without
+discarding queued work.
+
 ### Cloudflare Workers Builds (GitHub)
 
 Workers Builds runs **build command** then **deploy command**. A failing build

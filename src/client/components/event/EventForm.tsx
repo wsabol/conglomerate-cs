@@ -1,5 +1,5 @@
 import { EventConfidence } from "./EventConfidence";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Container } from "../layout";
 import { PageHeader } from "../ui/PageHeader";
@@ -7,13 +7,14 @@ import { Button } from "../ui/Button";
 import { TextField, TextArea, Select } from "../form";
 import { ErrorState, Spinner } from "../state";
 import { useAsync } from "../../lib/useAsync";
-import { createEvent, getEvent, patchEvent } from "../../lib/events";
+import { createEvent, generateSummaryDraft, getEvent, patchEvent } from "../../lib/events";
 import { useFilterOptions } from "../../lib/useFilterOptions";
 import { placeSelectOptions } from "../../lib/places";
 import { zodFieldErrors } from "../../lib/zodErrors";
 import {
   eventCreateSchema,
   eventUpdateSchema,
+  eventSummaryDraftSchema,
 } from "@shared/schemas/event";
 import {
   DATE_PRECISIONS,
@@ -112,6 +113,10 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
     Partial<Record<FormField, string>>
   >({});
   const [submitting, setSubmitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [draftBasis, setDraftBasis] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const formRevision = useRef(0);
   const [error, setError] = useState<string | null>(null);
 
   const { places } = useFilterOptions({ places: true });
@@ -126,6 +131,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
 
   useEffect(() => {
     if (!eventData) return;
+    formRevision.current += 1;
     setForm({
       name: eventData.name,
       eventType: eventData.eventType,
@@ -139,6 +145,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
       promotionText: eventData.performance?.promotionText ?? "",
     });
     setFieldErrors({});
+    setDraftBasis(null);
   }, [eventData]);
 
   const placeOptions = useMemo(
@@ -157,6 +164,10 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
   }, [mode, eventData]);
 
   function updateField<K extends FormField>(field: K, value: FormState[K]) {
+    formRevision.current += 1;
+    // Generated drafts are only current while their event fields remain unchanged.
+    if (field !== "summary" || !String(value).trim()) setDraftBasis(null);
+    setDraftError(null);
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => {
       if (!current[field]) return current;
@@ -166,12 +177,39 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
     });
   }
 
+  async function handleGenerate() {
+    if (!slug) return;
+    const { summary: _summary, ...body } = buildEventBody(form);
+    const parsed = eventSummaryDraftSchema.safeParse(body);
+    if (!parsed.success) {
+      setFieldErrors(mapZodErrorsToForm(zodFieldErrors(parsed.error)));
+      setDraftError("Fix the highlighted fields before generating a summary.");
+      return;
+    }
+    const revision = formRevision.current;
+    setGenerating(true);
+    setDraftError(null);
+    try {
+      const draft = await generateSummaryDraft(slug, parsed.data);
+      if (formRevision.current !== revision) {
+        setDraftError("The form changed while generating. Generate again to use the current values.");
+        return;
+      }
+      updateField("summary", draft.summary);
+      setDraftBasis(draft.basis);
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Could not generate a summary. Try again.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    const body = buildEventBody(form);
+    const body = { ...buildEventBody(form), ...(mode === "edit" && draftBasis ? { summaryDraftBasis: draftBasis } : {}) };
 
     if (mode === "new") {
       const parsed = eventCreateSchema.safeParse(body);
@@ -300,6 +338,16 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
           error={fieldErrors.summary}
           rows={6}
         />
+        {mode === "edit" && (
+          <div className={styles.draftAction}>
+            <Button type="button" variant="ghost-primary" loading={generating} disabled={submitting}
+              onClick={() => void handleGenerate()}>
+              {generating ? "Generating…" : "Generate fresh summary"}
+            </Button>
+            <p className={styles.draftHint}>Creates a draft here. Save changes to publish it.</p>
+            {draftError && <p className={styles.draftError} role="alert">{draftError}</p>}
+          </div>
+        )}
         {form.eventType === "performance" && (
           <>
             <TextArea
@@ -332,7 +380,7 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
         )}
 
         <div className={styles.actions}>
-          <Button type="submit" variant="primary" disabled={submitting}>
+          <Button type="submit" variant="primary" disabled={submitting || generating}>
             {submitting ? "Saving…" : mode === "new" ? "Create event" : "Save changes"}
           </Button>
           <Button

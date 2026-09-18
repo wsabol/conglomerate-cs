@@ -19,3 +19,5 @@ export {
 } from "./people";
 
 export { getEventConfidenceContext, assessConfidenceContext, getEligibleConfidenceMedia, getEventsCitingMedia, listConfidenceBackfillIds, eventRowSnapshot, mediaRowSnapshot, rowJson, getEventsUsingMediaRole } from "./confidence";
+
+export { getNearbyNarrativeEvents } from "./narrative";

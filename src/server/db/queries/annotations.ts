@@ -12,6 +12,7 @@ export type AnnotationRow = {
   body: string;
   annotationType: AnnotationDTO["annotationType"];
   incorporatePref: AnnotationDTO["incorporatePref"];
+  summaryStatus: AnnotationDTO["summaryStatus"];
   authorId: number | null;
   createdOn: string;
   modifiedOn: string;
@@ -26,6 +27,7 @@ const annotationSelect = {
   body: annotations.body,
   annotationType: annotations.annotationType,
   incorporatePref: annotations.incorporatePref,
+  summaryStatus: annotations.summaryStatus,
   authorId: annotations.authorId,
   createdOn: annotations.createdOn,
   modifiedOn: annotations.modifiedOn,
@@ -44,6 +46,7 @@ export function toAnnotationDTO(
     body: row.body,
     annotationType: row.annotationType,
     incorporatePref: row.incorporatePref,
+    summaryStatus: row.summaryStatus,
     authorId: row.authorId,
     authorName:
       row.authorPersonName || localPart(row.authorEmail) || "A band member",

@@ -16,7 +16,8 @@ export default defineConfig(async () => {
   return {
     plugins: [
       cloudflareTest({
-        wrangler: { configPath: "./wrangler.toml" },
+        // Local tests do not need the production AI binding, which starts a remote session.
+        wrangler: { configPath: "./wrangler.test.toml" },
         miniflare: {
           bindings: {
             TEST_MIGRATIONS: migrations,

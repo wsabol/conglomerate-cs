@@ -1,14 +1,16 @@
 import { apiFetch, toQuery } from "./api";
-import type { EventDetailDTO, EventListItemDTO, EventSourceDTO } from "@shared/dto";
+import type { EventDetailDTO, EventListItemDTO, EventSourceDTO, NarrativeJobDTO } from "@shared/dto";
 import {
   eventCreateSchema,
   eventUpdateSchema,
+  eventSummaryDraftSchema,
 } from "@shared/schemas/event";
 import type { BillingRole, EventGroup, EventType, ListResult } from "@shared/types";
 import type { z } from "zod";
 
 export type EventCreateBody = z.input<typeof eventCreateSchema>;
 export type EventUpdateBody = z.input<typeof eventUpdateSchema>;
+export type EventSummaryDraftBody = z.input<typeof eventSummaryDraftSchema>;
 
 export interface ListEventsParams {
   sort?: "date" | "modified";
@@ -32,6 +34,22 @@ export function listEvents(params: ListEventsParams = {}) {
 
 export function getEvent(slug: string) {
   return apiFetch<EventDetailDTO>(`/api/events/${slug}`);
+}
+
+export function getSummaryStatus(slug: string) {
+  return apiFetch<{ summary: string | null; job: NarrativeJobDTO | null }>(`/api/events/${slug}/summary-status`);
+}
+
+export function retrySummary(slug: string) {
+  return apiFetch<{ summary: string | null; job: NarrativeJobDTO | null }>(`/api/events/${slug}/summary-retry`, {
+    method: "POST",
+  });
+}
+
+export function generateSummaryDraft(slug: string, body: EventSummaryDraftBody) {
+  return apiFetch<{ summary: string; basis: string }>(`/api/events/${slug}/summary-draft`, {
+    method: "POST", body: JSON.stringify(body),
+  });
 }
 
 export function createEvent(body: EventCreateBody) {

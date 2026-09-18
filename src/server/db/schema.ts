@@ -293,6 +293,9 @@ export const annotations = sqliteTable(
     incorporatePref: text("incorporate_pref", { enum: INCORPORATE_PREFS })
       .notNull()
       .default("no_pref"),
+    summaryStatus: text("summary_status", { enum: ["pending", "processing", "incorporated", "excluded", "failed"] }).notNull().default("pending"),
+    inputRevision: integer("input_revision").notNull().default(1),
+    processedRevision: integer("processed_revision").notNull().default(0),
     isDeleted: isDeleted(),
     createdOn: createdOn(),
     modifiedOn: modifiedOn(),
@@ -302,6 +305,21 @@ export const annotations = sqliteTable(
     index("annotations_author_idx").on(t.authorId),
   ],
 );
+
+export const narrativeJobs = sqliteTable("narrative_jobs", {
+  eventId: integer("event_id").primaryKey().references(() => events.id, { onDelete: "cascade" }),
+  requestedVersion: integer("requested_version").notNull().default(1),
+  completedVersion: integer("completed_version").notNull().default(0),
+  sourceSnapshot: text("source_snapshot").notNull().default("[]"),
+  hasGeneratedSummary: integer("has_generated_summary", { mode: "boolean" }).notNull().default(false),
+  status: text("status", { enum: ["pending", "processing", "failed", "complete"] }).notNull().default("pending"),
+  leaseToken: text("lease_token"),
+  leaseUntil: text("lease_until"),
+  attempts: integer("attempts").notNull().default(0),
+  nextRetryOn: text("next_retry_on"),
+  errorCode: text("error_code"),
+  modifiedOn: modifiedOn(),
+}, (t) => [index("narrative_jobs_due_idx").on(t.status, t.nextRetryOn)]);
 
 // annotation_people -----------------------------------------------------------
 export const annotationPeople = sqliteTable(

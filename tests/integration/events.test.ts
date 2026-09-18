@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { env } from "cloudflare:test";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
@@ -9,6 +9,8 @@ import {
   eventPerformanceDetails,
   eventSources,
   events,
+  narrativeJobs,
+  objectRevisions,
   people,
   places,
 } from "../../src/server/db/schema";
@@ -435,6 +437,7 @@ describe("PATCH /api/events/:slug performance", () => {
         eventDate: "2010-07-02",
         datePrecision: "exact",
         confidence: "medium",
+        summary: "Original copy",
       })
       .returning()
       .get();
@@ -571,6 +574,46 @@ describe("PATCH /api/events/:slug sources", () => {
       .from(eventSources)
       .where(eq(eventSources.eventId, event.id));
     expect(rows).toHaveLength(0);
+  });
+
+  it("does not revise or queue an unchanged event, and audits source changes without queuing prose", async () => {
+    const db = getDb(env);
+    const event = await db.insert(events).values({
+      slug: "quiet-save", name: "Quiet Save", eventType: "performance",
+      eventDate: "2010-07-02", datePrecision: "exact", summary: "The original account.",
+    }).returning().get();
+    const revisions = () => db.select().from(objectRevisions).where(and(
+      eq(objectRevisions.targetType, "event"), eq(objectRevisions.targetId, event.id)));
+
+    const unchanged = await app.request(`/api/events/${event.slug}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: event.name, eventType: event.eventType,
+        eventDate: event.eventDate, datePrecision: event.datePrecision, summary: event.summary,
+        performance: { billingName: null, setlistText: null, promotionText: null } }),
+    }, env);
+    expect(unchanged.status).toBe(200);
+    expect(await revisions()).toHaveLength(0);
+    expect(await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id))).toHaveLength(0);
+
+    const sourced = await app.request(`/api/events/${event.slug}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sources: [{ sourceType: "url", url: "https://example.com/post" }] }),
+    }, env);
+    expect(sourced.status).toBe(200);
+    expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe(event.summary);
+    expect(await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id))).toHaveLength(0);
+    const history = await revisions();
+    expect(history).toHaveLength(1);
+    expect(history[0].beforeJson).not.toBe(history[0].afterJson);
+    expect(JSON.parse(history[0].afterJson!).sources).toHaveLength(1);
+
+    const sameSource = await app.request(`/api/events/${event.slug}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sources: [{ sourceType: "url", url: "https://example.com/post" }] }),
+    }, env);
+    expect(sameSource.status).toBe(200);
+    expect(await revisions()).toHaveLength(1);
+    expect(await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id))).toHaveLength(0);
   });
 });
 

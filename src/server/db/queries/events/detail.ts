@@ -8,6 +8,7 @@ import {
   eventPerformanceDetails,
   eventSources,
   events,
+  narrativeJobs,
   people,
   places,
 } from "../../schema";
@@ -15,6 +16,7 @@ import type { EventsQuery } from "@shared/schemas/query";
 import type { EventDetailDTO, EventSchemaDTO, PlaceDTO } from "@shared/dto";
 import { mediaDeliveryUrl, mediaThumbUrl } from "../../../media/url";
 import { getAnnotations } from "../annotations";
+import { publicNarrativeJob } from "../../../narrative/jobs";
 import { toPlaceDTO } from "../helpers";
 import { listMediaForEvent } from "../media";
 import { eventListConditions } from "./list";
@@ -40,6 +42,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
+    summaryJob,
   ] = await Promise.all([
     event.placeId
       ? db
@@ -70,6 +73,9 @@ async function loadEventAggregate(
     db.select().from(eventSources).where(eq(eventSources.eventId, event.id)),
     listMediaForEvent(db, event.id, bucket),
     getAnnotations(db, "event", event.id),
+    db.select({ status: narrativeJobs.status, requestedVersion: narrativeJobs.requestedVersion,
+      completedVersion: narrativeJobs.completedVersion, errorCode: narrativeJobs.errorCode,
+      leaseUntil: narrativeJobs.leaseUntil }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get(),
   ]);
 
   const heroImageId = event.heroImageId ?? null;
@@ -87,6 +93,7 @@ async function loadEventAggregate(
     sources,
     mediaItems,
     eventAnnotations,
+    summaryJob: publicNarrativeJob(summaryJob),
     eligibleMediaIds: await getEligibleConfidenceMedia(db, sources),
     resolvedHeroId,
     placeDTO,
@@ -96,7 +103,7 @@ async function loadEventAggregate(
 function baseEventFields(
   data: NonNullable<Awaited<ReturnType<typeof loadEventAggregate>>>,
 ) {
-  const { event, place, perf, peopleRows, acts, sources, eventAnnotations, resolvedHeroId } =
+  const { event, place, perf, peopleRows, acts, sources, eventAnnotations, summaryJob, resolvedHeroId } =
     data;
 
   const performanceEvent = event.eventType === "performance";
@@ -117,6 +124,7 @@ function baseEventFields(
     heroImageId: event.heroImageId ?? null,
     heroImageUrl: resolvedHeroId ? mediaDeliveryUrl(resolvedHeroId) : null,
     summary: event.summary,
+    summaryJob,
     performance: performanceEvent && perf
       ? {
           billingName: perf.billingName,
@@ -164,6 +172,7 @@ export async function getEventDetail(
 
   return {
     ...baseEventFields(data),
+    narrativesEnabled: false,
     media: {
       video: mediaItems.some((item) => item.mediaType === "video"),
       audio: mediaItems.some((item) => item.mediaType === "audio"),

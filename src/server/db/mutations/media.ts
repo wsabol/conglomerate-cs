@@ -17,6 +17,7 @@ import { getMediaItemById } from "../queries";
 import { badRequest, forbidden } from "../../lib/errors";
 import type { Env } from "../../env";
 import { deleteStreamAndR2Assets } from "../../media/retry";
+import { invalidateAround } from "../../narrative/jobs";
 
 export async function updateMedia(
   db: Db,
@@ -94,6 +95,11 @@ export async function updateMedia(
     changedBy: user.id,
   });
 
+  if (input.eventId !== undefined && input.eventId !== existing.eventId) {
+    await invalidateAround(db, existing.eventId);
+    await invalidateAround(db, input.eventId);
+  }
+
   return getMediaItemById(db, id);
 }
 
@@ -126,5 +132,6 @@ export async function softDeleteMedia(
   await updateMediaWithConfidence(db, id,
     { isDeleted: true, modifiedOn: sql`(CURRENT_TIMESTAMP)` }, user.id, "delete", additional);
   if (env) await deleteStreamAndR2Assets(env, existing);
+  await invalidateAround(db, existing.eventId);
   return true;
 }

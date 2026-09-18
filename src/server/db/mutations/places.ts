@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { places } from "../schema";
+import { invalidateForPlace } from "../../narrative/jobs";
 import type {
   PlaceCreateInput,
   PlaceUpdateInput,
@@ -48,6 +49,10 @@ export async function updatePlace(
     .get();
   if (!existing) return null;
 
+  const changed = Object.entries(input).some(([key, value]) =>
+    value !== undefined && (value ?? null) !== (existing[key as keyof typeof existing] ?? null));
+  if (!changed) return getPlace(db, id);
+
   await db
     .update(places)
     .set({
@@ -69,6 +74,8 @@ export async function updatePlace(
     after: updated,
     changedBy,
   });
+
+  if (input.name !== undefined && input.name !== existing.name) await invalidateForPlace(db, id);
 
   return getPlace(db, id);
 }
@@ -97,5 +104,6 @@ export async function softDeletePlace(
     before: existing,
     changedBy,
   });
+  await invalidateForPlace(db, id);
   return true;
 }

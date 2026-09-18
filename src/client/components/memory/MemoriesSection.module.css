@@ -68,3 +68,11 @@
   color: var(--color-orange);
   font-size: var(--text-sm);
 }
+
+.incorporateToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  cursor: pointer;
+}

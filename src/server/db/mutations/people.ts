@@ -7,6 +7,7 @@ import type {
 } from "@shared/schemas/person";
 import { recordRevision } from "../../audit/revision";
 import { getPerson } from "../queries";
+import { invalidateForPerson } from "../../narrative/jobs";
 
 export async function createPerson(
   db: Db,
@@ -88,6 +89,10 @@ export async function updatePerson(
     .get();
   if (!existing) return null;
 
+  const changed = Object.entries(input).some(([key, value]) =>
+    value !== undefined && (value ?? null) !== (existing[key as keyof typeof existing] ?? null));
+  if (!changed) return getPerson(db, id);
+
   await db
     .update(people)
     .set({
@@ -113,6 +118,8 @@ export async function updatePerson(
     after: updated,
     changedBy,
   });
+
+  if (input.displayName !== undefined && input.displayName !== existing.displayName) await invalidateForPerson(db, id);
 
   return getPerson(db, id);
 }
@@ -141,5 +148,6 @@ export async function softDeletePerson(
     before: existing,
     changedBy,
   });
+  await invalidateForPerson(db, id);
   return true;
 }
