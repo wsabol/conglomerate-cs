@@ -87,9 +87,9 @@ export function EventSummaryPanel({
           {event.summary ? <p className={styles.summary}>{event.summary}</p> : <EmptyState title="No summary yet." icon="document" size="sm" />}
         </div>
         {foreground && <div className={styles.summaryOverlay} role="status">Updating…</div>}
-        {background && <p role="status">{job?.status === "processing" ? "Summary update is running in the background…" : "Summary update is queued."}</p>}
-        {job?.status === "failed" && job.errorCode !== "QUEUE_EXPIRED" && <p role="status">{job.errorCode === "LEASE_EXPIRED" ? "Summary update is delayed; waiting to retry." : "Summary update is delayed. It will retry automatically."}</p>}
-        {job?.status === "failed" && job.errorCode === "QUEUE_EXPIRED" && <div role="status">
+        {background && <p className={styles.summaryStatus} role="status">{job?.status === "processing" ? "Summary update is running in the background…" : "Summary update is queued."}</p>}
+        {job?.status === "failed" && job.errorCode !== "QUEUE_EXPIRED" && <p className={styles.summaryStatus} role="status">{job.errorCode === "LEASE_EXPIRED" ? "Summary update is delayed; waiting to retry." : "Summary update is delayed. It will retry automatically."}</p>}
+        {job?.status === "failed" && job.errorCode === "QUEUE_EXPIRED" && <div className={styles.summaryStatus} role="status">
           <p>The queued summary update expired. Your memories are still saved.</p>
           {isEditor && <Button type="button" size="sm" variant="ghost-primary" loading={retrying} onClick={() => void handleRetry()}>Retry summary update</Button>}
         </div>}
