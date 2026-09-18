@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
+import { and, eq, ne, sql, type SQL } from "drizzle-orm";
 import type { Db } from "../client";
 import { annotations, eventActs, eventPeople, eventPerformanceDetails, eventSources, events, narrativeJobs, people } from "../schema";
 import type { EventCreateInput, EventUpdateInput } from "@shared/schemas/event";
@@ -148,9 +148,14 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
   // Omitted fields retain their values; explicit null and [] clear them.
   const { performance, sources, people: peopleInput, acts, summaryDraftBasis, ...fields } = input;
   const draftAccepted = !!summaryDraftBasis && !!input.summary?.trim();
+  // Read the queue version before validating evidence. Any later invalidation
+  // must survive acceptance of this older draft, even if a worker finishes it.
+  const draftJob = draftAccepted ? await db.select().from(narrativeJobs)
+    .where(eq(narrativeJobs.eventId, existing.id)).get() : undefined;
+  const validatedDraft = summaryDraftBasis ? await draftEvidence(db, existing.id) : undefined;
   if (summaryDraftBasis) {
     if (!draftAccepted) throw badRequest("A generated draft must have a nonempty summary.");
-    if ((await draftEvidence(db, existing.id)).basis !== summaryDraftBasis)
+    if (validatedDraft?.basis !== summaryDraftBasis)
       throw conflict("Event evidence changed since this draft was generated. Generate a fresh summary before saving.");
   }
   const scalarFields = {
@@ -221,10 +226,8 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
     ["name", "eventType", "eventDate", "eventTime", "datePrecision", "placeId",
       "people", "acts", "performance.promotionText"].includes(key)
   );
-  const draftMemories = draftAccepted
-    ? (await draftEvidence(db, existing.id)).context.find((item) => item.role === "focal")?.memories ?? []
-    : [];
-  const draftMemoryIds = draftMemories.map((memory) => memory.id);
+  const draftMemories = validatedDraft?.context.find((item) => item.role === "focal")?.memories ?? [];
+  const draftVersionUnchanged = sql`${narrativeJobs.requestedVersion} = ${draftJob?.requestedVersion ?? 0}`;
   await commitConfidenceBatch(db, [
     db.update(events).set(Object.keys(afterChange).length
       ? { ...scalarFields, slug: newSlug, confidence: assessment.level, modifiedOn: sql`(CURRENT_TIMESTAMP)` }
@@ -233,7 +236,8 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
       hasGeneratedSummary: true, sourceSnapshot: JSON.stringify(draftMemories) }).onConflictDoUpdate({
       target: narrativeJobs.eventId,
       set: { requestedVersion: sql`${narrativeJobs.requestedVersion} + 1`,
-        completedVersion: sql`${narrativeJobs.requestedVersion} + 1`, status: "complete",
+        completedVersion: sql`CASE WHEN ${draftVersionUnchanged} THEN ${narrativeJobs.requestedVersion} + 1 ELSE ${narrativeJobs.completedVersion} END`,
+        status: sql`CASE WHEN ${draftVersionUnchanged} THEN 'complete' ELSE 'pending' END`,
         hasGeneratedSummary: true, sourceSnapshot: JSON.stringify(draftMemories),
         leaseToken: null, leaseUntil: null, attempts: 0, nextRetryOn: null, errorCode: null,
         modifiedOn: sql`CURRENT_TIMESTAMP` },
@@ -242,8 +246,10 @@ export async function updateEventBySlug(db: Db, slug: string, input: EventUpdate
       target: narrativeJobs.eventId,
       set: { requestedVersion: sql`${narrativeJobs.requestedVersion} + 1`, status: "pending", attempts: 0, nextRetryOn: null, errorCode: null, modifiedOn: sql`CURRENT_TIMESTAMP` },
     })] : []),
-    ...(draftMemoryIds.length ? [db.update(annotations).set({ summaryStatus: "incorporated", processedRevision: sql`${annotations.inputRevision}` })
-      .where(inArray(annotations.id, draftMemoryIds))] : []),
+    ...draftMemories.map((memory) => db.update(annotations)
+      .set({ summaryStatus: "incorporated", processedRevision: memory.revision })
+      .where(and(eq(annotations.id, memory.id), eq(annotations.inputRevision, memory.revision),
+        eq(annotations.isDeleted, false), ne(annotations.incorporatePref, "separate")))),
     ...relationStatements(db, existing.id, {
       performance: Object.keys(performanceChanges).some((key) => `performance.${key}` in afterChange) ? performance : undefined,
       sources: "sources" in afterChange ? sources : undefined,

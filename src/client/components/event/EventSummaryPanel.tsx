@@ -24,6 +24,7 @@ export function EventSummaryPanel({
   const [job, setJob] = useState(event.summaryJob);
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [pollFailures, setPollFailures] = useState(0);
   // A queued job found on page load was not started by this visit.
   const [started, setStarted] = useState<number | null>(null);
   // End the overlay even if a status request never settles.
@@ -45,18 +46,24 @@ export function EventSummaryPanel({
       return () => document.removeEventListener("visibilitychange", resume);
     }
     let cancelled = false;
-    const delay = job.status === "failed" || started === null || Date.now() - started > 30_000 ? 15_000 : 2_000;
+    const delay = pollFailures > 0 ? Math.min(60_000, 15_000 * 2 ** Math.min(pollFailures - 1, 2))
+      : job.status === "failed" || started === null || Date.now() - started > 30_000 ? 15_000 : 2_000;
     const timer = window.setTimeout(async () => {
       if (document.hidden) { setJob((current) => current ? { ...current } : null); return; }
       try {
         const next = await getSummaryStatus(event.slug);
         if (cancelled) return;
+        setPollFailures(0);
         setJob(next.job);
         if (next.job?.status === "complete") { setStarted(null); onReload(); }
-      } catch { /* cron will retry; keep the prior narrative visible */ }
+      } catch {
+        if (cancelled) return;
+        setStarted(null);
+        setPollFailures((failures) => failures + 1);
+      }
     }, delay);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [job, started, event.slug, onReload]);
+  }, [job, started, pollFailures, event.slug, onReload]);
   const pending = !!job && job.requestedVersion > job.completedVersion && job.status !== "failed";
   const foreground = pending && started !== null && Date.now() - started <= 30_000;
   const background = pending && !foreground;

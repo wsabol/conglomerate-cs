@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { getDb } from "../../src/server/db/client";
@@ -213,6 +213,54 @@ describe("living narratives", () => {
     await db.insert(annotations).values({ targetType: "event", targetId: event.id, body: "New evidence", incorporatePref: "yes" });
     await expect(updateEventBySlug(db, event.slug, { summary: "Stale draft.", summaryDraftBasis: basis }, 0)).rejects.toThrow(/evidence changed/);
     expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBeNull();
+  });
+
+  it.each(["added", "edited", "completed"])("preserves %s memory work arriving during draft acceptance", async (change) => {
+    const db = getDb(env);
+    const concurrentDb = getDb(env);
+    const event = await db.insert(events).values({ slug: "draft-race", name: "Draft Race" }).returning().get();
+    const memory = await db.insert(annotations).values({ targetType: "event", targetId: event.id,
+      body: "Original memory.", incorporatePref: "yes" }).returning().get();
+    await invalidateAround(db, event.id);
+    const { basis } = await draftEvidence(db, event.id);
+    const batch = db.batch.bind(db);
+    let changedId = memory.id;
+    const spy = vi.spyOn(db, "batch").mockImplementationOnce(async (statements) => {
+      if (change === "added") {
+        const added = await concurrentDb.insert(annotations).values({ targetType: "event", targetId: event.id,
+          body: "New memory.", incorporatePref: "yes" }).returning().get();
+        changedId = added.id;
+      } else {
+        await concurrentDb.update(annotations).set({ body: "Corrected memory.", inputRevision: 2,
+          summaryStatus: "pending" }).where(eq(annotations.id, memory.id));
+      }
+      await invalidateAround(concurrentDb, event.id);
+      if (change === "completed") {
+        await processNarrative(aiEnv(async () => ({ response: "A newer narrative." })), event.id, 25_000);
+      }
+      return batch(statements);
+    });
+    try {
+      await updateEventBySlug(db, event.slug, { summary: "Accepted older draft.", summaryDraftBasis: basis }, 0);
+    } finally {
+      spy.mockRestore();
+    }
+    const job = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(job?.status).toBe("pending");
+    expect(job!.requestedVersion).toBeGreaterThan(job!.completedVersion);
+    expect(JSON.parse(job!.sourceSnapshot)).toEqual([
+      { id: memory.id, revision: 1, annotationType: "personal_memory", text: "Original memory." },
+    ]);
+    if (change !== "completed") {
+      expect((await db.select().from(annotations).where(eq(annotations.id, changedId)).get())?.summaryStatus).toBe("pending");
+    }
+    expect(await processNarrative(aiEnv(async (_model, input) => {
+      const payload = JSON.parse(input.messages[1].content);
+      expect(payload.currentNarrative).toBe("Accepted older draft.");
+      if (change === "added") expect(payload.changes.added[0].id).toBe(changedId);
+      else expect(payload.changes.changed[0].after.text).toBe("Corrected memory.");
+      return { response: "The draft with the newer memory incorporated." };
+    }), event.id, 25_000)).toBe(true);
   });
 
   it("keeps the first memory on the full-write path after a no-memory job completes", async () => {
