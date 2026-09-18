@@ -45,6 +45,17 @@ describe("event summary on page load", () => {
     expect(html).not.toContain("Updating…");
   });
 
+  it("shows a delayed notice for an expired worker lease", () => {
+    const html = renderToStaticMarkup(createElement(EventSummaryPanel, {
+      event: { ...event, summaryJob: { status: "failed", requestedVersion: 2, completedVersion: 1,
+        errorCode: "LEASE_EXPIRED" } },
+      canUpload: false, isEditor: true, onReload: () => {},
+    }));
+    expect(html).toContain("Summary update is delayed; waiting to retry.");
+    expect(html).not.toContain("Updating…");
+    expect(html).not.toContain("running in the background");
+  });
+
   it("offers a retry when an old pending job has expired", () => {
     const html = renderToStaticMarkup(createElement(EventSummaryPanel, {
       event: { ...event, summaryJob: { status: "failed", requestedVersion: 2, completedVersion: 1,

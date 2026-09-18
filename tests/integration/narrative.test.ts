@@ -74,38 +74,36 @@ describe("living narratives", () => {
     expect(await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event!.id))).toHaveLength(0);
   });
 
-  it("expires old pending work, leaves memories intact, and lets an editor retry it", async () => {
+  it.each(["pending", "expired", "abandoned"])("recovers %s work after a long generation pause", async (state) => {
     const db = getDb(env);
     const event = await db.insert(events).values({ slug: "old-queue", name: "Old Queue", summary: "Original account." }).returning().get();
-    const memory = await db.insert(annotations).values({ targetType: "event", targetId: event.id,
-      body: "We played an encore.", incorporatePref: "yes" }).returning().get();
+    await db.insert(annotations).values({ targetType: "event", targetId: event.id,
+      body: "We played an encore.", incorporatePref: "yes" });
     await invalidateAround(db, event.id);
-    await db.update(narrativeJobs).set({ modifiedOn: "2000-01-01 00:00:00" }).where(eq(narrativeJobs.eventId, event.id));
+    await db.update(narrativeJobs).set({ modifiedOn: "2000-01-01 00:00:00",
+      status: state === "expired" ? "failed" : state === "abandoned" ? "processing" : "pending",
+      errorCode: state === "expired" ? "QUEUE_EXPIRED" : null,
+      leaseToken: state === "abandoned" ? "dead-worker" : null,
+      leaseUntil: state === "abandoned" ? "2000-01-01T00:03:00.000Z" : null,
+    }).where(eq(narrativeJobs.eventId, event.id));
     const stale = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
-    expect(publicNarrativeJob(stale)?.errorCode).toBe("QUEUE_EXPIRED");
-    const statusResponse = await app.request(`/api/events/${event.slug}/summary-status`, {}, aiEnv(async () => {
-      throw new Error("An event GET must not use AI.");
-    }));
-    expect(((await statusResponse.json()) as { data: { job: { status: string } } }).data.job.status).toBe("failed");
-
+    expect(publicNarrativeJob(stale)?.errorCode).toBe(state === "abandoned" ? "LEASE_EXPIRED" : state === "expired" ? "QUEUE_EXPIRED" : null);
     let calls = 0;
-    const enabled = aiEnv(async () => { calls++; return { response: "Should not be called." }; });
-    expect(await processNarrative(enabled, event.id, 25_000)).toBe(false);
-    await processDueNarratives(enabled);
+    const enabled = aiEnv(async () => { calls++; return { response: "The band played an encore." }; });
+    const statusResponse = await app.request(`/api/events/${event.slug}/summary-status`, {}, enabled);
+    const statusBody = await statusResponse.json() as { data: { job: ReturnType<typeof publicNarrativeJob> } };
+    expect(statusBody.data.job).toEqual(publicNarrativeJob(stale));
+    expect(statusBody.data.job).not.toHaveProperty("leaseToken");
+    expect(statusBody.data.job).not.toHaveProperty("leaseUntil");
+    await processDueNarratives({ ...enabled, NARRATIVES_ENABLED: "false" });
     expect(calls).toBe(0);
-    const expired = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
-    expect(expired?.status).toBe("failed");
-    expect(expired?.errorCode).toBe("QUEUE_EXPIRED");
-    expect(expired?.nextRetryOn).toBeNull();
-    expect((await db.select().from(annotations).where(eq(annotations.id, memory.id)).get())?.body).toBe("We played an encore.");
-
-    const retried = await app.request(`/api/events/${event.slug}/summary-retry`, { method: "POST" }, env);
-    expect(retried.status).toBe(200);
-    const queued = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
-    expect(queued?.status).toBe("pending");
-    expect(queued?.errorCode).toBeNull();
-    expect(queued?.requestedVersion).toBe((stale?.requestedVersion ?? 0) + 1);
-    expect(await processNarrative(aiEnv(async () => ({ response: "The band played an encore." })), event.id, 25_000)).toBe(true);
+    expect((await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get())?.status).toBe(stale?.status);
+    await processDueNarratives(enabled);
+    expect(calls).toBe(1);
+    const completed = await db.select().from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
+    expect(completed?.status).toBe("complete");
+    expect(completed?.requestedVersion).toBe(stale?.requestedVersion);
+    expect(completed?.completedVersion).toBe(completed?.requestedVersion);
     expect((await db.select().from(events).where(eq(events.id, event.id)).get())?.summary).toBe("The band played an encore.");
   });
 

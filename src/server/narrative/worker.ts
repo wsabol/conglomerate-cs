@@ -2,9 +2,9 @@ import { and, asc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
 import type { Env } from "../env";
 import { getDb, type Db } from "../db/client";
 import { annotations, eventActs, eventPeople, eventPerformanceDetails, events, media, narrativeJobs, people, places } from "../db/schema";
-import { getConfig, NARRATIVE_PENDING_TTL_MS } from "../lib/config";
+import { getConfig } from "../lib/config";
 import { recordRevision } from "../audit/revision";
-import { expirePendingNarratives, markAnnotations } from "./jobs";
+import { recoverExpiredNarratives, markAnnotations } from "./jobs";
 import { formatEventDate } from "@shared/date";
 import { extractPeopleIds } from "@shared/mentions";
 
@@ -157,10 +157,9 @@ export async function processNarrative(env: Env, eventId: number, timeoutMs: num
   const db = getDb(env);
   const token = crypto.randomUUID();
   const lease = new Date(Date.now() + 180_000).toISOString();
-  const pendingCutoff = new Date(Date.now() - NARRATIVE_PENDING_TTL_MS).toISOString().replace("T", " ").slice(0, 19);
   const claimed = await db.update(narrativeJobs).set({ status: "processing", leaseToken: token, leaseUntil: lease, modifiedOn: sql`CURRENT_TIMESTAMP` }).where(and(
     eq(narrativeJobs.eventId, eventId),
-    or(and(eq(narrativeJobs.status, "pending"), sql`${narrativeJobs.modifiedOn} > ${pendingCutoff}`),
+    or(eq(narrativeJobs.status, "pending"),
       and(eq(narrativeJobs.status, "failed"), sql`${narrativeJobs.errorCode} IS NOT 'QUEUE_EXPIRED'`,
         or(sql`${narrativeJobs.nextRetryOn} IS NULL`, lt(narrativeJobs.nextRetryOn, new Date().toISOString()))),
       and(eq(narrativeJobs.status, "processing"), lt(narrativeJobs.leaseUntil, new Date().toISOString()))),
@@ -269,7 +268,7 @@ export async function processNarrative(env: Env, eventId: number, timeoutMs: num
 export async function processDueNarratives(env: Env): Promise<void> {
   if (!getConfig(env).narrativesEnabled) return;
   const db = getDb(env);
-  await expirePendingNarratives(db);
+  await recoverExpiredNarratives(db);
   const now = new Date().toISOString();
   const due = await db.select({ id: narrativeJobs.eventId }).from(narrativeJobs).where(or(eq(narrativeJobs.status, "pending"), and(eq(narrativeJobs.status, "failed"), lt(narrativeJobs.nextRetryOn, now)), and(eq(narrativeJobs.status, "processing"), lt(narrativeJobs.leaseUntil, now)))).orderBy(asc(narrativeJobs.modifiedOn)).limit(10);
   for (let i = 0; i < due.length; i += 2) await Promise.all(due.slice(i, i + 2).map((row) => processNarrative(env, row.id, 120_000)));

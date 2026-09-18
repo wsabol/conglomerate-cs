@@ -56,9 +56,6 @@ export interface AppConfig {
   inlinePlayback: { audio: string[]; video: string[] };
 }
 
-/** Pending narrative work is abandoned after a day without a worker picking it up. */
-export const NARRATIVE_PENDING_TTL_MS = 24 * 60 * 60 * 1000;
-
 export function getConfig(env: Env): AppConfig {
   return {
     narrativesEnabled: env.NARRATIVES_ENABLED === "true",

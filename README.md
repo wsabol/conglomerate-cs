@@ -187,9 +187,12 @@ avoid a remote AI session.
 Monitor `narrative_jobs` for pending/failed counts, oldest `modified_on`,
 `attempts`, and `error_code`. New writes replace older pending work for the same
 event, and a processing lease prevents stale output from being saved. Pending
-jobs expire after 24 hours without being picked up. The event page shows the
-`QUEUE_EXPIRED` failure and lets an editor retry; eligible memories remain
-saved. AI failures keep the last displayed summary and retry automatically.
+jobs remain queued until processed, including across pauses in generation.
+Previously expired `QUEUE_EXPIRED` jobs are automatically requeued when generation
+runs. The event page ends the foreground overlay after 30 seconds independently
+of status polling; work continues in the background. Expired processing leases
+show a delayed status and can be reclaimed by cron. AI failures keep the last
+displayed summary and retry automatically.
 Set the production variable back to `"false"` to pause generation without
 discarding queued work.
 

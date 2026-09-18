@@ -26,6 +26,12 @@ export function EventSummaryPanel({
   const [retryError, setRetryError] = useState<string | null>(null);
   // A queued job found on page load was not started by this visit.
   const [started, setStarted] = useState<number | null>(null);
+  // End the overlay even if a status request never settles.
+  useEffect(() => {
+    if (started === null) return;
+    const timer = window.setTimeout(() => setStarted(null), Math.max(0, 30_000 - (Date.now() - started)));
+    return () => window.clearTimeout(timer);
+  }, [started]);
   useEffect(() => {
     setJob(event.summaryJob);
     if (!event.summaryJob || event.summaryJob.requestedVersion <= event.summaryJob.completedVersion) setStarted(null);
@@ -75,7 +81,7 @@ export function EventSummaryPanel({
         </div>
         {foreground && <div className={styles.summaryOverlay} role="status">Updating…</div>}
         {background && <p role="status">{job?.status === "processing" ? "Summary update is running in the background…" : "Summary update is queued."}</p>}
-        {job?.status === "failed" && job.errorCode !== "QUEUE_EXPIRED" && <p role="status">Summary update is delayed. It will retry automatically.</p>}
+        {job?.status === "failed" && job.errorCode !== "QUEUE_EXPIRED" && <p role="status">{job.errorCode === "LEASE_EXPIRED" ? "Summary update is delayed; waiting to retry." : "Summary update is delayed. It will retry automatically."}</p>}
         {job?.status === "failed" && job.errorCode === "QUEUE_EXPIRED" && <div role="status">
           <p>The queued summary update expired. Your memories are still saved.</p>
           {isEditor && <Button type="button" size="sm" variant="ghost-primary" loading={retrying} onClick={() => void handleRetry()}>Retry summary update</Button>}

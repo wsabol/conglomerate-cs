@@ -75,7 +75,7 @@ async function loadEventAggregate(
     getAnnotations(db, "event", event.id),
     db.select({ status: narrativeJobs.status, requestedVersion: narrativeJobs.requestedVersion,
       completedVersion: narrativeJobs.completedVersion, errorCode: narrativeJobs.errorCode,
-      modifiedOn: narrativeJobs.modifiedOn }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get(),
+      leaseUntil: narrativeJobs.leaseUntil }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get(),
   ]);
 
   const heroImageId = event.heroImageId ?? null;

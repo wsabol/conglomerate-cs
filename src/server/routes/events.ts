@@ -48,7 +48,7 @@ route.get("/:slug/summary-status", async (c) => {
     requestedVersion: narrativeJobs.requestedVersion,
     completedVersion: narrativeJobs.completedVersion,
     errorCode: narrativeJobs.errorCode,
-    modifiedOn: narrativeJobs.modifiedOn,
+    leaseUntil: narrativeJobs.leaseUntil,
   }).from(narrativeJobs).where(eq(narrativeJobs.eventId, event.id)).get();
   return ok(c, { summary: event.summary, job: getConfig(c.env).narrativesEnabled ? publicNarrativeJob(job) : null }, "Returned summary status");
 });
