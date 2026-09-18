@@ -165,7 +165,8 @@ export function EventForm({ mode }: { mode: "new" | "edit" }) {
 
   function updateField<K extends FormField>(field: K, value: FormState[K]) {
     formRevision.current += 1;
-    if (field === "summary" && !String(value).trim()) setDraftBasis(null);
+    // Generated drafts are only current while their event fields remain unchanged.
+    if (field !== "summary" || !String(value).trim()) setDraftBasis(null);
     setDraftError(null);
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => {
