@@ -21,8 +21,8 @@ interface __BaseEnv_Env {
 	APP_ALLOWED_ORIGIN: "https://www.funkafterdeath.institute,https://conglomerate-cs.wsabol39.workers.dev" | "http://localhost:5173";
 	INVITE_FROM_EMAIL: "invites@funkafterdeath.institute";
 	INVITE_THROTTLE_HOURS: "24";
-	FEEDBACK_TO_EMAIL: "support@funkafterdeath.institute";
-	FEEDBACK_FROM_EMAIL: "invites@funkafterdeath.institute";
+	FEEDBACK_TO_EMAIL: "admin@funkafterdeath.institute";
+	FEEDBACK_FROM_EMAIL: "support@funkafterdeath.institute";
 	GITHUB_ISSUES_REPO: "wsabol/conglomerate-cs";
 	RESEND_API_KEY: string;
 }
@@ -50,8 +50,8 @@ declare namespace Cloudflare {
 		APP_ALLOWED_ORIGIN: "https://www.funkafterdeath.institute,https://conglomerate-cs.wsabol39.workers.dev";
 		INVITE_FROM_EMAIL: "invites@funkafterdeath.institute";
 		INVITE_THROTTLE_HOURS: "24";
-		FEEDBACK_TO_EMAIL: "support@funkafterdeath.institute";
-		FEEDBACK_FROM_EMAIL: "invites@funkafterdeath.institute";
+		FEEDBACK_TO_EMAIL: "admin@funkafterdeath.institute";
+	    FEEDBACK_FROM_EMAIL: "support@funkafterdeath.institute";
 		GITHUB_ISSUES_REPO: "wsabol/conglomerate-cs";
 		RESEND_API_KEY: string;
 	}

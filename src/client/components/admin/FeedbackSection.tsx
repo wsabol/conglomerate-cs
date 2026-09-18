@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FeedbackDTO } from "@shared/dto";
 import { Select } from "../form";
-import { Button } from "../ui/Button";
+import { Button, buttonClass } from "../ui/Button";
 import { Spinner } from "../state";
 import { createFeedbackGitHubIssue, listFeedback, resetFeedbackGitHubIssue, retryFeedbackNotification, setFeedbackReviewed } from "../../lib/feedback";
 import styles from "./FeedbackSection.module.css";
+import { DateTime } from "luxon";
 
 const categoryLabels: Record<FeedbackDTO["category"], string> = {
   bug: "Bug",
@@ -88,14 +89,13 @@ export function FeedbackSection() {
             <li className={styles.report} key={report.id}>
               <div className={styles.meta}>
                 <strong>#{report.id} · {categoryLabels[report.category]}</strong>
-                <span>{report.createdOn} · {report.submitterEmail}</span>
+                <span>{DateTime.fromSQL(report.createdOn).toLocaleString(DateTime.DATETIME_SHORT)} · {report.submitterEmail}</span>
               </div>
               <p className={styles.message}>{report.message}</p>
-              {report.whatHappened && <p><strong>What happened:</strong> {report.whatHappened}</p>}
-              {report.reproductionSteps && <p><strong>How to reproduce:</strong> {report.reproductionSteps}</p>}
+              {report.whatHappened && <p className={styles.message}><strong>What happened:</strong> {report.whatHappened}</p>}
+              {report.reproductionSteps && <p className={styles.message}><strong>How to reproduce:</strong> {report.reproductionSteps}</p>}
               <p className={styles.details}>Page: {report.pagePath}</p>
               <p className={styles.details}>Notification: {report.notificationStatus} · Review: {report.reviewStatus}</p>
-              {report.issueUrl && <a href={report.issueUrl} target="_blank" rel="noopener noreferrer">View GitHub issue</a>}
               {report.issueStatus === "creating" && <p className={styles.warning}>GitHub status is uncertain. Check the repository for feedback #{report.id} before taking further action.</p>}
               <div className={styles.actions}>
                 <Button type="button" size="sm" variant="ghost" disabled={busyId !== null}
@@ -104,6 +104,11 @@ export function FeedbackSection() {
                 </Button>
                 {report.notificationStatus === "failed" && <Button type="button" size="sm" variant="ghost" disabled={busyId !== null}
                   onClick={() => void act(report.id, () => retryFeedbackNotification(report.id))}>Retry email</Button>}
+                {report.issueUrl && (
+                  <a className={buttonClass("ghost-primary", "sm")} href={report.issueUrl} target="_blank" rel="noopener noreferrer">
+                    View GitHub issue
+                  </a>
+                )}
                 {report.issueStatus === "none" && <Button type="button" size="sm" disabled={busyId !== null}
                   onClick={() => void act(report.id, () => createFeedbackGitHubIssue(report.id))}>Create GitHub issue</Button>}
                 {report.issueStatus === "creating" && <Button type="button" size="sm" variant="ghost" disabled={busyId !== null}

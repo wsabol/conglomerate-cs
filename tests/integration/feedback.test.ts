@@ -34,7 +34,7 @@ describe("feedback", () => {
   const outbound = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
     if (String(url) === "https://api.resend.com/emails") {
       const email = JSON.parse(String(init?.body)) as { to: string[]; text: string };
-      expect(email.to).toEqual(["support@funkafterdeath.institute"]);
+      expect(email.to).toEqual(["admin@funkafterdeath.institute"]);
       expect(email.text).toContain("The timeline jumps");
       return new Response(JSON.stringify({ id: "mail-1" }), { status: 200 });
     }
