@@ -57,9 +57,9 @@ route.post("/:id/retry-notification", requireEditor, async (c) => {
   try {
     await sendFeedbackEmail(c.env, report);
     await setFeedbackNotificationStatus(db, id, "sent");
-  } catch {
+  } catch(e) {
     await setFeedbackNotificationStatus(db, id, "failed");
-    throw badGateway("Could not send feedback notification.");
+    throw badGateway("Could not send feedback notification: " + (e instanceof Error ? e.message : "Unknown error"));
   }
   return ok(c, await getFeedbackById(db, id), "Notification sent");
 });
