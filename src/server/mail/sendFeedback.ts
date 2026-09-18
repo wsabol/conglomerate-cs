@@ -24,7 +24,7 @@ export async function sendFeedbackEmail(env: Env, report: FeedbackDTO): Promise<
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
-      "Idempotency-Key": `feedback-notification-${report.id}`,
+      "Idempotency-Key": `feedback-notification-${report.id}-${(new Date()).getHours()}-${(new Date()).getMinutes()}`,
     },
     body: JSON.stringify({
       from: config.feedbackFromEmail,
@@ -34,5 +34,5 @@ export async function sendFeedbackEmail(env: Env, report: FeedbackDTO): Promise<
     }),
   });
 
-  if (!response.ok) throw new Error("Feedback email delivery failed: " + (await response.text()));
+  if (!response.ok) throw new Error("Feedback email delivery failed.");
 }
