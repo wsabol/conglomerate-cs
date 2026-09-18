@@ -33,6 +33,15 @@ export function tokenAudienceAllowed(
   return expectedAuds.some((expected) => aud.includes(expected));
 }
 
+/** Application-host logout so Access clears the cookie on this hostname. */
+export function buildAccessLogoutUrl(
+  requestUrl: string,
+  accessTeamDomain: string,
+): string | null {
+  if (!accessTeamDomain) return null;
+  return `${new URL(requestUrl).origin}/cdn-cgi/access/logout`;
+}
+
 export async function verifyAccessEmail(
   request: Request,
   config: AppConfig,

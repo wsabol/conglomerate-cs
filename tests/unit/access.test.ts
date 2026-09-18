@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  buildAccessLogoutUrl,
   tokenAudienceAllowed,
   verifyAccessEmail,
 } from "../../src/server/auth/access";
@@ -129,6 +130,37 @@ describe("tokenAudienceAllowed", () => {
 
   it("allows any audience when none are configured", () => {
     expect(tokenAudienceAllowed("anything", [])).toBe(true);
+  });
+});
+
+describe("buildAccessLogoutUrl", () => {
+  it("returns null when Access is not configured", () => {
+    expect(
+      buildAccessLogoutUrl(
+        "https://www.funkafterdeath.institute/api/me",
+        "",
+      ),
+    ).toBeNull();
+  });
+
+  it("uses the application origin instead of the team domain", () => {
+    expect(
+      buildAccessLogoutUrl(
+        "https://www.funkafterdeath.institute/api/me",
+        "wsabol-team.cloudflareaccess.com",
+      ),
+    ).toBe("https://www.funkafterdeath.institute/cdn-cgi/access/logout");
+  });
+
+  it("follows the preview hostname", () => {
+    expect(
+      buildAccessLogoutUrl(
+        "https://conglomerate-cs.wsabol39.workers.dev/api/me",
+        "wsabol-team.cloudflareaccess.com",
+      ),
+    ).toBe(
+      "https://conglomerate-cs.wsabol39.workers.dev/cdn-cgi/access/logout",
+    );
   });
 });
 

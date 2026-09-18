@@ -4,6 +4,7 @@ import type { AppEnv } from "../env";
 import { getDb } from "../db/client";
 import { people } from "../db/schema";
 import { getConfig } from "../lib/config";
+import { buildAccessLogoutUrl } from "../auth/access";
 import { ok } from "../lib/response";
 import { unauthorized } from "../lib/errors";
 
@@ -28,9 +29,7 @@ route.get("/", async (c) => {
   }
   if (!displayName) displayName = user.email.split("@")[0] ?? user.email;
 
-  const logoutUrl = config.accessTeamDomain
-    ? `https://${config.accessTeamDomain}/cdn-cgi/access/logout?redirect_url=${encodeURIComponent(config.appBaseUrl)}`
-    : null;
+  const logoutUrl = buildAccessLogoutUrl(c.req.url, config.accessTeamDomain);
 
   return ok(
     c,

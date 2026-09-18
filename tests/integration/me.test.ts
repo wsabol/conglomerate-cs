@@ -3,6 +3,7 @@ import { env } from "cloudflare:test";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
 import { people, users } from "../../src/server/db/schema";
+import type { Env } from "../../src/server/env";
 import type { ApiResponse } from "../../src/shared/types";
 
 interface MeDTO {
@@ -67,5 +68,22 @@ describe("GET /api/me", () => {
     expect(body.data?.role).toBe("member");
     expect(body.data?.email).toBe("member@band.test");
     expect(body.data?.id).toBeGreaterThan(0);
+  });
+
+  it("returns an application-host Access logout URL", async () => {
+    const accessEnv = {
+      ...env,
+      ACCESS_TEAM_DOMAIN: "wsabol-team.cloudflareaccess.com",
+    } as unknown as Env;
+
+    const res = await app.request(
+      "https://www.funkafterdeath.institute/api/me",
+      {},
+      accessEnv,
+    );
+    const body = (await res.json()) as ApiResponse<MeDTO>;
+    expect(body.data?.logoutUrl).toBe(
+      "https://www.funkafterdeath.institute/cdn-cgi/access/logout",
+    );
   });
 });
