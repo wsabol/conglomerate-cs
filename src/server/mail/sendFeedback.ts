@@ -33,5 +33,6 @@ export async function sendFeedbackEmail(env: Env, report: FeedbackDTO): Promise<
       text: lines.join("\n"),
     }),
   });
-  if (!response.ok) throw new Error("Feedback email delivery failed.");
+
+  if (!response.ok) throw new Error("Feedback email delivery failed: " + (await response.text()));
 }
