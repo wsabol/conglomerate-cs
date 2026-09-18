@@ -49,8 +49,20 @@
   line-height: var(--leading-relaxed);
 }
 
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .quiz {
   text-align: left;
+}
+
+.divider {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .quizError {

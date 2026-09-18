@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./lib/auth";
 import { AppShell } from "./components/shell";
 import { RequireEditor } from "./components/RequireEditor";
@@ -10,18 +10,18 @@ import EventDetail from "./routes/EventDetail";
 import EventForm from "./routes/EventForm";
 import Media from "./routes/Media";
 import Admin from "./routes/Admin";
-import SignIn from "./routes/SignIn";
+import LoggedOut from "./routes/LoggedOut";
 import Welcome from "./routes/Welcome";
 import Styleguide from "./routes/Styleguide";
 import NotFound from "./routes/NotFound";
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* <Route path="/signin" element={<SignIn />} /> */}
-          <Route path="/welcome" element={<Welcome />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/logged-out" element={<LoggedOut />} />
+        <Route element={<AuthProvider><Outlet /></AuthProvider>}>
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />
             <Route path="/timeline" element={<Timeline />} />
@@ -56,8 +56,8 @@ export function App() {
             <Route path="/styleguide" element={<Styleguide />} />
             <Route path="*" element={<NotFound />} />
           </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }

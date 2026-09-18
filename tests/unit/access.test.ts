@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  buildAccessLoginUrl,
   buildAccessLogoutUrl,
   tokenAudienceAllowed,
   verifyAccessEmail,
@@ -27,6 +28,7 @@ const config: AppConfig = {
   accessEnforced: true,
   accessTeamDomain: "team.cloudflareaccess.com",
   accessAuds: ["aud-tag"],
+  accessLoginAudiences: { "archive.test": "aud-tag" },
   accessAccountId: "",
   accessPolicyId: "",
   devUserEmail: null,
@@ -35,7 +37,6 @@ const config: AppConfig = {
   appAllowedOrigin: "https://archive.test",
   appAllowedOrigins: ["https://archive.test"],
   inviteFromEmail: "invites@archive.test",
-  inviteTokenTtlDays: 7,
   inviteThrottleHours: 24,
   uploadLimits: { photo: 1, audio: 1, video: 1, document: 1 },
   presignTtlSeconds: 900,
@@ -47,6 +48,29 @@ const config: AppConfig = {
   allowedMimeTypes: { photo: [], video: [], audio: [], document: [] },
   inlinePlayback: { audio: [], video: [] },
 };
+
+describe("buildAccessLoginUrl", () => {
+  it("links directly to the configured Access app and preserves the return path", () => {
+    const url = buildAccessLoginUrl(
+      "https://archive.test/api/auth/login",
+      "/timeline?year=2024",
+      config,
+    );
+    expect(url).toBe(
+      "https://team.cloudflareaccess.com/cdn-cgi/access/login/archive.test?kid=aud-tag&redirect_url=%2Ftimeline%3Fyear%3D2024",
+    );
+  });
+
+  it("rejects unknown hosts and external return destinations", () => {
+    expect(buildAccessLoginUrl("https://unknown.test/api/auth/login", "/", config)).toBeNull();
+    const url = buildAccessLoginUrl(
+      "https://archive.test/api/auth/login",
+      "//other.example/",
+      config,
+    );
+    expect(new URL(url!).searchParams.get("redirect_url")).toBe("/");
+  });
+});
 
 describe("verifyAccessEmail", () => {
   afterEach(() => {
@@ -176,4 +200,3 @@ describe("parseCsv", () => {
     ]);
   });
 });
-

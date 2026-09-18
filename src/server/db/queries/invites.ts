@@ -62,22 +62,6 @@ export async function listInvites(db: Db, limit: number): Promise<InviteDTO[]> {
   }));
 }
 
-export async function getInviteByTokenHash(
-  db: Db,
-  tokenHash: string,
-): Promise<{ inviteeName: string; tokenExpiresAt: string; status: string } | null> {
-  const row = await db
-    .select({
-      inviteeName: invites.inviteeName,
-      tokenExpiresAt: invites.tokenExpiresAt,
-      status: invites.status,
-    })
-    .from(invites)
-    .where(eq(invites.tokenHash, tokenHash))
-    .get();
-  return row ?? null;
-}
-
 export async function getInviteById(db: Db, id: number): Promise<InviteDTO | null> {
   const row = await db
     .select({

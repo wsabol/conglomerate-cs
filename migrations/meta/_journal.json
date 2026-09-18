@@ -64,6 +64,13 @@
       "when": 1789696239477,
       "tag": "0008_lonely_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1789753033963,
+      "tag": "0009_keen_the_stranger",
+      "breakpoints": true
     }
   ]
 }

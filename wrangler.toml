@@ -43,12 +43,12 @@ DEV_USER_ROLE = "editor"
 ACCESS_ENFORCED = "false"
 ACCESS_TEAM_DOMAIN = ""
 ACCESS_AUD = ""
+ACCESS_LOGIN_AUDIENCES = ""
 ACCESS_ACCOUNT_ID = ""
 ACCESS_POLICY_ID = ""
 APP_BASE_URL = "http://localhost:5173"
 APP_ALLOWED_ORIGIN = "http://localhost:5173"
 INVITE_FROM_EMAIL = "invites@funkafterdeath.institute"
-INVITE_TOKEN_TTL_DAYS = "7"
 INVITE_THROTTLE_HOURS = "24"
 
 [triggers]
@@ -81,12 +81,12 @@ ACCESS_ENFORCED = "true"
 ACCESS_TEAM_DOMAIN = "wsabol-team.cloudflareaccess.com"
 # Production + preview Access apps (comma-separated AUDs).
 ACCESS_AUD = "d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a,00b6c453c4565e39b1ab376759e0f2816a0fe849f3aa6e7f7a9662bbd857c284"
+ACCESS_LOGIN_AUDIENCES = "www.funkafterdeath.institute=d529d2a3185377e0e6b82c6abcb154962f5ee4a87533314e8113cb0d2d70263a,conglomerate-cs.wsabol39.workers.dev=00b6c453c4565e39b1ab376759e0f2816a0fe849f3aa6e7f7a9662bbd857c284"
 ACCESS_ACCOUNT_ID = "78ad9e9b375f356c309e38ac02d8f7df"
 ACCESS_POLICY_ID = "1a8aea77-922d-4d0f-9bcc-11be0f50c71d"
 APP_BASE_URL = "https://www.funkafterdeath.institute"
-APP_ALLOWED_ORIGIN = "https://www.funkafterdeath.institute,https://funkafterdeath.institute,https://conglomerate-cs.wsabol39.workers.dev"
+APP_ALLOWED_ORIGIN = "https://www.funkafterdeath.institute,https://conglomerate-cs.wsabol39.workers.dev"
 INVITE_FROM_EMAIL = "invites@funkafterdeath.institute"
-INVITE_TOKEN_TTL_DAYS = "7"
 INVITE_THROTTLE_HOURS = "24"
 
 [[env.production.d1_databases]]

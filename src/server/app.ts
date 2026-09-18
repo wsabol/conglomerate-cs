@@ -3,6 +3,7 @@ import type { AppEnv } from "./env";
 import { identity } from "./middleware/identity";
 import { errorHandler, notFoundHandler } from "./middleware/error";
 import healthRoute from "./routes/health";
+import authLoginRoute from "./routes/authLogin";
 import meRoute from "./routes/me";
 import eventsRoute from "./routes/events";
 import peopleRoute from "./routes/people";
@@ -12,7 +13,6 @@ import mediaApiRoute from "./routes/media";
 import uploadsRoute from "./routes/uploads";
 import annotationsRoute from "./routes/annotations";
 import adminRoute from "./routes/admin";
-import invitesRoute from "./routes/invites";
 import statsRoute from "./routes/stats";
 import mediaDeliveryRoute from "./routes/mediaDelivery";
 import streamWebhookRoute from "./routes/streamWebhook";
@@ -31,6 +31,7 @@ export function createApp() {
   const api = new Hono<AppEnv>();
   // Health is unauthenticated so uptime probes skip JWT verification and D1.
   api.route("/health", healthRoute);
+  api.route("/auth", authLoginRoute);
   api.route("/webhooks/cloudflare-stream", streamWebhookRoute);
   api.route("/stream-ingest", streamIngestRoute);
 
@@ -45,7 +46,6 @@ export function createApp() {
   authed.route("/uploads", uploadsRoute);
   authed.route("/annotations", annotationsRoute);
   authed.route("/admin", adminRoute);
-  authed.route("/invites", invitesRoute);
   authed.route("/stats", statsRoute);
   api.route("/", authed);
 

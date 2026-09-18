@@ -36,6 +36,17 @@ describe("apiFetch", () => {
     vi.restoreAllMocks();
   });
 
+  it("preserves the current archive URL when sending an expired session to welcome", () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", {
+      location: { pathname: "/timeline", search: "?year=2024", assign },
+    });
+
+    accessNavigation.redirect();
+
+    expect(assign).toHaveBeenCalledWith("/welcome?next=%2Ftimeline%3Fyear%3D2024");
+  });
+
   it("retries GET requests once on 503", async () => {
     let calls = 0;
     vi.stubGlobal("fetch", async () => {
@@ -75,7 +86,7 @@ describe("apiFetch", () => {
     expect(calls).toBe(1);
   });
 
-  it("redirects to Access when fetch follows a login redirect", async () => {
+  it("opens welcome when fetch follows an Access login redirect", async () => {
     const redirect = vi
       .spyOn(accessNavigation, "redirect")
       .mockImplementation(() => {});
@@ -84,10 +95,10 @@ describe("apiFetch", () => {
     vi.stubGlobal("fetch", async () => htmlResponse(accessUrl, true));
 
     await expect(apiFetch("/api/me")).rejects.toMatchObject({ status: 401 });
-    expect(redirect).toHaveBeenCalledWith(accessUrl);
+    expect(redirect).toHaveBeenCalledWith();
   });
 
-  it("redirects to Access when the response is HTML instead of JSON", async () => {
+  it("opens welcome when the response is HTML instead of JSON", async () => {
     const redirect = vi
       .spyOn(accessNavigation, "redirect")
       .mockImplementation(() => {});
@@ -96,10 +107,10 @@ describe("apiFetch", () => {
     );
 
     await expect(apiFetch("/api/me")).rejects.toMatchObject({ status: 401 });
-    expect(redirect).toHaveBeenCalledWith(undefined);
+    expect(redirect).toHaveBeenCalledWith();
   });
 
-  it("does not redirect on a JSON 401 from the app", async () => {
+  it("opens welcome on a JSON 401 from the app", async () => {
     const redirect = vi
       .spyOn(accessNavigation, "redirect")
       .mockImplementation(() => {});
@@ -111,7 +122,7 @@ describe("apiFetch", () => {
       status: 401,
       message: "Authentication required.",
     });
-    expect(redirect).not.toHaveBeenCalled();
+    expect(redirect).toHaveBeenCalledWith();
   });
 
   it("probes for a hidden Access 302 when fetch fails with a network error", async () => {

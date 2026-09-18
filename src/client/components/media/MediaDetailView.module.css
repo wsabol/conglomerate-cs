@@ -305,7 +305,7 @@
 
 .inlineError {
   margin: var(--space-3) 0 0;
-  color: var(--color-danger);
+  color: var(--color-orange);
 }
 
 .peoplePicker {

@@ -50,13 +50,14 @@ export interface AppConfig {
   accessTeamDomain: string;
   /** Accepted Access application AUDs (preview and production may differ). */
   accessAuds: string[];
+  /** Application audience by public hostname for the Access login start URL. */
+  accessLoginAudiences: Record<string, string>;
   accessAccountId: string;
   accessPolicyId: string;
   devUserEmail: string | null;
   devUserRole: string | null;
   appBaseUrl: string;
   inviteFromEmail: string;
-  inviteTokenTtlDays: number;
   inviteThrottleHours: number;
   uploadLimits: UploadLimits;
   presignTtlSeconds: number;
@@ -89,6 +90,13 @@ export function getConfig(env: Env): AppConfig {
     accessEnforced: (env.ACCESS_ENFORCED ?? "false").toLowerCase() === "true",
     accessTeamDomain: env.ACCESS_TEAM_DOMAIN ?? "",
     accessAuds: parseCsv(env.ACCESS_AUD),
+    accessLoginAudiences: Object.fromEntries(
+      parseCsv(env.ACCESS_LOGIN_AUDIENCES).flatMap((entry) => {
+        const separator = entry.indexOf("=");
+        if (separator <= 0 || separator === entry.length - 1) return [];
+        return [[entry.slice(0, separator).toLowerCase(), entry.slice(separator + 1)]];
+      }),
+    ),
     accessAccountId: env.ACCESS_ACCOUNT_ID ?? "",
     accessPolicyId: env.ACCESS_POLICY_ID ?? "",
     devUserEmail: env.DEV_USER_EMAIL || null,
@@ -97,7 +105,6 @@ export function getConfig(env: Env): AppConfig {
     appAllowedOrigin: appAllowedOrigins[0] ?? "http://localhost:5173",
     appAllowedOrigins,
     inviteFromEmail: env.INVITE_FROM_EMAIL ?? "invites@theconglomerate.local",
-    inviteTokenTtlDays: num(env.INVITE_TOKEN_TTL_DAYS, 7),
     inviteThrottleHours: num(env.INVITE_THROTTLE_HOURS, 24),
     uploadLimits: {
       photo: num(env.UPLOAD_MAX_PHOTO_BYTES, DEFAULT_UPLOAD_LIMIT_BYTES.photo),

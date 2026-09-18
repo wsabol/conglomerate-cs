@@ -45,6 +45,15 @@ const WELCOME_QUIZ_QUESTIONS: WelcomeQuizQuestion[] = [
     ],
     correctChoiceId: "a",
   },
+  {
+    prompt: "They heard the call and -",
+    choices: [
+      { id: "a", text: "they wrote it on the wall" },
+      { id: "b", text: "they hung up the phone" },
+      { id: "c", text: "laughed at the thought of it" },
+    ],
+    correctChoiceId: "a",
+  },
 ];
 
 function shuffle<T>(items: T[]): T[] {
@@ -80,7 +89,7 @@ const WRONG_ANSWER_MESSAGES = [
   "These aren't even good pentatonics.",
   "Real creative asshole...",
   "The Broprophet is dead and you killed him.",
-  "You think you got a slick dick!",
+  "You think you got a slick d*ck?!",
 ] as const;
 
 export function pickWrongAnswerMessage(): string {

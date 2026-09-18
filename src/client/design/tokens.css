@@ -15,14 +15,14 @@
   --color-emerald-hover: #09a888;
   --color-brass: #c49a47; /* featured / archival emphasis */
   --color-brass-hover: #d6ac57;
-  --color-orange: #c64c27; /* high-energy actions */
-  --color-orange-hover: #dc5c34;
+  --color-orange: #d9633f; /* high-energy actions */
+  --color-orange-hover: #da7644;
   --color-blue: #557ca8; /* atmospheric, sparing */
   --color-magenta: #8c4f78; /* atmospheric, sparing */
   --color-violet: #554b69; /* atmospheric, sparing */
 
   --color-danger: #c64c27;
-  --color-success: #078a70;
+  --color-success: var(--color-emerald);
 
   /* Derived surfaces / lines */
   --color-border-light: rgba(241, 233, 218, 0.06);

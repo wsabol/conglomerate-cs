@@ -53,12 +53,38 @@ Production configuration:
 
 - Set `ACCESS_ENFORCED=true`, `ACCESS_TEAM_DOMAIN` (e.g. `your-team.cloudflareaccess.com`),
   and `ACCESS_AUD` (comma-separated Access application AUD tags for production and
-  preview) in the `[env.production]` vars.
+  preview) in the `[env.production]` vars. Set `ACCESS_LOGIN_AUDIENCES` to
+  comma-separated `hostname=AUD` entries for every protected public hostname.
 - Create self-hosted Access applications covering `www.funkafterdeath.institute` and
   the `workers.dev` preview hostname, each with its own allowlist. `APP_BASE_URL`
   should be the canonical production origin.
-- Promote an editor:
-  `wrangler d1 execute DB --remote --command "UPDATE users SET role='editor' WHERE email='you@example.com'"`.
+- For the branded entry and exit pages, add narrowly scoped Access **Bypass / Everyone**
+  applications for `/welcome`, `/logged-out`, `/assets/*`, and `/ico/*` on each
+  protected hostname. The Vite SPA needs the asset paths to render those public
+  pages. Also bypass only `/api/auth/login` so the public page can request its
+  Access login URL. Keep other `/api/*`, `/media/*`, and the archive protected. If
+  other static files used by the sign-in page are added, bypass only those files.
+- Add a Cloudflare zone redirect rule that runs before Access: when a browser
+  requests a protected document path **without** `CF_Authorization`, redirect
+  to `/welcome?next=<encoded original path and query>`. Exclude `/welcome`,
+  `/logged-out`, `/cdn-cgi/access/*`, API and media routes, and static
+  assets. Test the rule with `/` and `/timeline` in a private browser, then use
+  Continue from `/welcome`.
+  Access does not provide a general setting that redirects an unauthenticated
+  self-hosted application request to an arbitrary site page; its custom block
+  redirect is for denied users, not this login step. An expired or invalid cookie
+  may still show Access's own login screen unless an edge rule handles it.
+- `/welcome` is public and does not require an invite token. Its quiz enables
+  Continue after a choice; the correct answer requests a login URL from
+  `/api/auth/login` and sends the browser directly to Cloudflare Access. Access
+  then presents its configured Google / one-time PIN methods and returns to the
+  protected `next` path (or `/`). Invite emails link to
+  `/welcome` without a token. Logout requests the application-host
+  `/cdn-cgi/access/logout` endpoint and shows `/logged-out` after a successful
+  response. Do not redirect the logout endpoint itself at the edge, or the
+  cookie will not be cleared.
+- If an existing SPA session expires during an API request, the client navigates
+  to `/welcome`, preserving the current archive path as `next`.
 
 ### Invites (Admin)
 
@@ -71,7 +97,7 @@ Editors can send invites from **Admin → Invites**. Each invite:
 Production setup for invites:
 
 - **Vars** in `[env.production.vars]`: `APP_BASE_URL` (site origin), `INVITE_FROM_EMAIL`,
-  `ACCESS_ACCOUNT_ID`, `ACCESS_POLICY_ID`, `INVITE_TOKEN_TTL_DAYS`, `INVITE_THROTTLE_HOURS`.
+  `ACCESS_ACCOUNT_ID`, `ACCESS_POLICY_ID`, `INVITE_THROTTLE_HOURS`.
 - **Secrets** via `wrangler secret put --env production`:
   - `RESEND_API_KEY` — Resend API key (from address domain must be verified in Resend).
   - `CLOUDFLARE_API_TOKEN` — Zero Trust / Access edit permission for allowlist updates.
@@ -233,7 +259,6 @@ tests/      Vitest unit + integration
 
 ## TODO
 
-- [ ] Wire src/client/routes/SignIn.tsx to redirect to Access login URLs (Milestone 4 in your implementation plan).
 
 ## Automatic event confidence
 

@@ -3,7 +3,6 @@ export { getArchiveStats } from "./stats";
 export { listRevisions, listUsers } from "./admin";
 export {
   getInviteById,
-  getInviteByTokenHash,
   getUserByEmail,
   hasRecentInvite,
   listInvites,

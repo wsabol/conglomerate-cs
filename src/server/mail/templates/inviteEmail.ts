@@ -58,7 +58,7 @@ export function renderInviteEmailHtml({
           </tr>
           <tr>
             <td style="font-size:13px;line-height:1.5;color:#8f877c;text-align:center;">
-              <p style="margin:0;">This link expires in seven days. If you weren't expecting this invite, you can ignore this email.</p>
+              <p style="margin:0;">Access is limited to invited members. If you weren't expecting this invite, you can ignore this email.</p>
             </td>
           </tr>
         </table>
@@ -81,7 +81,7 @@ export function renderInviteEmailText({
     "",
     `Accept your invitation: ${welcomeUrl}`,
     "",
-    "This link expires in seven days. If you weren't expecting this invite, you can ignore this email.",
+    "Access is limited to invited members. If you weren't expecting this invite, you can ignore this email.",
   ].join("\n");
 }
 

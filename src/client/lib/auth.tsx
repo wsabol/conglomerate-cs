@@ -25,7 +25,7 @@ interface AuthContextValue {
   isEditor: boolean;
   loading: boolean;
   refresh: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthContextValue>({
   isEditor: false,
   loading: true,
   refresh: () => {},
-  logout: () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,14 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     const url = user?.logoutUrl;
     if (url) {
-      window.location.assign(url);
-      return;
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "same-origin",
+        redirect: "manual",
+        cache: "no-store",
+      });
+      if (response.type !== "opaqueredirect" && !response.ok) {
+        throw new Error("Could not sign out. Please try again.");
+      }
     }
     setUser(null);
-    window.location.assign("/");
+    window.location.assign("/logged-out");
   }, [user?.logoutUrl]);
 
   const value = useMemo<AuthContextValue>(

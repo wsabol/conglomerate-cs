@@ -19,7 +19,6 @@ import {
   conflict,
   tooManyRequests,
 } from "../lib/errors";
-import { buildWelcomeUrl } from "../lib/inviteToken";
 import { sendInviteEmail } from "../mail/sendInvite";
 
 export async function processInvite(
@@ -49,8 +48,8 @@ export async function processInvite(
     throw badGateway(message);
   }
 
-  const { id, rawToken } = await createInvite(db, env, input, invitedByUserId);
-  const welcomeUrl = buildWelcomeUrl(config.appBaseUrl, rawToken);
+  const id = await createInvite(db, input, invitedByUserId);
+  const welcomeUrl = `${config.appBaseUrl.replace(/\/$/, "")}/welcome`;
   const logoUrl = `${config.appBaseUrl.replace(/\/$/, "")}/ico/logo-transparent.png`;
 
   try {

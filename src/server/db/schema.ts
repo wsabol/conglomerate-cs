@@ -351,8 +351,6 @@ export const invites = sqliteTable(
     invitedBy: integer("invited_by")
       .notNull()
       .references(() => users.id),
-    tokenHash: text("token_hash").notNull(),
-    tokenExpiresAt: text("token_expires_at").notNull(),
     status: text("status", { enum: INVITE_STATUSES }).notNull().default("pending"),
     errorMessage: text("error_message"),
     providerMessageId: text("provider_message_id"),
@@ -360,7 +358,6 @@ export const invites = sqliteTable(
   },
   (t) => [
     index("invites_email_created_idx").on(t.email, t.createdOn),
-    uniqueIndex("invites_token_hash_idx").on(t.tokenHash),
   ],
 );
 

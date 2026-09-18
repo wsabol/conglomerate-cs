@@ -58,7 +58,7 @@
 }
 
 .errorTitle {
-  color: var(--color-orange);
+  color: var(--color-danger);
 }
 
 .spinner {

@@ -21,12 +21,6 @@ export function createInvite(body: InviteCreateInput) {
   });
 }
 
-export function verifyInviteToken(token: string) {
-  return apiFetch<{ valid: true; inviteeName: string }>(
-    `/api/invites/verify${toQuery({ token })}`,
-  );
-}
-
 export function listRevisions(params: {
   target_type?: RevisionTargetType;
   target_id?: number;

@@ -3,9 +3,8 @@ import { env } from "cloudflare:test";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
 import { invites, users } from "../../src/server/db/schema";
-import { hashInviteToken } from "../../src/server/lib/inviteToken";
 import type { ApiResponse } from "../../src/shared/types";
-import type { InviteDTO, InviteVerifyDTO } from "../../src/shared/dto";
+import type { InviteDTO } from "../../src/shared/dto";
 
 function mockInviteOutboundFetch(): void {
   vi.stubGlobal(
@@ -20,6 +19,11 @@ function mockInviteOutboundFetch(): void {
       );
 
       if (url === "https://api.resend.com/emails" && init?.method === "POST") {
+        const message = JSON.parse(String(init.body)) as { html: string; text: string };
+        expect(message.html).toContain('href="http://localhost:5173/welcome"');
+        expect(message.text).toContain("http://localhost:5173/welcome");
+        expect(message.text).not.toContain("?token=");
+        expect(message.text).not.toContain("expires in seven days");
         return new Response(JSON.stringify({ id: "test-resend-message-id" }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -147,75 +151,5 @@ describe("admin invites", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as ApiResponse<{ results: InviteDTO[] }>;
     expect(body.data?.results).toHaveLength(1);
-  });
-});
-
-describe("invite verification", () => {
-  beforeEach(async () => {
-    const db = getDb(env);
-    await db.delete(invites);
-    await db.delete(users);
-  });
-
-  it("verifies a valid invite token", async () => {
-    const db = getDb(env);
-    const editor = await db
-      .insert(users)
-      .values({ email: "editor@band.test", role: "editor" })
-      .returning()
-      .get();
-
-    const rawToken = "11111111-2222-4333-8444-555555555555";
-    const tokenHash = await hashInviteToken(rawToken);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    await db.insert(invites).values({
-      email: "alex@example.com",
-      inviteeName: "Alex",
-      invitedBy: editor.id,
-      tokenHash,
-      tokenExpiresAt: expiresAt,
-      status: "sent",
-    });
-
-    const res = await app.request(
-      `/api/invites/verify?token=${encodeURIComponent(rawToken)}`,
-      {},
-      env,
-    );
-
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as ApiResponse<InviteVerifyDTO>;
-    expect(body.data?.valid).toBe(true);
-    expect(body.data?.inviteeName).toBe("Alex");
-  });
-
-  it("rejects an expired invite token", async () => {
-    const db = getDb(env);
-    const editor = await db
-      .insert(users)
-      .values({ email: "editor@band.test", role: "editor" })
-      .returning()
-      .get();
-
-    const rawToken = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    const tokenHash = await hashInviteToken(rawToken);
-
-    await db.insert(invites).values({
-      email: "alex@example.com",
-      inviteeName: "Alex",
-      invitedBy: editor.id,
-      tokenHash,
-      tokenExpiresAt: "2000-01-01T00:00:00.000Z",
-      status: "sent",
-    });
-
-    const res = await app.request(
-      `/api/invites/verify?token=${encodeURIComponent(rawToken)}`,
-      {},
-      env,
-    );
-
-    expect(res.status).toBe(404);
   });
 });

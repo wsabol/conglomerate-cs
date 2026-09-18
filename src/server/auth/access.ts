@@ -1,4 +1,5 @@
 import type { AppConfig } from "../lib/config";
+import { protectedDestination } from "@shared/accessNavigation";
 
 // Verifies a Cloudflare Access application token (RS256 JWT) against the team's
 // public JWKS. Cloudflare places the assertion on the `Cf-Access-Jwt-Assertion`
@@ -40,6 +41,32 @@ export function buildAccessLogoutUrl(
 ): string | null {
   if (!accessTeamDomain) return null;
   return `${new URL(requestUrl).origin}/cdn-cgi/access/logout`;
+}
+
+/** Match Cloudflare Access's application login URL for this public hostname. */
+export function buildAccessLoginUrl(
+  requestUrl: string,
+  next: string | null,
+  config: AppConfig,
+): string | null {
+  const destination = new URL(protectedDestination(next), requestUrl);
+  if (!config.accessEnforced) {
+    return new URL(`${destination.pathname}${destination.search}`, config.appBaseUrl).toString();
+  }
+
+  const hostname = new URL(requestUrl).hostname.toLowerCase();
+  const audience = config.accessLoginAudiences[hostname];
+  if (!config.accessTeamDomain || !audience || !config.accessAuds.includes(audience)) {
+    return null;
+  }
+
+  const login = new URL(
+    `/cdn-cgi/access/login/${hostname}`,
+    `https://${config.accessTeamDomain}`,
+  );
+  login.searchParams.set("kid", audience);
+  login.searchParams.set("redirect_url", `${destination.pathname}${destination.search}`);
+  return login.toString();
 }
 
 export async function verifyAccessEmail(

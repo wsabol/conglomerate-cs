@@ -1,4 +1,5 @@
 import type { ApiResponse } from "@shared/types";
+import { protectedDestination } from "@shared/accessNavigation";
 
 /** Error thrown for non-2xx API responses, carrying the envelope message. */
 export class ApiClientError extends Error {
@@ -19,7 +20,8 @@ const ACCESS_URL_RE = /cloudflareaccess\.com|\/cdn-cgi\/access/i;
 interface BrowserWindow {
   location: {
     assign(url: string): void;
-    reload(): void;
+    pathname?: string;
+    search?: string;
   };
 }
 
@@ -38,28 +40,20 @@ function isAccessChallengeResponse(res: Response): boolean {
 }
 
 /**
- * Top-level navigation when Cloudflare Access intercepts a request.
+ * Top-level navigation to the public welcome page when Access intercepts a request.
  * Exported as an object so tests can spy on `redirect` (same-module calls
  * would not go through a stubbed named export).
  */
 export const accessNavigation = {
-  redirect(url?: string): void {
+  redirect(): void {
     const browserWindow = getBrowserWindow();
     if (!browserWindow) return;
-    if (url && isCloudflareAccessUrl(url)) {
-      browserWindow.location.assign(url);
-      return;
-    }
-    browserWindow.location.reload();
+    const next = protectedDestination(
+      `${browserWindow.location.pathname ?? "/"}${browserWindow.location.search ?? ""}`,
+    );
+    browserWindow.location.assign(`/welcome?next=${encodeURIComponent(next)}`);
   },
 };
-
-function redirectToAccess(res?: Response): void {
-  const url = res?.url;
-  accessNavigation.redirect(
-    url && isCloudflareAccessUrl(url) ? url : undefined,
-  );
-}
 
 /** CORS hides Access's 302; a manual-redirect probe to `/` makes it visible. */
 async function redirectIfAccessChallengeHidden(): Promise<void> {
@@ -76,7 +70,7 @@ async function redirectIfAccessChallengeHidden(): Promise<void> {
       res.status === 302 ||
       isCloudflareAccessUrl(res.url)
     ) {
-      redirectToAccess(res);
+      accessNavigation.redirect();
     }
   } catch {
     // Offline or blocked — do not reload.
@@ -102,7 +96,7 @@ async function fetchEnvelope<T>(
   const res = await fetch(path, { ...init, headers });
 
   if (isAccessChallengeResponse(res)) {
-    redirectToAccess(res);
+    accessNavigation.redirect();
     throw new ApiClientError("Authentication required.", 401);
   }
 
@@ -115,6 +109,7 @@ async function fetchEnvelope<T>(
   }
 
   if (!res.ok) {
+    if (res.status === 401) accessNavigation.redirect();
     const details = (body?.data as { details?: unknown } | null)?.details;
     throw new ApiClientError(
       body?.message ?? "Request failed.",

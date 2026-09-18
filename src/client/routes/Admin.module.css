@@ -91,7 +91,7 @@
 }
 
 .formError {
-  color: var(--color-danger, #c45c5c);
+  color: var(--color-orange);
   margin: 0;
 }
 

@@ -149,9 +149,8 @@ export interface InviteDTO {
   createdOn: string;
 }
 
-export interface InviteVerifyDTO {
-  valid: true;
-  inviteeName: string;
+export interface AccessLoginDTO {
+  url: string;
 }
 
 export interface RevisionDTO {

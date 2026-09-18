@@ -17,6 +17,7 @@ export interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   /** Comma-separated Access application AUDs (production, preview, …). */
   ACCESS_AUD?: string;
+  ACCESS_LOGIN_AUDIENCES?: string;
   ACCESS_ACCOUNT_ID?: string;
   ACCESS_POLICY_ID?: string;
   // Local-only identity override; never set in production.
@@ -27,7 +28,6 @@ export interface Env {
   APP_BASE_URL?: string;
   APP_ALLOWED_ORIGIN?: string;
   INVITE_FROM_EMAIL?: string;
-  INVITE_TOKEN_TTL_DAYS?: string;
   INVITE_THROTTLE_HOURS?: string;
   RESEND_API_KEY?: string;
   CLOUDFLARE_API_TOKEN?: string;
