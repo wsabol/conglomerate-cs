@@ -65,7 +65,12 @@ export function buildAccessLoginUrl(
     `https://${config.accessTeamDomain}`,
   );
   login.searchParams.set("kid", audience);
-  login.searchParams.set("redirect_url", `${destination.pathname}${destination.search}`);
+  // Return through a protected path exempt from the pre-Access welcome redirect.
+  // Access can establish its application cookie there before the browser visits
+  // the requested archive page.
+  const returnPath = new URL("/auth/complete", requestUrl);
+  returnPath.searchParams.set("next", `${destination.pathname}${destination.search}`);
+  login.searchParams.set("redirect_url", `${returnPath.pathname}${returnPath.search}`);
   return login.toString();
 }
 

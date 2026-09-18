@@ -58,8 +58,8 @@ Production configuration:
 - Create self-hosted Access applications covering `www.funkafterdeath.institute` and
   the `workers.dev` preview hostname, each with its own allowlist. `APP_BASE_URL`
   should be the canonical production origin.
-- For the branded entry and exit pages, add narrowly scoped Access **Bypass / Everyone**
-  applications for `/welcome`, `/logged-out`, `/assets/*`, and `/ico/*` on each
+- For the branded entry page, add narrowly scoped Access **Bypass / Everyone**
+  applications for `/welcome`, `/assets/*`, and `/ico/*` on each
   protected hostname. The Vite SPA needs the asset paths to render those public
   pages. Also bypass only `/api/auth/login` so the public page can request its
   Access login URL. Keep other `/api/*`, `/media/*`, and the archive protected. If
@@ -67,9 +67,11 @@ Production configuration:
 - Add a Cloudflare zone redirect rule that runs before Access: when a browser
   requests a protected document path **without** `CF_Authorization`, redirect
   to `/welcome?next=<encoded original path and query>`. Exclude `/welcome`,
-  `/logged-out`, `/cdn-cgi/access/*`, API and media routes, and static
-  assets. Test the rule with `/` and `/timeline` in a private browser, then use
-  Continue from `/welcome`.
+  `/auth/complete`, `/cdn-cgi/access/*`, API and media routes, and static
+  assets. Keep `/auth/complete` protected by Access: after sign-in, Access
+  returns there to establish its application cookie, and the client navigates
+  to the protected `next` path. Test the rule with `/` and `/timeline` in a
+  private browser, then use Continue from `/welcome`.
   Access does not provide a general setting that redirects an unauthenticated
   self-hosted application request to an arbitrary site page; its custom block
   redirect is for denied users, not this login step. An expired or invalid cookie
@@ -79,10 +81,10 @@ Production configuration:
   `/api/auth/login` and sends the browser directly to Cloudflare Access. Access
   then presents its configured Google / one-time PIN methods and returns to the
   protected `next` path (or `/`). Invite emails link to
-  `/welcome` without a token. Logout requests the application-host
-  `/cdn-cgi/access/logout` endpoint and shows `/logged-out` after a successful
-  response. Do not redirect the logout endpoint itself at the edge, or the
-  cookie will not be cleared.
+  `/welcome` without a token. Logout navigates the browser to the
+  application-host `/cdn-cgi/access/logout` endpoint so Cloudflare Access can
+  complete its logout flow. Do not redirect the logout endpoint itself at the
+  edge, or the cookie will not be cleared.
 - If an existing SPA session expires during an API request, the client navigates
   to `/welcome`, preserving the current archive path as `next`.
 

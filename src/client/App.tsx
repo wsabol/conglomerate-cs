@@ -10,8 +10,8 @@ import EventDetail from "./routes/EventDetail";
 import EventForm from "./routes/EventForm";
 import Media from "./routes/Media";
 import Admin from "./routes/Admin";
-import LoggedOut from "./routes/LoggedOut";
 import Welcome from "./routes/Welcome";
+import AuthComplete from "./routes/AuthComplete";
 import Styleguide from "./routes/Styleguide";
 import NotFound from "./routes/NotFound";
 
@@ -20,7 +20,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/welcome" element={<Welcome />} />
-        <Route path="/logged-out" element={<LoggedOut />} />
+        <Route path="/auth/complete" element={<AuthComplete />} />
         <Route element={<AuthProvider><Outlet /></AuthProvider>}>
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />

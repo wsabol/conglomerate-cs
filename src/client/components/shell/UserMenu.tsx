@@ -7,7 +7,6 @@ import styles from "./shell.module.css";
 export function UserMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,15 +54,11 @@ export function UserMenu() {
             <span className={styles.userDropdownEmail}>{user.email}</span>
           </div>
           <div className={styles.userDropdownDivider} />
-          {logoutError && <span role="alert">{logoutError}</span>}
           <button
             type="button"
             className={styles.userDropdownAction}
             role="menuitem"
-            onClick={() => {
-              setLogoutError(null);
-              void logout().catch(() => setLogoutError("Could not sign out. Please try again."));
-            }}
+            onClick={logout}
           >
             <Icon name="log-out" size={16} />
             Log Out

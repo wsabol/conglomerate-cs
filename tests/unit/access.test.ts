@@ -57,7 +57,7 @@ describe("buildAccessLoginUrl", () => {
       config,
     );
     expect(url).toBe(
-      "https://team.cloudflareaccess.com/cdn-cgi/access/login/archive.test?kid=aud-tag&redirect_url=%2Ftimeline%3Fyear%3D2024",
+      "https://team.cloudflareaccess.com/cdn-cgi/access/login/archive.test?kid=aud-tag&redirect_url=%2Fauth%2Fcomplete%3Fnext%3D%252Ftimeline%253Fyear%253D2024",
     );
   });
 
@@ -68,7 +68,7 @@ describe("buildAccessLoginUrl", () => {
       "//other.example/",
       config,
     );
-    expect(new URL(url!).searchParams.get("redirect_url")).toBe("/");
+    expect(new URL(url!).searchParams.get("redirect_url")).toBe("/auth/complete?next=%2F");
   });
 });
 

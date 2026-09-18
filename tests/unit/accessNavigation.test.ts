@@ -7,7 +7,7 @@ describe("protectedDestination", () => {
   });
 
   it("falls back to the archive for external and public targets", () => {
-    for (const next of ["https://other.example/", "//other.example/", "/welcome", "/signin", "/logged-out", "/cdn-cgi/access/logout", "/api/me"]) {
+    for (const next of ["https://other.example/", "//other.example/", "/welcome", "/signin", "/logged-out", "/auth/complete", "/cdn-cgi/access/logout", "/api/me"]) {
       expect(protectedDestination(next)).toBe("/");
     }
   });

@@ -4,7 +4,7 @@ export function protectedDestination(next: string | null): string {
   try {
     const url = new URL(next, "https://archive.invalid");
     if (url.origin !== "https://archive.invalid") return "/";
-    if (/^\/(?:welcome|signin|logged-out|api|media|cdn-cgi)(?:\/|$)/i.test(url.pathname)) return "/";
+    if (/^\/(?:welcome|signin|logged-out|api|media|cdn-cgi)(?:\/|$)/i.test(url.pathname) || url.pathname.toLowerCase() === "/auth/complete") return "/";
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return "/";
