@@ -84,8 +84,8 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
           busy
             ? "Uploading…"
             : posterUrl
-              ? "Replace poster or paste"
-              : "Upload event poster or paste"
+              ? "Replace poster"
+              : "Upload event poster"
         }
         accept="image/*"
         onFiles={handleUpload}
