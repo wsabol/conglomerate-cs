@@ -26,8 +26,8 @@ export default defineConfig({
         "ico/apple-touch-icon.png",
       ],
       manifest: {
-        name: "The Conglomerate",
-        short_name: "Conglomerate",
+        name: "Funk After Death - The Conglomerate Archives",
+        short_name: "Funk After Death",
         description: "A private chronological archive of the band's shows, parties, recordings, people, and stories.",
         theme_color: "#080a09",
         background_color: "#080a09",
