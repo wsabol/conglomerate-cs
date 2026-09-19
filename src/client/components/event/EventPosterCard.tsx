@@ -29,7 +29,7 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
 
   if (!posterUrl && !canManage) return null;
 
-  async function handleUpload(files: FileList) {
+  async function handleUpload(files: File[]) {
     const file = files[0];
     if (!file) return;
 
@@ -80,7 +80,13 @@ export function EventPosterCard({ event, onReload }: EventPosterCardProps) {
     <div className={styles.posterUpload}>
       {!posterUrl && <p className={styles.posterEmpty}>No poster yet.</p>}
       <FileInput
-        label={busy ? "Uploading…" : posterUrl ? "Replace poster" : "Upload event poster"}
+        label={
+          busy
+            ? "Uploading…"
+            : posterUrl
+              ? "Replace poster or paste"
+              : "Upload event poster or paste"
+        }
         accept="image/*"
         onFiles={handleUpload}
       />

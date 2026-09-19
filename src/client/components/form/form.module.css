@@ -117,9 +117,14 @@ textarea.control {
   justify-content: center;
   transition: border-color var(--motion-fast), color var(--motion-fast);
 }
-.fileInput:hover {
+.fileInput:hover,
+.fileInput:focus-visible {
   border-color: var(--color-emerald);
   color: var(--color-text);
+}
+.fileInput:focus-visible {
+  outline: 2px solid var(--color-emerald);
+  outline-offset: 2px;
 }
 .fileInput input {
   display: none;

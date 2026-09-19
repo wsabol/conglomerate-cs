@@ -1,11 +1,18 @@
 import {
+  useEffect,
   useId,
+  useRef,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "../../lib/cn";
+import {
+  fileMatchesAccept,
+  filesFromClipboard,
+  isEditablePasteTarget,
+} from "../../lib/fileInput";
 import { Icon } from "../ui/Icon";
 import styles from "./form.module.css";
 
@@ -254,34 +261,89 @@ interface FileInputProps {
   label?: string;
   accept?: string;
   multiple?: boolean;
-  onFiles: (files: FileList) => void;
+  onFiles: (files: File[]) => void;
 }
 
 export function FileInput({
-  label = "Choose files or drag them here",
+  label = "Choose files, drag them here, or paste",
   accept,
   multiple,
   onFiles,
 }: FileInputProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const onFilesRef = useRef(onFiles);
+  const acceptRef = useRef(accept);
+  const multipleRef = useRef(multiple);
+  onFilesRef.current = onFiles;
+  acceptRef.current = accept;
+  multipleRef.current = multiple;
+
+  function emitFiles(list: Iterable<File>, filterAccept = false) {
+    let files = Array.from(list);
+    if (filterAccept) {
+      files = files.filter((file) =>
+        fileMatchesAccept(file, acceptRef.current),
+      );
+    }
+    if (!files.length) return false;
+    onFilesRef.current(multipleRef.current ? files : files.slice(0, 1));
+    return true;
+  }
+
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      const root = rootRef.current;
+      if (!root) return;
+      if (isEditablePasteTarget(event.target)) return;
+
+      const active = document.activeElement;
+      const hovered = root.matches(":hover");
+      const focused = Boolean(active && root.contains(active));
+      if (!hovered && !focused) return;
+
+      const files = filesFromClipboard(event.clipboardData);
+      if (!files.length) return;
+      if (emitFiles(files, true)) event.preventDefault();
+    }
+
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, []);
+
   return (
-    <label
+    <div
+      ref={rootRef}
       className={styles.fileInput}
+      tabIndex={0}
+      role="button"
+      aria-label={label}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
-        if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
+        emitFiles(e.dataTransfer.files);
       }}
     >
-      <Icon name="upload" label="Upload" />
+      <Icon name="upload" />
       <span>{label}</span>
       <input
+        ref={inputRef}
         type="file"
         accept={accept}
         multiple={multiple}
+        tabIndex={-1}
         onChange={(e) => {
-          if (e.target.files?.length) onFiles(e.target.files);
+          if (e.target.files?.length) emitFiles(e.target.files);
+          e.target.value = "";
         }}
       />
-    </label>
+    </div>
   );
 }

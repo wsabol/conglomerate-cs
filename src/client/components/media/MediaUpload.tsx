@@ -15,7 +15,7 @@ export function MediaUpload({ eventId, onUploaded }: MediaUploadProps) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleFiles(files: FileList) {
+  async function handleFiles(files: File[]) {
     setBusy(true);
     setError(null);
     try {
@@ -36,7 +36,7 @@ export function MediaUpload({ eventId, onUploaded }: MediaUploadProps) {
     <div className={styles.wrap}>
       <p className={styles.hint}>{UPLOAD_LIMIT_HINT}</p>
       <FileInput
-        label={busy ? "Uploading…" : "Choose files or drag them here"}
+        label={busy ? "Uploading…" : "Choose files, drag them here, or paste"}
         accept="image/*,video/*,audio/*,application/pdf"
         multiple
         onFiles={handleFiles}

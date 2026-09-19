@@ -75,7 +75,7 @@ export function SourceForm({
   const actionsClass = inModal ? modalStyles.modalActions : styles.actions;
   const errorClass = inModal ? modalStyles.modalError : styles.error;
 
-  async function handleUpload(files: FileList) {
+  async function handleUpload(files: File[]) {
     const file = files[0];
     if (!file) return;
 
@@ -212,7 +212,9 @@ export function SourceForm({
                 <>
                   <FileInput
                     label={
-                      uploading ? "Uploading…" : "Choose an image or drag it here"
+                      uploading
+                        ? "Uploading…"
+                        : "Choose an image, drag it here, or paste"
                     }
                     accept="image/*"
                     onFiles={handleUpload}
