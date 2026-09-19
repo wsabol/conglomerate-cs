@@ -19,6 +19,9 @@ route.post("/", requireUser, async (c) => {
   const db = getDb(c.env);
 
   const target = await beginUpload(c.env, db, input, user.id);
+  if (target.reused) {
+    return ok(c, target, "Existing source media reused");
+  }
   return ok(c, target, "Upload authorized", 201);
 });
 

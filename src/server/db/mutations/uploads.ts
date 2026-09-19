@@ -3,6 +3,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../client";
 import { events, media } from "../schema";
 import type { UploadCreateInput } from "@shared/schemas/media";
+import type { MediaItemDTO, UploadBeginDTO } from "@shared/dto";
 import type { AppUser, Env } from "../../env";
 import { recordRevision } from "../../audit/revision";
 import { getConfig, mediaTypeForMime } from "../../lib/config";
@@ -32,6 +33,20 @@ function duplicateConflict(existing: DuplicateMedia) {
       error_code: "duplicate_media",
     },
   ]);
+}
+
+function isSourcePurpose(purpose: UploadCreateInput["purpose"] | string | null) {
+  return purpose === "source";
+}
+
+async function reusedSourceMedia(
+  db: Db,
+  env: Env,
+  existingId: number,
+): Promise<MediaItemDTO> {
+  const item = await getMediaItemById(db, existingId, env.MEDIA);
+  if (!item) throw notFound("Media not found.");
+  return item;
 }
 
 /** Delete R2 objects for a rejected upload and mark the row failed. */
@@ -74,7 +89,7 @@ export async function beginUpload(
   db: Db,
   input: UploadCreateInput,
   userId: number,
-) {
+): Promise<UploadBeginDTO> {
   const config = getConfig(env);
 
   const event = await db
@@ -90,7 +105,15 @@ export async function beginUpload(
 
   if (input.checksum) {
     const existing = await findPublishedMediaByChecksum(db, input.checksum);
-    if (existing) throw duplicateConflict(existing);
+    if (existing) {
+      if (isSourcePurpose(input.purpose)) {
+        return {
+          reused: true,
+          media: await reusedSourceMedia(db, env, existing.id),
+        };
+      }
+      throw duplicateConflict(existing);
+    }
   }
 
   const category = mediaTypeForMime(env, input.mimeType);
@@ -131,6 +154,7 @@ export async function beginUpload(
   const target = await createUploadTarget(env, r2Key, input.mimeType, row.id);
 
   return {
+    reused: false,
     mediaId: row.id,
     uploadUrl: target.url,
     uploadMethod: target.method,
@@ -259,6 +283,9 @@ export async function completeUpload(
   const duplicate = await findPublishedMediaByChecksum(db, checksum);
   if (duplicate && duplicate.id !== id) {
     await abortDuplicateUpload(env, db, existing);
+    if (isSourcePurpose(existing.purpose)) {
+      return reusedSourceMedia(db, env, duplicate.id);
+    }
     throw duplicateConflict(duplicate);
   }
 
@@ -315,6 +342,9 @@ export async function completeUpload(
         displayKey,
         thumbKey,
       });
+      if (raced && isSourcePurpose(existing.purpose)) {
+        return reusedSourceMedia(db, env, raced.id);
+      }
       if (raced) throw duplicateConflict(raced);
       throw conflict("This file already exists in the archive.", [
         {

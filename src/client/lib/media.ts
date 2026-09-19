@@ -1,5 +1,5 @@
 import { apiFetch, ApiClientError, toQuery } from "./api";
-import type { MediaItemDTO } from "@shared/dto";
+import type { MediaItemDTO, UploadBeginDTO } from "@shared/dto";
 import type {
   ListResult,
   MediaPurpose,
@@ -23,13 +23,6 @@ export function listMedia(params: ListMediaParams = {}) {
       params as Record<string, string | number | undefined | null>,
     )}`,
   );
-}
-
-export interface UploadTarget {
-  mediaId: number;
-  uploadUrl: string;
-  uploadMethod: "PUT";
-  directUpload: boolean;
 }
 
 function duplicateMessage(err: ApiClientError): string {
@@ -57,9 +50,9 @@ export async function uploadFile(
 
   const checksum = await sha256Hex(await file.arrayBuffer());
 
-  let init: UploadTarget;
+  let init: UploadBeginDTO;
   try {
-    init = await apiFetch<UploadTarget>("/api/uploads", {
+    init = await apiFetch<UploadBeginDTO>("/api/uploads", {
       method: "POST",
       body: JSON.stringify({
         eventId,
@@ -80,6 +73,8 @@ export async function uploadFile(
     }
     throw err;
   }
+
+  if (init.reused) return init.media;
 
   await putWithProgress(init.uploadUrl, file, init.uploadMethod, onProgress);
 

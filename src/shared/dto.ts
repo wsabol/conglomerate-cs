@@ -134,6 +134,19 @@ export interface MediaItemDTO {
   people: { id: number; displayName: string }[];
 }
 
+export type UploadBeginDTO =
+  | {
+      reused: false;
+      mediaId: number;
+      uploadUrl: string;
+      uploadMethod: "PUT";
+      directUpload: boolean;
+    }
+  | {
+      reused: true;
+      media: MediaItemDTO;
+    };
+
 export interface VideoPlaybackDTO {
   provider: "cloudflare-stream";
   token: string;

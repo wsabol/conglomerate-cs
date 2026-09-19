@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
 import { app } from "../../src/server/app";
 import { getDb } from "../../src/server/db/client";
 import {
@@ -12,23 +13,22 @@ import {
 } from "../../src/server/db/schema";
 import { sha256Hex } from "../../src/shared/checksum";
 import type { ApiResponse } from "../../src/shared/types";
-import type { EventDetailDTO, MediaItemDTO } from "../../src/shared/dto";
-
-interface UploadTarget {
-  mediaId: number;
-}
+import type { EventDetailDTO, MediaItemDTO, UploadBeginDTO } from "../../src/shared/dto";
 
 function bytesOf(text: string): ArrayBuffer {
   return new TextEncoder().encode(text).buffer as ArrayBuffer;
 }
 
-async function seedEvent() {
+async function seedEvent(
+  slug = "source-media-show",
+  name = "Source Media Show",
+) {
   const db = getDb(env);
   const event = await db
     .insert(events)
     .values({
-      slug: "source-media-show",
-      name: "Source Media Show",
+      slug,
+      name,
       eventType: "performance",
       eventDate: "2011-05-14",
       datePrecision: "exact",
@@ -38,7 +38,7 @@ async function seedEvent() {
     .get();
   await db.insert(eventPerformanceDetails).values({
     eventId: event.id,
-    billingName: "Source Media Show",
+    billingName: name,
   });
   return event;
 }
@@ -67,9 +67,16 @@ async function publishPhoto(
     },
     env,
   );
+  const beginBody = (await begin.json()) as ApiResponse<UploadBeginDTO>;
+  if (begin.status === 200 && beginBody.data?.reused) {
+    return { mediaId: beginBody.data.media.id, dto: beginBody.data.media };
+  }
   expect(begin.status).toBe(201);
-  const beginBody = (await begin.json()) as ApiResponse<UploadTarget>;
-  const mediaId = beginBody.data!.mediaId;
+  expect(beginBody.data?.reused).toBe(false);
+  const mediaId = beginBody.data && !beginBody.data.reused
+    ? beginBody.data.mediaId
+    : undefined;
+  expect(mediaId).toBeDefined();
 
   const put = await app.request(
     `/api/uploads/${mediaId}/body`,
@@ -89,11 +96,11 @@ async function publishPhoto(
   );
   expect(complete.status).toBe(200);
   const completeBody = (await complete.json()) as ApiResponse<MediaItemDTO>;
-  return { mediaId, dto: completeBody.data! };
+  return { mediaId: mediaId!, dto: completeBody.data! };
 }
 
-async function getEvent() {
-  const res = await app.request("/api/events/source-media-show", {}, env);
+async function getEvent(slug = "source-media-show") {
+  const res = await app.request(`/api/events/${slug}`, {}, env);
   expect(res.status).toBe(200);
   const body = (await res.json()) as ApiResponse<EventDetailDTO>;
   return body.data!;
@@ -186,5 +193,191 @@ describe("source-purpose media uploads", () => {
     expect(detail.mediaItems.map((item) => item.id)).not.toContain(
       source.mediaId,
     );
+  });
+
+  it("reuses the same published file as a source on another event", async () => {
+    const first = await seedEvent();
+    const second = await seedEvent("source-media-show-2", "Source Media Show 2");
+    const bytes = bytesOf("shared-facebook-screenshot");
+    const { mediaId } = await publishPhoto(
+      first.id,
+      bytes,
+      "fb-event.jpg",
+      "source",
+    );
+
+    const reused = await publishPhoto(
+      second.id,
+      bytes,
+      "fb-event-again.jpg",
+      "source",
+    );
+    expect(reused.mediaId).toBe(mediaId);
+
+    await app.request(
+      "/api/events/source-media-show",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sources: [
+            {
+              sourceType: "media",
+              description: "Facebook event screenshot",
+              mediaId,
+            },
+          ],
+        }),
+      },
+      env,
+    );
+    const attachSecond = await app.request(
+      "/api/events/source-media-show-2",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sources: [
+            {
+              sourceType: "media",
+              description: "Same screenshot, later event",
+              mediaId,
+            },
+          ],
+        }),
+      },
+      env,
+    );
+    expect(attachSecond.status).toBe(200);
+
+    const firstDetail = await getEvent();
+    const secondDetail = await getEvent("source-media-show-2");
+    expect(firstDetail.mediaItems).toEqual([]);
+    expect(secondDetail.mediaItems).toEqual([]);
+    expect(firstDetail.heroImageId).toBeNull();
+    expect(secondDetail.heroImageId).toBeNull();
+    expect(firstDetail.sources[0]?.mediaId).toBe(mediaId);
+    expect(secondDetail.sources[0]?.mediaId).toBe(mediaId);
+
+    const published = await getDb(env)
+      .select()
+      .from(media)
+      .where(eq(media.status, "published"));
+    expect(published).toHaveLength(1);
+  });
+
+  it("reuses a gallery original when citing the same file as a source elsewhere", async () => {
+    const first = await seedEvent();
+    const second = await seedEvent("source-media-show-2", "Source Media Show 2");
+    const bytes = bytesOf("poster-also-used-as-source");
+    const { mediaId } = await publishPhoto(first.id, bytes, "poster.jpg");
+
+    const reused = await publishPhoto(
+      second.id,
+      bytes,
+      "poster-source.jpg",
+      "source",
+    );
+    expect(reused.mediaId).toBe(mediaId);
+
+    const firstDetail = await getEvent();
+    expect(firstDetail.heroImageId).toBe(mediaId);
+    expect(firstDetail.mediaItems.map((item) => item.id)).toEqual([mediaId]);
+
+    const secondDetail = await getEvent("source-media-show-2");
+    expect(secondDetail.heroImageId).toBeNull();
+    expect(secondDetail.mediaItems).toEqual([]);
+  });
+
+  it("still rejects using the same file in two event galleries", async () => {
+    const first = await seedEvent();
+    const second = await seedEvent("source-media-show-2", "Source Media Show 2");
+    const bytes = bytesOf("gallery-only-once");
+    await publishPhoto(first.id, bytes, "live.jpg");
+
+    const checksum = await sha256Hex(bytes);
+    const begin = await app.request(
+      "/api/uploads",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: second.id,
+          filename: "live-copy.jpg",
+          mimeType: "image/jpeg",
+          size: bytes.byteLength,
+          title: "live-copy.jpg",
+          checksum,
+          purpose: "gallery",
+        }),
+      },
+      env,
+    );
+    expect(begin.status).toBe(409);
+  });
+
+  it("reuses source media at complete when begin did not see a checksum", async () => {
+    const first = await seedEvent();
+    const second = await seedEvent("source-media-show-2", "Source Media Show 2");
+    const bytes = bytesOf("complete-path-source-reuse");
+    const { mediaId } = await publishPhoto(
+      first.id,
+      bytes,
+      "fb-event.jpg",
+      "source",
+    );
+
+    const begin = await app.request(
+      "/api/uploads",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: second.id,
+          filename: "fb-event-copy.jpg",
+          mimeType: "image/jpeg",
+          size: bytes.byteLength,
+          title: "fb-event-copy.jpg",
+          purpose: "source",
+        }),
+      },
+      env,
+    );
+    expect(begin.status).toBe(201);
+    const beginBody = (await begin.json()) as ApiResponse<UploadBeginDTO>;
+    expect(beginBody.data?.reused).toBe(false);
+    const incomingId =
+      beginBody.data && !beginBody.data.reused
+        ? beginBody.data.mediaId
+        : undefined;
+    expect(incomingId).toBeDefined();
+    expect(incomingId).not.toBe(mediaId);
+
+    const put = await app.request(
+      `/api/uploads/${incomingId}/body`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: bytes,
+      },
+      env,
+    );
+    expect(put.status).toBe(200);
+
+    const complete = await app.request(
+      `/api/uploads/${incomingId}/complete`,
+      { method: "POST" },
+      env,
+    );
+    expect(complete.status).toBe(200);
+    const completeBody = (await complete.json()) as ApiResponse<MediaItemDTO>;
+    expect(completeBody.data?.id).toBe(mediaId);
+
+    const incoming = await getDb(env)
+      .select({ status: media.status })
+      .from(media)
+      .where(eq(media.id, incomingId!))
+      .get();
+    expect(incoming?.status).toBe("failed");
   });
 });
