@@ -55,11 +55,15 @@ export function filesFromClipboard(
   return Array.from(data.files, normalizePastedFile);
 }
 
+type PasteTarget = {
+  isContentEditable?: boolean;
+  tagName?: string;
+  closest?: (selector: string) => unknown;
+};
+
 export function isEditablePasteTarget(target: EventTarget | null): boolean {
   if (!target || typeof target !== "object") return false;
-  const el = target as Partial<HTMLElement> & {
-    closest?: (selector: string) => unknown;
-  };
+  const el = target as PasteTarget;
   if (el.isContentEditable) return true;
   const tag = el.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
