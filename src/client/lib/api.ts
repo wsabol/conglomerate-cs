@@ -121,8 +121,16 @@ async function fetchEnvelope<T>(
   return body.data as T;
 }
 
-/** Fetch a JSON API endpoint and unwrap the `{ data, message }` envelope. */
-export async function apiFetch<T>(
+/** Collapses concurrent GET/HEAD calls to the same path into one network request. */
+const inflightGets = new Map<string, Promise<unknown>>();
+
+function inflightKey(path: string, init?: RequestInit): string | null {
+  const method = (init?.method ?? "GET").toUpperCase();
+  if ((method !== "GET" && method !== "HEAD") || init?.signal) return null;
+  return `${method} ${path}`;
+}
+
+async function requestEnvelope<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
@@ -148,6 +156,27 @@ export async function apiFetch<T>(
   }
 
   throw lastError;
+}
+
+/** Fetch a JSON API endpoint and unwrap the `{ data, message }` envelope. */
+export function apiFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const key = inflightKey(path, init);
+  if (key) {
+    const existing = inflightGets.get(key);
+    if (existing) return existing as Promise<T>;
+  }
+
+  const request = requestEnvelope<T>(path, init);
+  if (!key) return request;
+
+  const tracked = request.finally(() => {
+    if (inflightGets.get(key) === tracked) inflightGets.delete(key);
+  });
+  inflightGets.set(key, tracked);
+  return tracked;
 }
 
 /** Build a query string from a params object, skipping empty values. */

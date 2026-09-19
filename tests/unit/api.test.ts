@@ -62,6 +62,70 @@ describe("apiFetch", () => {
     expect(data.ok).toBe(true);
   });
 
+  it("dedupes concurrent GET requests to the same path", async () => {
+    let calls = 0;
+    let resolveFetch!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      () =>
+        new Promise<Response>((resolve) => {
+          calls++;
+          resolveFetch = resolve;
+        }),
+    );
+
+    const first = apiFetch<{ ok: boolean }>("/api/health");
+    const second = apiFetch<{ ok: boolean }>("/api/health");
+    resolveFetch(jsonResponse({ data: { ok: true }, message: "ok" }, 200));
+
+    await expect(first).resolves.toEqual({ ok: true });
+    await expect(second).resolves.toEqual({ ok: true });
+    expect(calls).toBe(1);
+  });
+
+  it("issues a new GET after the previous in-flight request settles", async () => {
+    let calls = 0;
+    vi.stubGlobal("fetch", async () => {
+      calls++;
+      return jsonResponse({ data: { n: calls }, message: "ok" }, 200);
+    });
+
+    expect(await apiFetch<{ n: number }>("/api/health")).toEqual({ n: 1 });
+    expect(await apiFetch<{ n: number }>("/api/health")).toEqual({ n: 2 });
+    expect(calls).toBe(2);
+  });
+
+  it("does not dedupe concurrent POST requests", async () => {
+    let calls = 0;
+    const resolvers: Array<(value: Response) => void> = [];
+    vi.stubGlobal(
+      "fetch",
+      () =>
+        new Promise<Response>((resolve) => {
+          calls++;
+          resolvers.push(resolve);
+        }),
+    );
+
+    const first = apiFetch<{ ok: boolean }>("/api/events", {
+      method: "POST",
+      body: "{}",
+    });
+    const second = apiFetch<{ ok: boolean }>("/api/events", {
+      method: "POST",
+      body: "{}",
+    });
+
+    expect(resolvers).toHaveLength(2);
+    for (const resolve of resolvers) {
+      resolve(jsonResponse({ data: { ok: true }, message: "ok" }, 200));
+    }
+
+    await expect(first).resolves.toEqual({ ok: true });
+    await expect(second).resolves.toEqual({ ok: true });
+    expect(calls).toBe(2);
+  });
+
   it("does not retry POST requests", async () => {
     let calls = 0;
     vi.stubGlobal("fetch", async () => {
