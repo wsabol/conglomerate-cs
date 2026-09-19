@@ -111,6 +111,7 @@ export async function beginUpload(
       eventId: input.eventId,
       title: input.title ?? input.filename,
       mediaType: category,
+      purpose: input.purpose ?? "gallery",
       originalFilename: input.filename,
       mimeType: input.mimeType,
       size: input.size,
@@ -325,7 +326,11 @@ export async function completeUpload(
     throw err;
   }
 
-  if (existing.eventId && updated.mediaType === "photo") {
+  if (
+    existing.eventId &&
+    existing.purpose === "gallery" &&
+    updated.mediaType === "photo"
+  ) {
     const event = await db
       .select()
       .from(events)

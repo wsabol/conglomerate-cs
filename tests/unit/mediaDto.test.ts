@@ -10,6 +10,7 @@ function baseRow(overrides: Partial<MediaRow> = {}): MediaRow {
     eventId: 1,
     title: "Test video",
     mediaType: "video",
+    purpose: "gallery",
     r2Key: "media/1/test.mp4",
     originalFilename: "test.mp4",
     mimeType: "video/mp4",

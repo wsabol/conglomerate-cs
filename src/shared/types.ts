@@ -88,6 +88,10 @@ export const MEDIA_TYPES = [
 ] as const;
 export type MediaType = (typeof MEDIA_TYPES)[number];
 
+/** Gallery assets appear on the event; source assets are citation screenshots only. */
+export const MEDIA_PURPOSES = ["gallery", "source"] as const;
+export type MediaPurpose = (typeof MEDIA_PURPOSES)[number];
+
 export const MEDIA_STATUSES = [
   "uploading",
   "uploaded",

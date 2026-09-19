@@ -20,6 +20,7 @@ import {
   DATE_PRECISIONS,
   EVENT_TYPES,
   INCORPORATE_PREFS,
+  MEDIA_PURPOSES,
   MEDIA_STATUSES,
   MEDIA_TYPES,
   PLACE_STATUSES,
@@ -222,6 +223,9 @@ export const media = sqliteTable(
     eventId: integer("event_id").references(() => events.id),
     title: text("title"),
     mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
+    purpose: text("purpose", { enum: MEDIA_PURPOSES })
+      .notNull()
+      .default("gallery"),
     r2Key: text("r2_key"),
     originalFilename: text("original_filename"),
     mimeType: text("mime_type"),

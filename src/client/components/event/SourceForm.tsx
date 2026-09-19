@@ -83,7 +83,9 @@ export function SourceForm({
     setUploadError(null);
     try {
       setUploadProgress(0);
-      const item = await uploadFile(eventId, file, setUploadProgress);
+      const item = await uploadFile(eventId, file, setUploadProgress, {
+        purpose: "source",
+      });
       if (item.mediaType !== "photo") {
         throw new Error("Source image must be a photo.");
       }

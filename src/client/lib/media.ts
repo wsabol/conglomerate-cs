@@ -1,6 +1,11 @@
 import { apiFetch, ApiClientError, toQuery } from "./api";
 import type { MediaItemDTO } from "@shared/dto";
-import type { ListResult, MediaType, ApiErrorDetail } from "@shared/types";
+import type {
+  ListResult,
+  MediaPurpose,
+  MediaType,
+  ApiErrorDetail,
+} from "@shared/types";
 import type { UploadCreateInput } from "@shared/schemas/media";
 import type { MediaUpdateInput } from "@shared/schemas/media";
 import { sha256Hex } from "@shared/checksum";
@@ -43,6 +48,7 @@ export async function uploadFile(
   eventId: number,
   file: File,
   onProgress?: (pct: number) => void,
+  options?: { purpose?: MediaPurpose },
 ): Promise<MediaItemDTO> {
   const sizeError = validateUploadFileSize(file);
   if (sizeError) {
@@ -62,6 +68,7 @@ export async function uploadFile(
         size: file.size,
         title: file.name,
         checksum,
+        purpose: options?.purpose ?? "gallery",
       } satisfies UploadCreateInput),
     });
   } catch (err) {

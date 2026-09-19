@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DATE_PRECISIONS } from "../types";
+import { DATE_PRECISIONS, MEDIA_PURPOSES } from "../types";
 
 export const uploadCreateSchema = z.object({
   eventId: z.number().int().positive(),
@@ -7,6 +7,7 @@ export const uploadCreateSchema = z.object({
   mimeType: z.string().trim().min(1).max(255),
   size: z.number().int().positive(),
   title: z.string().trim().max(512).optional(),
+  purpose: z.enum(MEDIA_PURPOSES).default("gallery"),
   /** Optional client-computed SHA-256 (lowercase hex) for early dedup. */
   checksum: z
     .string()

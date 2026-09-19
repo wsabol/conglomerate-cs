@@ -122,6 +122,7 @@ export async function listMediaForEvent(
     .where(
       and(
         eq(media.eventId, eventId),
+        eq(media.purpose, "gallery"),
         eq(media.isDeleted, false),
         sql`(
           ${media.status} = 'published'
@@ -157,7 +158,11 @@ export async function listMedia(
   q: MediaQuery,
   bucket?: Env["MEDIA"],
 ): Promise<MediaItemDTO[]> {
-  const conds = [eq(media.status, "published"), eq(media.isDeleted, false)];
+  const conds = [
+    eq(media.status, "published"),
+    eq(media.isDeleted, false),
+    eq(media.purpose, "gallery"),
+  ];
   if (q.media_type) conds.push(eq(media.mediaType, q.media_type));
   if (q.year) conds.push(like(media.capturedDate, `${q.year}-%`));
   if (q.person) {

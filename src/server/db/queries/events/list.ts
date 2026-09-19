@@ -31,6 +31,7 @@ async function mediaAvailability(
         inArray(media.eventId, eventIds),
         eq(media.status, "published"),
         eq(media.isDeleted, false),
+        eq(media.purpose, "gallery"),
       ),
     );
 
@@ -109,7 +110,8 @@ export async function listEvents(
     (SELECT count(*) FROM ${annotations} WHERE ${annotations.targetType} = 'event'
       AND ${annotations.targetId} = ${events.id} AND ${annotations.isDeleted} = 0)
     + (SELECT count(*) FROM ${media} WHERE ${media.eventId} = ${events.id}
-      AND ${media.status} = 'published' AND ${media.isDeleted} = 0)
+      AND ${media.status} = 'published' AND ${media.isDeleted} = 0
+      AND ${media.purpose} = 'gallery')
   )`;
   const baseQuery = db
     .select({
