@@ -100,7 +100,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": "http://localhost:8787",
-      "/media": "http://localhost:8787",
+      // `/media` is the SPA gallery. Only `/media/:id` delivery belongs on the Worker.
+      "/media": {
+        target: "http://localhost:8787",
+        bypass(req) {
+          const path = req.url?.split("?")[0];
+          if (path === "/media") return "/index.html";
+          return undefined;
+        },
+      },
     },
   },
 });
