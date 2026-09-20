@@ -618,16 +618,31 @@ function PeopleTagModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
     setSelected(new Set(item.people.map((person) => person.id)));
     setError(null);
+    if (loadedRef.current) return;
+
+    let cancelled = false;
     setLoading(true);
     listPeople()
-      .then((result) => setPeople(result.results))
-      .catch(() => setError("People could not be loaded."))
-      .finally(() => setLoading(false));
+      .then((result) => {
+        if (cancelled) return;
+        setPeople(result.results);
+        loadedRef.current = true;
+      })
+      .catch(() => {
+        if (!cancelled) setError("People could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, item.id, item.people]);
 
   async function save() {

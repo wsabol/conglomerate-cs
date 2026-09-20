@@ -11,7 +11,7 @@ import {
   relationshipTypeLabel,
   sortPeopleForDisplay,
 } from "../../lib/format";
-import { listPeople } from "../../lib/people";
+import { invalidatePeopleList, listPeople } from "../../lib/people";
 import { useAsync } from "../../lib/useAsync";
 import { eventPersonInputSchema } from "@shared/schemas/event";
 import type { EventDetailDTO } from "@shared/dto";
@@ -246,6 +246,9 @@ function EventPeopleModal({
       }
 
       await patchEvent(event.slug, { people: parsed.data });
+      if (draftPeople.some((person) => person.isNew)) {
+        invalidatePeopleList();
+      }
     }, "Could not save personnel.");
     if (ok) onSaved();
   }

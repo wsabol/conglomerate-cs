@@ -6,15 +6,33 @@ import type { z } from "zod";
 
 export type PersonCreateBody = z.input<typeof personCreateSchema>;
 
-export function listPeople() {
-  return apiFetch<ListResult<PersonDTO>>("/api/people");
+let peopleList: Promise<ListResult<PersonDTO>> | null = null;
+
+/** Drop the cached people list so the next `listPeople()` hits the network. */
+export function invalidatePeopleList() {
+  peopleList = null;
 }
 
-export function createPerson(body: PersonCreateBody) {
-  return apiFetch<PersonDTO>("/api/people", {
+/** Session-cached people directory. Failed fetches are not cached. */
+export function listPeople() {
+  if (!peopleList) {
+    peopleList = apiFetch<ListResult<PersonDTO>>("/api/people").catch(
+      (error) => {
+        peopleList = null;
+        throw error;
+      },
+    );
+  }
+  return peopleList;
+}
+
+export async function createPerson(body: PersonCreateBody) {
+  const person = await apiFetch<PersonDTO>("/api/people", {
     method: "POST",
     body: JSON.stringify(body),
   });
+  invalidatePeopleList();
+  return person;
 }
 
 function personTypeLabel(personType: string | null): string {
